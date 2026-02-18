@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/",
+      "destination": "/coming-soon.html",
+      "permanent": false
+    },
+    {
       "source": "/mvp/index.html",
       "destination": "/mvp",
       "permanent": false
@@ -8,16 +13,12 @@
   ],
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/coming-soon.html"
+      "source": "/mvp/:path*",
+      "destination": "/:path*"
     },
     {
       "source": "/mvp",
       "destination": "/index.html"
-    },
-    {
-      "source": "/mvp/:path*",
-      "destination": "/:path*"
     }
   ],
   "headers": [
