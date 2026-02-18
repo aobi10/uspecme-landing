@@ -89,7 +89,6 @@
     OVERWATCH: 'overwatch',
     LOL: 'lol',
     FORTNITE: 'fortnite',
-    ARCRAIDERS: 'arcraiders',
     RIVALS: 'rivals'
   };
 
@@ -97,7 +96,6 @@
     GAME_IDS.OVERWATCH,
     GAME_IDS.LOL,
     GAME_IDS.FORTNITE,
-    GAME_IDS.ARCRAIDERS,
     GAME_IDS.RIVALS
   ];
 
@@ -259,8 +257,7 @@
     if (gameId === GAME_IDS.OVERWATCH) return t('d.game.overwatch');
     if (gameId === GAME_IDS.LOL) return t('d.game.lol');
     if (gameId === GAME_IDS.FORTNITE) return t('d.game.fortnite');
-    if (gameId === GAME_IDS.ARCRAIDERS) return t('d.game.arcraiders');
-    if (gameId === GAME_IDS.RIVALS) return t('d.editor.public.game.rivals');
+    if (gameId === GAME_IDS.RIVALS) return t('d.game.rivals');
     return String(gameId || '-');
   }
 
@@ -269,7 +266,7 @@
     if (raw === GAME_IDS.OVERWATCH) return GAME_IDS.OVERWATCH;
     if (raw === GAME_IDS.LOL || raw === 'league') return GAME_IDS.LOL;
     if (raw === GAME_IDS.FORTNITE) return GAME_IDS.FORTNITE;
-    if (raw === GAME_IDS.ARCRAIDERS || raw === 'arc raiders') return GAME_IDS.ARCRAIDERS;
+    if (raw === 'arcraiders' || raw === 'arc raiders') return GAME_IDS.RIVALS;
     if (raw === GAME_IDS.RIVALS) return GAME_IDS.RIVALS;
     if (raw === GAME_IDS.ANY || raw === 'any') return GAME_IDS.ANY;
     return fallback;
@@ -769,7 +766,7 @@
       availability: 'Weekend',
       lookingFor: ['Scrims', 'Tryouts'],
       games: [
-        { game: GAME_IDS.ARCRAIDERS, role: 'Scout', rank: 'N/A', peak: 'N/A', proof: PROOF_STATUS.SELF_DECLARED },
+        { game: GAME_IDS.RIVALS, role: 'Scout', rank: 'N/A', peak: 'N/A', proof: PROOF_STATUS.SELF_DECLARED },
         { game: GAME_IDS.FORTNITE, role: 'IGL', rank: 'Champion', peak: 'Unreal', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
       ]
     },
@@ -819,7 +816,7 @@
           needs: [{ role: 'IGL', rankMin: 'Champion' }]
         },
         {
-          game: GAME_IDS.ARCRAIDERS,
+          game: GAME_IDS.RIVALS,
           needs: [{ role: 'Scout', rankMin: 'N/A' }]
         }
       ],
@@ -832,7 +829,6 @@
     [GAME_IDS.OVERWATCH]: `${ASSET_BASE}/logos/misc/overwatch_logo_2026.png`,
     [GAME_IDS.LOL]: `${ASSET_BASE}/logos/misc/LoL.png`,
     [GAME_IDS.FORTNITE]: `${ASSET_BASE}/logos/misc/Fortnite.jpeg`,
-    [GAME_IDS.ARCRAIDERS]: `${ASSET_BASE}/logos/misc/rivals.png`,
     [GAME_IDS.RIVALS]: `${ASSET_BASE}/logos/misc/rivals.png`
   };
 
@@ -897,9 +893,9 @@
       'd.notifications.item.three': 'Login unlocks messaging, invites, and workflow actions.',
       'd.network.meta.self': 'EU · Flex DPS · Overwatch',
       'd.network.meta.valk': 'Support · Master 3 · 42 shared scrims',
-      'd.network.meta.arc': 'Scout · Arc Raiders · Weekend availability',
+      'd.network.meta.arc': 'Scout · Marvel Rivals · Weekend availability',
       'd.network.meta.pending.one': 'Incoming · Tank + Support trial squad · 19:00 CET',
-      'd.network.meta.pending.two': 'Incoming · Arc Raiders scrim cluster · Tue/Thu',
+      'd.network.meta.pending.two': 'Incoming · Marvel Rivals scrim cluster · Tue/Thu',
       'd.network.meta.pending.three': 'Outgoing · Follow-up intro requested',
       'd.network.meta.suggested.one': 'Team Manager · FaZe Academy · Shared org history',
       'd.network.meta.suggested.two': 'Head Coach · Vienna Ascend · Looking for shot-calling structure',
@@ -927,7 +923,7 @@
       'd.notifications.meta.system.twoText': 'Connected account badges are visible, rank verification expands in early access.',
       'd.hero.badge': 'GameIn',
       'd.hero.title': 'From solo queue to a real team.',
-      'd.hero.lead': 'Find verified players and teams in Overwatch, LoL, Fortnite and Arc Raiders. Compare fast. Tryouts made simple.',
+      'd.hero.lead': 'Find verified players and teams in Overwatch, LoL, Fortnite and Marvel Rivals. Compare fast. Tryouts made simple.',
       'd.hero.ctaPlayer': "I'm a Player",
       'd.hero.ctaTeam': "I'm a Team",
       'd.kpi.verified.title': 'Verified Ranks',
@@ -957,7 +953,7 @@
       'd.game.overwatch': 'Overwatch',
       'd.game.lol': 'LoL',
       'd.game.fortnite': 'Fortnite',
-      'd.game.arcraiders': 'Arc Raiders',
+      'd.game.rivals': 'Marvel Rivals',
       'd.role.tank': 'Tank',
       'd.role.support': 'Support',
       'd.role.dps': 'DPS',
@@ -1278,9 +1274,9 @@
       'd.notifications.item.three': 'Vorschau-Modus aktiv: Login schaltet Nachrichten, Einladungen und Workflows frei.',
       'd.network.meta.self': 'EU · Flex DPS · Overwatch',
       'd.network.meta.valk': 'Support · Master 3 · 42 gemeinsame Scrims',
-      'd.network.meta.arc': 'Scout · Arc Raiders · Wochenende verfügbar',
+      'd.network.meta.arc': 'Scout · Marvel Rivals · Wochenende verfügbar',
       'd.network.meta.pending.one': 'Eingehend · Tank + Support Trial-Squad · 19:00 CET',
-      'd.network.meta.pending.two': 'Eingehend · Arc Raiders Scrim-Cluster · Di/Do',
+      'd.network.meta.pending.two': 'Eingehend · Marvel Rivals Scrim-Cluster · Di/Do',
       'd.network.meta.pending.three': 'Ausgehend · Follow-up Intro angefragt',
       'd.network.meta.suggested.one': 'Team Managerin · FaZe Academy · Gemeinsamer Org-Kontext',
       'd.network.meta.suggested.two': 'Head Coach · Vienna Ascend · Sucht Shot-Calling-Struktur',
@@ -1308,7 +1304,7 @@
       'd.notifications.meta.system.twoText': 'Connected-Account-Badges sind sichtbar, Rank-Verifikation wird im Early Access ausgebaut.',
       'd.hero.badge': 'GameIn',
       'd.hero.title': 'Von Solo-Queue zu einem echten Team.',
-      'd.hero.lead': 'Finde verifizierte Spieler und Teams in Overwatch, LoL, Fortnite und Arc Raiders. Schnell vergleichen. Tryouts einfach machen.',
+      'd.hero.lead': 'Finde verifizierte Spieler und Teams in Overwatch, LoL, Fortnite und Marvel Rivals. Schnell vergleichen. Tryouts einfach machen.',
       'd.hero.ctaPlayer': 'Ich bin ein Spieler',
       'd.hero.ctaTeam': 'Ich bin ein Team',
       'd.kpi.verified.title': 'Verifizierte Ranks',
@@ -1338,7 +1334,7 @@
       'd.game.overwatch': 'Overwatch',
       'd.game.lol': 'LoL',
       'd.game.fortnite': 'Fortnite',
-      'd.game.arcraiders': 'Arc Raiders',
+      'd.game.rivals': 'Marvel Rivals',
       'd.role.tank': 'Tank',
       'd.role.support': 'Support',
       'd.role.dps': 'DPS',

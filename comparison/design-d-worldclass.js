@@ -115,7 +115,7 @@
       availability: 'Weekend',
       lookingFor: ['Scrims', 'Tryouts'],
       games: [
-        { game: 'ArcRaiders', role: 'Scout', rank: 'N/A', peak: 'N/A', proof: PROOF_STATUS.SELF_DECLARED },
+        { game: 'Rivals', role: 'Scout', rank: 'N/A', peak: 'N/A', proof: PROOF_STATUS.SELF_DECLARED },
         { game: 'Fortnite', role: 'IGL', rank: 'Champion', peak: 'Unreal', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
       ]
     },
@@ -164,7 +164,7 @@
           needs: [{ role: 'IGL', rankMin: 'Champion' }]
         },
         {
-          game: 'ArcRaiders',
+          game: 'Rivals',
           needs: [{ role: 'Scout', rankMin: 'N/A' }]
         }
       ],
@@ -177,7 +177,7 @@
     Overwatch: `${ASSET_BASE}/logos/misc/overwatch_logo_2026.png`,
     LoL: `${ASSET_BASE}/logos/misc/LoL.png`,
     Fortnite: `${ASSET_BASE}/logos/misc/Fortnite.jpeg`,
-    ArcRaiders: `${ASSET_BASE}/logos/misc/rivals.png`
+    Rivals: `${ASSET_BASE}/logos/misc/rivals.png`
   };
 
   const I18N_D = {
@@ -194,7 +194,7 @@
       'd.toggle.motionOff': 'Motion: Reduced',
       'd.hero.badge': 'GameIn Layer',
       'd.hero.title': 'From solo queue to a real team.',
-      'd.hero.lead': 'Find verified players and teams in Overwatch, LoL, Fortnite and Arc Raiders. Compare fast. Tryouts made simple.',
+      'd.hero.lead': 'Find verified players and teams in Overwatch, LoL, Fortnite and Marvel Rivals. Compare fast. Tryouts made simple.',
       'd.hero.ctaPlayer': "I'm a Player",
       'd.hero.ctaTeam': "I'm a Team",
       'd.kpi.verified.title': 'Verified Ranks',
@@ -224,7 +224,7 @@
       'd.game.overwatch': 'Overwatch',
       'd.game.lol': 'LoL',
       'd.game.fortnite': 'Fortnite',
-      'd.game.arcraiders': 'Arc Raiders',
+      'd.game.rivals': 'Marvel Rivals',
       'd.role.tank': 'Tank',
       'd.role.support': 'Support',
       'd.role.dps': 'DPS',
@@ -356,7 +356,7 @@
       'd.toggle.motionOff': 'Motion: Reduziert',
       'd.hero.badge': 'GameIn Layer',
       'd.hero.title': 'Von Solo-Queue zu einem echten Team.',
-      'd.hero.lead': 'Finde verifizierte Spieler und Teams in Overwatch, LoL, Fortnite und Arc Raiders. Schnell vergleichen. Tryouts einfach machen.',
+      'd.hero.lead': 'Finde verifizierte Spieler und Teams in Overwatch, LoL, Fortnite und Marvel Rivals. Schnell vergleichen. Tryouts einfach machen.',
       'd.hero.ctaPlayer': 'Ich bin Spieler',
       'd.hero.ctaTeam': 'Ich bin Team',
       'd.kpi.verified.title': 'Verifizierte Ranks',
@@ -386,7 +386,7 @@
       'd.game.overwatch': 'Overwatch',
       'd.game.lol': 'LoL',
       'd.game.fortnite': 'Fortnite',
-      'd.game.arcraiders': 'Arc Raiders',
+      'd.game.rivals': 'Marvel Rivals',
       'd.role.tank': 'Tank',
       'd.role.support': 'Support',
       'd.role.dps': 'DPS',
