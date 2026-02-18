@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GameIn · Messages Preview</title>
+  <meta name="description" content="GameIn messages preview in Shinobi mode with locked messaging actions.">
+  <link rel="stylesheet" href="main.css">
+</head>
+<body class="variant-gamein" data-page="messages" data-preview-state="preview">
+  <a class="skip-link" href="#main" data-d18n="d.a11y.skip">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="index.html" aria-label="GameIn">
+        <span class="logo">g</span>
+        <span class="brand-name">GameIn</span>
+        <span class="brand-sub">by uSpecMe</span>
+      </a>
+
+      <nav class="nav desktop-only" aria-label="Main navigation">
+        <a href="index.html" data-nav="start" data-d18n="d.nav.start">Start</a>
+        <a href="network.html" data-nav="network" data-d18n="d.nav.network">Network</a>
+        <a href="requests.html" data-nav="requests" data-d18n="d.nav.requests">Requests</a>
+        <a href="messages.html" data-nav="messages" data-d18n="d.nav.messages">Messages</a>
+        <a href="notifications.html" data-nav="notifications" data-d18n="d.nav.notifications">Notifications</a>
+      </nav>
+
+      <div class="toolbar">
+        <div class="lang-switch" role="group" aria-label="Language switch">
+          <button type="button" data-lang="en" aria-pressed="true">EN</button>
+          <button type="button" data-lang="de" aria-pressed="false">DE</button>
+        </div>
+        <button type="button" class="button ghost small auth-entry" data-open-auth data-auth-mode="login" data-d18n="d.auth.open.login">Login</button>
+        <button type="button" id="themeToggle" class="toggle-btn" aria-pressed="true" data-d18n="d.toggle.themeDark">Theme: Dark</button>
+        <button type="button" id="motionToggle" class="toggle-btn" aria-pressed="false" data-d18n="d.toggle.motionOn">Motion: On</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="subpage-main">
+    <section class="section">
+      <div class="container">
+        <div class="subpage-head">
+          <h1 data-d18n="d.page.messages.title">Messages</h1>
+          <p data-d18n="d.page.messages.lead">Preview threaded communication, context summaries, and role-specific collaboration history.</p>
+        </div>
+
+        <div class="subpage-grid">
+          <article class="subpage-card">
+            <div class="subpage-card-head">
+              <h2 data-d18n="d.module.messages.threads">Thread List</h2>
+              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Preview</span>
+            </div>
+            <ul class="list-stack">
+              <li class="list-row">
+                <strong>Vienna Ascend</strong>
+                <span data-d18n="d.messages.meta.thread.one">Tryout prep · 4 unread · Updated 08:42</span>
+              </li>
+              <li class="list-row">
+                <strong>FaZe Academy</strong>
+                <span data-d18n="d.messages.meta.thread.two">Roster review · 2 unread · Updated yesterday</span>
+              </li>
+              <li class="list-row">
+                <strong>Team Liquid Community</strong>
+                <span data-d18n="d.messages.meta.thread.three">Intro thread · 1 unread · Updated 2 days ago</span>
+              </li>
+            </ul>
+            <div class="preview-lock" data-preview-lock>
+              <p class="preview-lock-note"><strong data-d18n="d.action.startThread">Start New Thread</strong><span data-d18n="d.preview.lock.note">This is a visible Shinobi preview. Log in to unlock full actions.</span></p>
+              <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="messages.threads" data-lock-action="start_thread" data-d18n="d.preview.lock.cta">Login for full access</button>
+            </div>
+          </article>
+
+          <article class="subpage-card">
+            <div class="subpage-card-head">
+              <h2 data-d18n="d.module.messages.preview">Conversation Preview</h2>
+              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Preview</span>
+            </div>
+            <div class="conversation-box">
+              <p class="bubble" data-d18n="d.messages.sample.one">Shinobi, can you join tonight at 20:00 CET for role trials?</p>
+              <p class="bubble self" data-d18n="d.messages.sample.two">Confirmed. I can bring two VOD clips from last week scrims.</p>
+              <p class="bubble" data-d18n="d.messages.sample.three">Perfect. I will send lobby details after captain review.</p>
+            </div>
+            <div class="preview-lock" data-preview-lock>
+              <p class="preview-lock-note"><strong data-d18n="d.action.send">Send Message</strong><span data-d18n="d.preview.lock.note">This is a visible Shinobi preview. Log in to unlock full actions.</span></p>
+              <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="messages.preview" data-lock-action="send" data-d18n="d.preview.lock.cta">Login for full access</button>
+            </div>
+          </article>
+
+          <article class="subpage-card wide">
+            <div class="subpage-card-head">
+              <h2 data-d18n="d.module.messages.compose">Compose</h2>
+              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Preview</span>
+            </div>
+            <div class="form">
+              <label>
+                <span data-d18n="d.messages.field.to">To</span>
+                <input type="text" value="Vienna Ascend" readonly>
+              </label>
+              <label>
+                <span data-d18n="d.messages.field.draft">Draft</span>
+                <textarea rows="4" data-d18n-placeholder="d.messages.compose.placeholder" placeholder="Write a message draft for the preview thread."></textarea>
+              </label>
+            </div>
+            <div class="preview-lock" data-preview-lock>
+              <p class="preview-lock-note"><strong data-d18n="d.action.attach">Attach File</strong><span data-d18n="d.preview.lock.note">This is a visible Shinobi preview. Log in to unlock full actions.</span></p>
+              <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="messages.compose" data-lock-action="attach" data-d18n="d.preview.lock.cta">Login for full access</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="legal-links">
+        <a href="#" data-d18n="d.legal.privacy">Privacy</a>
+        <a href="#" data-d18n="d.legal.terms">Terms</a>
+      </div>
+      <p data-i18n="footer.note">Early access product in active construction.</p>
+    </div>
+  </footer>
+
+  <nav class="bottom-nav mobile-only" aria-label="Mobile navigation">
+    <a href="index.html" data-nav="start" data-d18n="d.nav.start">Start</a>
+    <a href="network.html" data-nav="network" data-d18n="d.nav.network">Network</a>
+    <a href="requests.html" data-nav="requests" data-d18n="d.nav.requests">Requests</a>
+    <a href="messages.html" data-nav="messages" data-d18n="d.nav.messages">Messages</a>
+    <a href="notifications.html" data-nav="notifications" data-d18n="d.nav.notifications">Notifications</a>
+  </nav>
+
+  <div id="uiNotice" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <div id="authModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal-backdrop" data-close-auth aria-label="Close auth modal"></div>
+    <div class="modal-content auth-modal-content">
+      <div class="modal-header">
+        <h3 id="authTitle" data-d18n="d.auth.title.register">Create your account</h3>
+        <button type="button" class="close" data-close-auth aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p data-d18n="d.auth.lead">Create or access your account first, then continue to the waitlist.</p>
+        <div id="authTabs" class="auth-tabs" role="tablist" aria-label="Authentication mode">
+          <button type="button" class="auth-tab active" role="tab" aria-selected="true" data-auth-tab="register" data-d18n="d.auth.tab.register">Register</button>
+          <button type="button" class="auth-tab" role="tab" aria-selected="false" data-auth-tab="login" data-d18n="d.auth.tab.login">Login</button>
+        </div>
+
+        <form id="registerForm" class="form auth-form">
+          <label>
+            <span data-d18n="d.auth.field.email">Email</span>
+            <input type="email" name="email" required autocomplete="email" data-d18n-placeholder="d.auth.placeholder.email" placeholder="you@example.com">
+          </label>
+          <label>
+            <span data-d18n="d.auth.field.password">Password</span>
+            <input type="password" name="password" minlength="6" required autocomplete="new-password" data-d18n-placeholder="d.auth.placeholder.password" placeholder="At least 6 characters">
+          </label>
+          <button type="submit" class="button primary wide" data-d18n="d.auth.submit.register">Register and continue</button>
+        </form>
+
+        <form id="loginForm" class="form auth-form hidden">
+          <label>
+            <span data-d18n="d.auth.field.email">Email</span>
+            <input type="email" name="email" required autocomplete="email" data-d18n-placeholder="d.auth.placeholder.email" placeholder="you@example.com">
+          </label>
+          <label>
+            <span data-d18n="d.auth.field.password">Password</span>
+            <input type="password" name="password" minlength="6" required autocomplete="current-password" data-d18n-placeholder="d.auth.placeholder.password" placeholder="At least 6 characters">
+          </label>
+          <button type="submit" class="button primary wide" data-d18n="d.auth.submit.login">Login and continue</button>
+        </form>
+
+        <div id="authSuccess" class="success hidden" role="status" aria-live="polite">
+          <strong data-d18n="d.auth.success">Preview auth completed.</strong>
+          <p data-d18n="d.auth.continueWaitlist">Continuing to waitlist...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="button ghost" data-close-auth data-d18n="d.modal.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="waitlistModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="waitlistTitle">
+    <div class="modal-backdrop" data-close-modal aria-label="Close modal"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="waitlistTitle" data-i18n="modal.title">Join the Waitlist</h3>
+        <button type="button" class="close" data-close-modal aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p data-i18n="modal.lead">This preview form is local-only and does not transmit data.</p>
+        <form id="waitlistForm" class="form">
+          <label>
+            <span data-i18n="modal.email.label">Email</span>
+            <input type="email" name="email" required data-i18n-placeholder="modal.email.placeholder" placeholder="you@example.com" autocomplete="email">
+          </label>
+
+          <label>
+            <span data-i18n="modal.role.label">Role</span>
+            <select name="role" required>
+              <option value="" selected disabled data-i18n="modal.role.placeholder">Select role</option>
+              <option value="player" data-i18n="modal.role.player">Player</option>
+              <option value="team" data-i18n="modal.role.team">Team</option>
+            </select>
+          </label>
+
+          <label>
+            <span data-i18n="modal.game.label">Main game</span>
+            <select name="game" required>
+              <option value="" selected disabled data-i18n="modal.game.placeholder">Select main game</option>
+              <option value="overwatch" data-i18n="modal.game.overwatch">Overwatch</option>
+              <option value="league" data-i18n="modal.game.lol">League of Legends</option>
+              <option value="fortnite" data-i18n="modal.game.fortnite">Fortnite</option>
+              <option value="arcraiders" data-i18n="modal.game.arcraiders">Arc Raiders</option>
+              <option value="other" data-i18n="modal.game.other">Other</option>
+            </select>
+          </label>
+
+          <button class="button primary wide" type="submit" data-i18n="modal.submit">Join Waitlist</button>
+        </form>
+
+        <div id="waitlistSuccess" class="success hidden" role="status" aria-live="polite" data-i18n="modal.success">You are on the preview waitlist. No data is sent or stored.</div>
+        <p class="micro" data-i18n="modal.micro">This interaction is a frontend preview only.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="button ghost" data-close-modal data-i18n="modal.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="track.js"></script>
+  <script src="shared.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

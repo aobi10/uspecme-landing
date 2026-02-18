@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>uSpecMe · GameIn Professional Layer</title>
+  <meta name="description" content="uSpecMe GameIn comparison variant with a LinkedIn-style professional layer for gaming identities.">
+  <link rel="stylesheet" href="design-gamein.css">
+</head>
+<body class="variant-gamein">
+  <a class="skip-link" href="#main" data-d18n="d.a11y.skip">Skip to content</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#landing" aria-label="GameIn">
+        <span class="logo">g</span>
+        <span class="brand-name">GameIn</span>
+        <span class="brand-sub">by uSpecMe</span>
+      </a>
+
+      <nav class="nav desktop-only" aria-label="Main navigation">
+        <a href="#explore" data-d18n="d.nav.explore">Explore</a>
+        <button type="button" class="nav-ghost" data-toast="d.toast.comingSoon" data-d18n="d.nav.matches">Matches</button>
+        <button type="button" class="nav-ghost" data-toast="d.toast.comingSoon" data-d18n="d.nav.tryouts">Tryouts</button>
+        <button type="button" class="nav-ghost" data-toast="d.toast.comingSoon" data-d18n="d.nav.messages">Messages</button>
+        <a href="#profile" data-d18n="d.nav.profile">Profile</a>
+      </nav>
+
+      <div class="toolbar">
+        <div class="lang-switch" role="group" aria-label="Language switch">
+          <button type="button" data-lang="en" aria-pressed="true">EN</button>
+          <button type="button" data-lang="de" aria-pressed="false">DE</button>
+        </div>
+
+        <button type="button" id="themeToggle" class="toggle-btn" aria-pressed="true" data-d18n="d.toggle.themeDark">Theme: Dark</button>
+        <button type="button" id="motionToggle" class="toggle-btn" aria-pressed="false" data-d18n="d.toggle.motionOn">Motion: On</button>
+
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="landing" class="hero section">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <span class="hero-pill" data-d18n="d.hero.badge">GameIn Layer</span>
+          <h1 data-d18n="d.hero.title">From solo queue to a real team.</h1>
+          <p data-d18n="d.hero.lead">Find verified players and teams in Overwatch, LoL, Fortnite and Arc Raiders. Compare fast. Tryouts made simple.</p>
+
+          <div class="hero-actions">
+            <button type="button" class="button primary" id="ctaPlayer" data-d18n="d.hero.ctaPlayer">I'm a Player</button>
+            <button type="button" class="button secondary" id="ctaTeam" data-d18n="d.hero.ctaTeam">I'm a Team</button>
+          </div>
+
+          <div class="network-cta-row">
+            <button type="button" class="button ghost" data-open-network-modal data-network-mode="intro" data-d18n="d.network.open.intro">Request Intro</button>
+            <button type="button" class="button ghost" data-open-network-modal data-network-mode="reference" data-d18n="d.network.open.reference">Add Reference</button>
+          </div>
+
+          <div class="hero-kpis">
+            <article>
+              <h3 data-d18n="d.kpi.verified.title">Verified Ranks</h3>
+              <p data-d18n="d.kpi.verified.text">Where possible, rank is verified. Otherwise status is clearly labeled.</p>
+            </article>
+            <article>
+              <h3 data-d18n="d.kpi.compare.title">Compare in Seconds</h3>
+              <p data-d18n="d.kpi.compare.text">Shortlist two profiles side by side without leaving Explore.</p>
+            </article>
+            <article>
+              <h3 data-d18n="d.kpi.tryout.title">Invite to Tryout</h3>
+              <p data-d18n="d.kpi.tryout.text">Trigger clear intent with one modal and capture early-access demand.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="hero-panel">
+          <div class="panel-head">
+            <h2 data-d18n="d.panel.title">Live Intent Monitor</h2>
+            <button type="button" class="button ghost small" id="openConnectFromHero" data-d18n="d.panel.connect">Connect</button>
+          </div>
+
+          <div class="metric-grid" aria-label="Summary metrics">
+            <article><span data-d18n="d.metric.m1">Connect Clicks</span><strong id="metricConnect">0</strong></article>
+            <article><span data-d18n="d.metric.m2">Tryout Requests</span><strong id="metricTryouts">0</strong></article>
+            <article><span data-d18n="d.metric.m3">Waitlist Submits</span><strong id="metricWaitlist">0</strong></article>
+            <article><span data-d18n="d.metric.m4">Compare Adds</span><strong id="metricCompare">0</strong></article>
+          </div>
+
+          <div class="hero-mock-stage">
+            <article class="hero-profile-preview" aria-label="Shinobi profile preview">
+              <div class="hero-preview-head">
+                <img class="hero-preview-avatar" src="../assets/avatars/shinobi 1.jpeg" alt="Shinobi profile picture">
+                <div class="hero-preview-ident">
+                  <h3>Shinobi</h3>
+                  <p data-i18n="profile.role">Flex DPS</p>
+                </div>
+                <span class="proof-badge rank" data-i18n="profile.verified">Skill Verified</span>
+              </div>
+
+              <div class="hero-preview-games">
+                <div class="hero-preview-row">
+                  <img src="../assets/logos/misc/overwatch_logo_2026.png" alt="Overwatch logo">
+                  <span data-i18n="profile.game.ow">Overwatch · Shinobi#4728</span>
+                </div>
+                <div class="hero-preview-row">
+                  <img src="../assets/logos/misc/LoL.png" alt="League of Legends logo">
+                  <span data-i18n="profile.game.lol">League of Legends · Shn0bi</span>
+                </div>
+                <div class="hero-preview-row">
+                  <img src="../assets/logos/misc/rivals.png" alt="Marvel Rivals logo">
+                  <span data-i18n="profile.game.rivals">Marvel Rivals · ShinobiX</span>
+                </div>
+                <div class="hero-preview-row">
+                  <img src="../assets/logos/misc/Fortnite.jpeg" alt="Fortnite logo">
+                  <span data-i18n="profile.game.fn">ShinobiFN</span>
+                </div>
+              </div>
+
+              <div class="hero-preview-section">
+                <h4 data-i18n="profile.career.title">Career</h4>
+                <p class="team-line">
+                  <img src="../assets/logos/teams/Faze Clan.png" alt="FaZe logo">
+                  <span data-i18n="profile.career.line">FaZe · Current Member</span>
+                </p>
+                <p class="team-line">
+                  <img src="../assets/logos/teams/Team Liquid.jpeg" alt="Team Liquid logo">
+                  <span data-i18n="profile.career.former">Team Liquid · Former Member</span>
+                </p>
+              </div>
+
+              <div class="hero-preview-section">
+                <h4 data-i18n="profile.setup.title">Pro Setup</h4>
+                <div class="hero-preview-hardware">
+                  <span class="setup-item"><img src="../assets/logos/misc/logitech.jpeg" alt="Logitech logo"><span data-i18n="profile.setup.s1">Logitech G Pro X Superlight 2</span></span>
+                  <span class="setup-item"><span data-i18n="profile.setup.s2">Artisan Zero XL</span></span>
+                  <span class="setup-item"><span data-i18n="profile.setup.s3">Wooting 60HE</span></span>
+                  <span class="setup-item"><img src="../assets/logos/misc/benq.png" alt="BenQ logo"><span data-i18n="profile.setup.s4">BenQ Zowie 360Hz</span></span>
+                  <span class="setup-item setup-item-wide"><img src="../assets/logos/misc/nvidea.png" alt="NVIDIA logo"><span data-i18n="profile.setup.s5">NVIDIA RTX 4090</span></span>
+                </div>
+              </div>
+            </article>
+
+          </div>
+          <p class="hero-note" data-d18n="d.panel.note">No autoplay. Fast scan, high signal density, clear CTA hierarchy.</p>
+          <div class="hero-linkedin-layer">
+            <p class="profile-headline" data-d18n="d.profile.headline">Flex DPS focused on team systems, comms discipline and measurable improvement.</p>
+            <p class="profile-about compact" data-d18n="d.profile.about.short">Proof-first gaming identity with references, career history and tryout context.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="explore" class="section explore-section">
+      <div class="container">
+        <div class="section-head">
+          <h2 data-d18n="d.explore.title">Explore</h2>
+          <div class="mode-toggle" role="tablist" aria-label="Explore mode">
+            <button type="button" class="active" id="modePlayers" role="tab" aria-selected="true" data-d18n="d.mode.players">Players</button>
+            <button type="button" id="modeTeams" role="tab" aria-selected="false" data-d18n="d.mode.teams">Teams</button>
+          </div>
+        </div>
+
+        <div class="explore-controls">
+          <label class="search-wrap">
+            <span class="sr-only" data-d18n="d.filter.search">Search</span>
+            <input id="searchInput" type="search" placeholder="Search handle or team" autocomplete="off">
+          </label>
+
+          <div class="chip-row" id="gameChips" aria-label="Games">
+            <button type="button" class="chip active" data-game="Any" data-d18n="d.filter.any">Any</button>
+            <button type="button" class="chip" data-game="Overwatch" data-d18n="d.game.overwatch">Overwatch</button>
+            <button type="button" class="chip" data-game="LoL" data-d18n="d.game.lol">LoL</button>
+            <button type="button" class="chip" data-game="Fortnite" data-d18n="d.game.fortnite">Fortnite</button>
+            <button type="button" class="chip" data-game="ArcRaiders" data-d18n="d.game.arcraiders">Arc Raiders</button>
+          </div>
+        </div>
+
+        <div class="explore-layout">
+          <aside class="filter-rail panel" aria-label="Filters">
+            <h3 data-d18n="d.filter.title">Filters</h3>
+
+            <label>
+              <span data-d18n="d.filter.role">Role</span>
+              <select id="roleFilter">
+                <option value="Any" data-d18n="d.filter.any">Any</option>
+                <option value="Tank" data-d18n="d.role.tank">Tank</option>
+                <option value="Support" data-d18n="d.role.support">Support</option>
+                <option value="DPS" data-d18n="d.role.dps">DPS</option>
+                <option value="Jungle" data-d18n="d.role.jungle">Jungle</option>
+                <option value="IGL" data-d18n="d.role.igl">IGL</option>
+                <option value="Scout" data-d18n="d.role.scout">Scout</option>
+              </select>
+            </label>
+
+            <label>
+              <span data-d18n="d.filter.rank">Rank</span>
+              <select id="rankFilter">
+                <option value="Any" data-d18n="d.filter.any">Any</option>
+                <option value="Diamond" data-d18n="d.rank.diamondPlus">Diamond+</option>
+                <option value="Master" data-d18n="d.rank.masterPlus">Master+</option>
+                <option value="Champion" data-d18n="d.rank.championUnreal">Champion/Unreal</option>
+              </select>
+            </label>
+
+            <label>
+              <span data-d18n="d.filter.region">Region</span>
+              <select id="regionFilter">
+                <option value="Any" data-d18n="d.filter.any">Any</option>
+                <option value="EU">EU</option>
+                <option value="NA">NA</option>
+                <option value="APAC">APAC</option>
+              </select>
+            </label>
+
+            <label>
+              <span data-d18n="d.filter.availability">Availability</span>
+              <select id="availabilityFilter">
+                <option value="Any" data-d18n="d.filter.any">Any</option>
+                <option value="Weeknights" data-d18n="d.availability.weeknights">Weeknights</option>
+                <option value="Weekend" data-d18n="d.availability.weekend">Weekend</option>
+              </select>
+            </label>
+
+            <label>
+              <span data-d18n="d.filter.proof">Proof</span>
+              <select id="proofFilter">
+                <option value="Any" data-d18n="d.filter.any">Any</option>
+                <option value="RANK_VERIFIED" data-d18n="d.proof.rankVerified">Rank Verified</option>
+                <option value="ACCOUNT_CONNECTED" data-d18n="d.proof.accountConnected">Account Connected</option>
+                <option value="SELF_DECLARED" data-d18n="d.proof.selfDeclared">Self Declared</option>
+              </select>
+            </label>
+          </aside>
+
+          <section class="results" aria-label="Results">
+            <div id="resultList" class="result-list"></div>
+            <div id="emptyState" class="panel hidden" data-d18n="d.empty">No results for current filters.</div>
+          </section>
+
+          <aside class="compare-drawer panel" id="compareDrawer" aria-label="Compare drawer">
+            <div class="drawer-head">
+              <h3 data-d18n="d.compare.title">Compare (max 2)</h3>
+              <button type="button" id="clearCompare" class="link-btn" data-d18n="d.compare.clear">Clear</button>
+            </div>
+
+            <div id="compareEmpty" class="drawer-empty" data-d18n="d.compare.empty">Select up to 2 players to compare role, rank, proof and availability.</div>
+            <div id="compareContent" class="hidden"></div>
+
+            <button type="button" id="inviteSelected" class="button primary wide" disabled data-d18n="d.compare.invite">Invite selected</button>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="profile" class="section">
+      <div class="container profile-showcase panel">
+        <h2 data-i18n="profile.title">Public Profile</h2>
+        <div class="profile-grid">
+          <div class="profile-card-main">
+            <div class="profile-top">
+              <div class="profile-avatar">
+                <img class="profile-avatar-image" src="../assets/avatars/shinobi 1.jpeg" alt="Shinobi profile picture">
+                <span class="profile-avatar-fallback" aria-hidden="true">SN</span>
+              </div>
+              <div>
+                <h3 class="profile-name">Shinobi</h3>
+                <p class="profile-role" data-i18n="profile.role">Flex DPS</p>
+              </div>
+              <span class="proof-badge rank" data-i18n="profile.verified">Skill Verified</span>
+            </div>
+
+            <p class="profile-headline" data-d18n="d.profile.headline">Flex DPS focused on team systems, comms discipline and measurable improvement.</p>
+            <p class="profile-about" data-d18n="d.profile.about">Known for calm mid-round communication, role flexibility across metas and consistent VOD review habits.</p>
+
+            <div class="profile-games">
+              <div class="profile-game-row">
+                <div>
+                  <img src="../assets/logos/misc/overwatch_logo_2026.png" alt="Overwatch logo">
+                  <span data-i18n="profile.game.ow">Overwatch · Shinobi#4728</span>
+                </div>
+                <span data-i18n="profile.rank.master">Master</span>
+              </div>
+              <div class="profile-game-row">
+                <div>
+                  <img src="../assets/logos/misc/LoL.png" alt="League of Legends logo">
+                  <span data-i18n="profile.game.lol">League of Legends · Shn0bi</span>
+                </div>
+                <span data-i18n="profile.rank.diamond">Diamond</span>
+              </div>
+              <div class="profile-game-row">
+                <div>
+                  <img src="../assets/logos/misc/rivals.png" alt="Marvel Rivals logo">
+                  <span data-i18n="profile.game.rivals">Marvel Rivals · ShinobiX</span>
+                </div>
+                <span data-i18n="profile.rank.gm">Grandmaster</span>
+              </div>
+              <div class="profile-game-row">
+                <div>
+                  <img src="../assets/logos/misc/Fortnite.jpeg" alt="Fortnite logo">
+                  <span data-i18n="profile.game.fn">ShinobiFN</span>
+                </div>
+                <span data-i18n="profile.rank.champion">Champion</span>
+              </div>
+            </div>
+
+            <div class="network-cta-row">
+              <button type="button" class="button ghost" data-open-network-modal data-network-mode="intro" data-d18n="d.network.open.intro">Request Intro</button>
+              <button type="button" class="button ghost" data-open-network-modal data-network-mode="reference" data-d18n="d.network.open.reference">Add Reference</button>
+            </div>
+
+            <article class="experience-list">
+              <h4 data-d18n="d.experience.title">Experience</h4>
+              <div class="experience-item">
+                <div>
+                  <p class="experience-role" data-d18n="d.experience.one.role">Flex DPS</p>
+                  <p class="experience-org" data-d18n="d.experience.one.org">FaZe Academy · Active Roster</p>
+                </div>
+                <span class="experience-date" data-d18n="d.experience.one.date">2025 - Present</span>
+              </div>
+              <div class="experience-item">
+                <div>
+                  <p class="experience-role" data-d18n="d.experience.two.role">Starter Support</p>
+                  <p class="experience-org" data-d18n="d.experience.two.org">Team Liquid Community Division</p>
+                </div>
+                <span class="experience-date" data-d18n="d.experience.two.date">2023 - 2025</span>
+              </div>
+              <div class="experience-item">
+                <div>
+                  <p class="experience-role" data-d18n="d.experience.three.role">Scrim Captain</p>
+                  <p class="experience-org" data-d18n="d.experience.three.org">EU Contenders Mix</p>
+                </div>
+                <span class="experience-date" data-d18n="d.experience.three.date">2022 - 2023</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="profile-card-side">
+            <article>
+              <h4 data-i18n="profile.career.title">Career</h4>
+              <p class="team-line"><img src="../assets/logos/teams/Faze Clan.png" alt="FaZe logo"><span data-i18n="profile.career.line">FaZe · Current Member</span></p>
+              <p class="team-line"><img src="../assets/logos/teams/Team Liquid.jpeg" alt="Team Liquid logo"><span data-i18n="profile.career.former">Team Liquid · Former Member</span></p>
+            </article>
+
+            <article>
+              <h4 data-d18n="d.references.title">References</h4>
+              <div class="references-grid" id="referencesPanel">
+                <article class="reference-card">
+                  <h5 data-d18n="d.references.one.name">Kai "Vector" Neumann</h5>
+                  <p class="reference-meta" data-d18n="d.references.one.meta">Head Coach · Vienna Ascend</p>
+                  <p data-d18n="d.references.one.text">Reliable in review cycles and adapts quickly to strategic feedback.</p>
+                </article>
+                <article class="reference-card">
+                  <h5 data-d18n="d.references.two.name">Mila "Astra" Hoffmann</h5>
+                  <p class="reference-meta" data-d18n="d.references.two.meta">Team Manager · FaZe Academy</p>
+                  <p data-d18n="d.references.two.text">Strong teammate with consistent attendance and clear match communication.</p>
+                </article>
+              </div>
+            </article>
+
+            <article>
+              <h4 data-i18n="profile.setup.title">Pro Setup</h4>
+              <div class="setup-grid">
+                <span class="setup-item"><img src="../assets/logos/misc/logitech.jpeg" alt="Logitech logo"><span data-i18n="profile.setup.s1">Logitech G Pro X Superlight 2</span></span>
+                <span class="setup-item"><span data-i18n="profile.setup.s2">Artisan Zero XL</span></span>
+                <span class="setup-item"><span data-i18n="profile.setup.s3">Wooting 60HE</span></span>
+                <span class="setup-item"><img src="../assets/logos/misc/benq.png" alt="BenQ logo"><span data-i18n="profile.setup.s4">BenQ Zowie 360Hz</span></span>
+                <span class="setup-item setup-item-wide"><img src="../assets/logos/misc/nvidea.png" alt="NVIDIA logo"><span data-i18n="profile.setup.s5">NVIDIA RTX 4090</span></span>
+              </div>
+            </article>
+
+            <article class="metric-grid">
+              <span data-i18n="profile.metric.dpi">DPI 800</span>
+              <span data-i18n="profile.metric.sens">Sens 4.00</span>
+              <span data-i18n="profile.metric.poll">Polling 1000 Hz</span>
+              <span data-i18n="profile.metric.fov">FOV 103</span>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="waitlist" class="section">
+      <div class="container panel waitlist-panel">
+        <div>
+          <h2 data-i18n="wait.heading">Join the waitlist</h2>
+          <p data-i18n="wait.lead">Get early access to proof-first teamfinding for competitive online games.</p>
+        </div>
+        <button type="button" class="button primary" data-open-modal data-i18n="wait.panel.cta">Open Waitlist</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="brand"><span class="logo">u</span><span class="brand-name">uSpecMe</span></div>
+      <div class="legal-links">
+        <a href="#" data-d18n="d.legal.privacy">Privacy</a>
+        <a href="#" data-d18n="d.legal.terms">Terms</a>
+      </div>
+      <p data-i18n="footer.note">Early access product in active construction.</p>
+    </div>
+  </footer>
+
+  <nav class="bottom-nav mobile-only" aria-label="Mobile navigation">
+    <a href="#explore" data-d18n="d.nav.explore">Explore</a>
+    <button type="button" data-toast="d.toast.tryoutsSoon" data-d18n="d.nav.tryouts">Tryouts</button>
+    <button type="button" data-toast="d.toast.messagesSoon" data-d18n="d.nav.messages">Messages</button>
+    <a href="#profile" data-d18n="d.nav.profile">Profile</a>
+  </nav>
+
+  <div id="uiNotice" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <div id="inviteModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
+    <div class="modal-backdrop" data-close-invite></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="inviteTitle" data-d18n="d.invite.title">Invite to Tryout</h3>
+        <button type="button" class="close" data-close-invite aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="inviteForm" class="form">
+          <label>
+            <span data-d18n="d.invite.game">Game</span>
+            <select name="game" id="inviteGame" required>
+              <option value="Overwatch" data-d18n="d.game.overwatch">Overwatch</option>
+              <option value="LoL" data-d18n="d.game.lol">LoL</option>
+              <option value="Fortnite" data-d18n="d.game.fortnite">Fortnite</option>
+              <option value="ArcRaiders" data-d18n="d.game.arcraiders">Arc Raiders</option>
+            </select>
+          </label>
+
+          <label>
+            <span data-d18n="d.invite.role">Role needed / offered</span>
+            <input type="text" name="role" id="inviteRole" required>
+          </label>
+
+          <label>
+            <span data-d18n="d.invite.slot">Suggested slot</span>
+            <select name="slot" id="inviteSlot" required>
+              <option value="Tue 20:00" data-d18n="d.invite.slot.tue">Tue 20:00</option>
+              <option value="Thu 19:30" data-d18n="d.invite.slot.thu">Thu 19:30</option>
+              <option value="Sun 18:00" data-d18n="d.invite.slot.sun">Sun 18:00</option>
+            </select>
+          </label>
+
+          <label>
+            <span data-d18n="d.invite.notes">Notes</span>
+            <textarea name="notes" id="inviteNotes" rows="3"></textarea>
+          </label>
+
+          <button type="submit" class="button primary wide" data-d18n="d.invite.submit">Send tryout request</button>
+        </form>
+
+        <div id="inviteSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.invite.success">Intent captured. Join early access to activate real invites.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="button ghost" data-close-invite data-d18n="d.modal.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="connectModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="connectTitle">
+    <div class="modal-backdrop" data-close-connect></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="connectTitle" data-d18n="d.connect.title">Connect account</h3>
+        <button type="button" class="close" data-close-connect aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p data-d18n="d.connect.lead">Choose a provider to confirm ownership and improve trust signals.</p>
+        <div class="provider-grid">
+          <button type="button" data-provider="Battle.net">Battle.net</button>
+          <button type="button" data-provider="Riot">Riot</button>
+          <button type="button" data-provider="Epic">Epic</button>
+          <button type="button" data-provider="Steam">Steam</button>
+          <button type="button" data-provider="PlayStation">PlayStation</button>
+          <button type="button" data-provider="Xbox">Xbox</button>
+        </div>
+
+        <div id="connectSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.connect.success">Connection intent captured. Full verification goes live in early access.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="button ghost" data-close-connect data-d18n="d.modal.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="networkModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="networkTitle">
+    <div class="modal-backdrop" data-close-network></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="networkTitle" data-d18n="d.network.title">Professional Networking</h3>
+        <button type="button" class="close" data-close-network aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tabs" id="networkTabs" role="tablist" aria-label="Networking mode">
+          <button type="button" class="active" data-network-mode="intro" aria-selected="true" data-d18n="d.network.tab.intro">Request Intro</button>
+          <button type="button" data-network-mode="reference" aria-selected="false" data-d18n="d.network.tab.reference">Add Reference</button>
+        </div>
+
+        <form id="networkIntroForm" class="form" data-network-form="intro">
+          <label>
+            <span data-d18n="d.network.intro.org.label">Team / Organization</span>
+            <input type="text" name="organization" required data-d18n-placeholder="d.network.intro.org.placeholder" placeholder="e.g. Team Liquid Academy">
+          </label>
+          <label>
+            <span data-d18n="d.network.intro.role.label">Role needed</span>
+            <input type="text" name="role" required data-d18n-placeholder="d.network.intro.role.placeholder" placeholder="e.g. Flex DPS for evening scrims">
+          </label>
+          <label>
+            <span data-d18n="d.network.intro.message.label">Message</span>
+            <textarea name="message" rows="3" data-d18n-placeholder="d.network.intro.message.placeholder" placeholder="Share context for the introduction."></textarea>
+          </label>
+          <button type="submit" class="button primary wide" data-d18n="d.network.submit.intro">Send intro request</button>
+        </form>
+
+        <form id="networkReferenceForm" class="form hidden" data-network-form="reference">
+          <label>
+            <span data-d18n="d.network.reference.role.label">Your role</span>
+            <input type="text" name="authorRole" required data-d18n-placeholder="d.network.reference.role.placeholder" placeholder="e.g. Coach, Team Lead, Analyst">
+          </label>
+          <label>
+            <span data-d18n="d.network.reference.relationship.label">Relationship</span>
+            <input type="text" name="relationship" required data-d18n-placeholder="d.network.reference.relationship.placeholder" placeholder="e.g. Worked together for one season">
+          </label>
+          <label>
+            <span data-d18n="d.network.reference.text.label">Reference text</span>
+            <textarea name="referenceText" rows="3" required data-d18n-placeholder="d.network.reference.text.placeholder" placeholder="Write a short reference."></textarea>
+          </label>
+          <button type="submit" class="button primary wide" data-d18n="d.network.submit.reference">Submit reference</button>
+        </form>
+
+        <div id="networkSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.network.success">Networking intent captured locally. Join early access for live intros and references.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="button ghost" data-close-network data-d18n="d.modal.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="waitlistModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="waitlistTitle">
+    <div class="modal-backdrop" data-close-modal aria-label="Close modal"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="waitlistTitle" data-i18n="modal.title">Join the Waitlist</h3>
+        <button type="button" class="close" data-close-modal aria-label="Close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p data-i18n="modal.lead">This preview form is local-only and does not transmit data.</p>
+        <form id="waitlistForm" class="form">
+          <label>
+            <span data-i18n="modal.email.label">Email</span>
+            <input type="email" name="email" required data-i18n-placeholder="modal.email.placeholder" placeholder="you@example.com" autocomplete="email">
+          </label>
+
+          <label>
+            <span data-i18n="modal.role.label">Role</span>
+            <select name="role" required>
+              <option value="" selected disabled data-i18n="modal.role.placeholder">Select role</option>
+              <option value="player" data-i18n="modal.role.player">Player</option>
+              <option value="team" data-i18n="modal.role.team">Team</option>
+            </select>
+          </label>
+
+          <label>
+            <span data-i18n="modal.game.label">Main game</span>
+            <select name="game" required>
+              <option value="" selected disabled data-i18n="modal.game.placeholder">Select main game</option>
+              <option value="overwatch" data-i18n="modal.game.overwatch">Overwatch</option>
+              <option value="league" data-i18n="modal.game.lol">League of Legends</option>
+              <option value="fortnite" data-i18n="modal.game.fortnite">Fortnite</option>
+              <option value="arcraiders" data-i18n="modal.game.arcraiders">Arc Raiders</option>
+              <option value="other" data-i18n="modal.game.other">Other</option>
+            </select>
+          </label>
+
+          <button class="button primary wide" type="submit" data-i18n="modal.submit">Join Waitlist</button>
+        </form>
+
+        <div id="waitlistSuccess" class="success hidden" role="status" aria-live="polite" data-i18n="modal.success">You are on the preview waitlist. No data is sent or stored.</div>
+        <p class="micro" data-i18n="modal.micro">This interaction is a frontend preview only.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="button ghost" data-close-modal data-i18n="modal.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="track.js"></script>
+  <script src="shared.js"></script>
+  <script src="design-gamein.js"></script>
+</body>
+</html>

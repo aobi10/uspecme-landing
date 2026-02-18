@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>uSpecMe · Owner Intent Monitor</title>
+  <meta name="description" content="Private owner-only intent monitor for GameIn fake-door tracking.">
+  <link rel="stylesheet" href="design-d-worldclass.css">
+  <style>
+    .owner-wrap {
+      min-height: 100vh;
+      display: grid;
+      align-items: center;
+    }
+    .owner-panel {
+      display: grid;
+      gap: 12px;
+    }
+    .owner-panel h1 {
+      margin: 0;
+      font-family: Sora, Inter, sans-serif;
+      font-size: clamp(1.4rem, 2.7vw, 2rem);
+    }
+    .owner-panel p {
+      margin: 0;
+      color: rgb(var(--text-2));
+    }
+    .owner-meta {
+      color: rgb(var(--muted));
+      font-size: 13px;
+      border: 1px solid rgb(var(--border));
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      background: rgb(var(--surface-2));
+    }
+    .owner-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .owner-lock {
+      text-align: center;
+      border: 1px solid rgb(var(--danger) / 0.45);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      color: rgb(var(--text));
+      background: rgb(var(--danger) / 0.12);
+    }
+    @media (max-width: 640px) {
+      .owner-actions .button {
+        width: 100%;
+      }
+      .owner-panel {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body class="variant-gamein">
+  <main class="owner-wrap">
+    <section class="section">
+      <div class="container">
+        <div class="panel owner-panel">
+          <div>
+            <h1>Private Intent Monitor</h1>
+            <p>Unlinked owner page for reviewing demand signals from the public landing.</p>
+          </div>
+
+          <div class="metric-grid" aria-label="Intent metrics">
+            <article><span>Connect Clicks</span><strong id="metricConnect">0</strong></article>
+            <article><span>Tryout Requests</span><strong id="metricTryouts">0</strong></article>
+            <article><span>Waitlist Submits</span><strong id="metricWaitlist">0</strong></article>
+            <article><span>Compare Adds</span><strong id="metricCompare">0</strong></article>
+          </div>
+
+          <div class="owner-meta">
+            Last update: <strong id="metricsUpdatedAt">-</strong>
+          </div>
+
+          <div class="owner-actions">
+            <button type="button" id="refreshMetrics" class="button secondary">Refresh</button>
+            <button type="button" id="resetMetrics" class="button ghost">Reset counters</button>
+            <button type="button" id="changeOwnerCode" class="button ghost">Change owner code</button>
+          </div>
+
+          <p>This page is local-only and unlinked. Access control is browser-side for convenience, not hardened security.</p>
+          <div id="ownerLockNotice" class="owner-lock hidden" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="owner-intent-monitor.js"></script>
+</body>
+</html>
