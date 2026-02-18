@@ -1,33 +1,8 @@
 {
   "redirects": [
     {
-      "source": "/index.html",
-      "destination": "/mvp",
-      "permanent": false
-    },
-    {
       "source": "/mvp/index.html",
       "destination": "/mvp",
-      "permanent": false
-    },
-    {
-      "source": "/network.html",
-      "destination": "/mvp/network.html",
-      "permanent": false
-    },
-    {
-      "source": "/requests.html",
-      "destination": "/mvp/requests.html",
-      "permanent": false
-    },
-    {
-      "source": "/messages.html",
-      "destination": "/mvp/messages.html",
-      "permanent": false
-    },
-    {
-      "source": "/notifications.html",
-      "destination": "/mvp/notifications.html",
       "permanent": false
     }
   ],
@@ -38,10 +13,6 @@
     },
     {
       "source": "/mvp",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/mvp/",
       "destination": "/index.html"
     },
     {
