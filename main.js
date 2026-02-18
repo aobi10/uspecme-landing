@@ -1658,6 +1658,8 @@
       searchInput.placeholder = state.mode === 'players' ? t('d.search.placeholder.players') : t('d.search.placeholder.teams');
     }
 
+    syncExploreRankFilterOptions();
+
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
       const dark = document.documentElement.classList.contains('dark');
@@ -1794,6 +1796,79 @@
     return schedule
       .replace('Mon/Wed/Fri', t('d.schedule.monWedFri'))
       .replace('Tue/Thu', t('d.schedule.tueThu'));
+  }
+
+  function getProfileGameKeyFromExploreGame(gameName) {
+    if (gameName === 'Overwatch') {
+      return 'overwatch';
+    }
+    if (gameName === 'LoL') {
+      return 'lol';
+    }
+    if (gameName === 'Fortnite') {
+      return 'fortnite';
+    }
+    return '';
+  }
+
+  function extractTierFromExploreRank(gameKey, rankValue) {
+    const rankConfig = PROFILE_RANKS[gameKey];
+    if (!rankConfig) {
+      return '';
+    }
+    const normalizedRank = String(rankValue || '').toLowerCase();
+    if (!normalizedRank || normalizedRank === 'n/a') {
+      return '';
+    }
+
+    const sortedTiers = rankConfig.tiers.slice().sort((a, b) => b.length - a.length);
+    const matchedTier = sortedTiers.find((tier) => normalizedRank.includes(tier.toLowerCase()));
+    return matchedTier || '';
+  }
+
+  function getExploreRankFilterGameKey() {
+    if (state.game === 'Any') {
+      return '';
+    }
+    return getProfileGameKeyFromExploreGame(state.game);
+  }
+
+  function syncExploreRankFilterOptions() {
+    const rankFilter = document.getElementById('rankFilter');
+    if (!rankFilter) {
+      return;
+    }
+
+    const gameKey = getExploreRankFilterGameKey();
+    const supportsRankCatalog = Boolean(gameKey && PROFILE_RANKS[gameKey]);
+    const options = supportsRankCatalog ? ['Any'].concat(PROFILE_RANKS[gameKey].tiers) : ['Any'];
+
+    setSelectOptions(rankFilter, options, (value) => {
+      if (value === 'Any') {
+        return t('d.filter.any');
+      }
+      const tierKey = getRankTierKey(gameKey, value);
+      return tierKey ? t(tierKey) : value;
+    });
+
+    rankFilter.disabled = !supportsRankCatalog;
+    const isValidSelection = options.includes(state.rank);
+    state.rank = isValidSelection ? state.rank : 'Any';
+    rankFilter.value = state.rank;
+
+    const wrap = rankFilter.closest('.select-wrap');
+    if (wrap) {
+      wrap.classList.toggle('is-disabled', rankFilter.disabled);
+    }
+    const arrow = wrap ? wrap.querySelector(`[data-select-toggle="${rankFilter.id}"]`) : null;
+    if (arrow) {
+      arrow.disabled = rankFilter.disabled;
+      arrow.setAttribute('aria-disabled', String(rankFilter.disabled));
+    }
+
+    if (typeof rankFilter._uspecRebuildMenu === 'function') {
+      rankFilter._uspecRebuildMenu();
+    }
   }
 
   function getRankTierKey(gameKey, tier) {
@@ -2287,17 +2362,9 @@
 
     if (state.rank !== 'Any') {
       const rankMatch = games.some((entry) => {
-        const rank = (entry.rank || '').toLowerCase();
-        if (state.rank === 'Diamond') {
-          return rank.includes('diamond') || rank.includes('master') || rank.includes('grandmaster') || rank.includes('champion') || rank.includes('unreal');
-        }
-        if (state.rank === 'Master') {
-          return rank.includes('master') || rank.includes('grandmaster') || rank.includes('champion') || rank.includes('unreal');
-        }
-        if (state.rank === 'Champion') {
-          return rank.includes('champion') || rank.includes('unreal');
-        }
-        return true;
+        const gameKey = getProfileGameKeyFromExploreGame(entry.game);
+        const tier = extractTierFromExploreRank(gameKey, entry.rank);
+        return tier === state.rank;
       });
       if (!rankMatch) {
         return false;
@@ -2833,11 +2900,18 @@
       };
 
       const open = () => {
+        if (select.disabled) {
+          return;
+        }
         closeAll(wrap);
         setOpenState(true);
       };
 
       const toggle = () => {
+        if (select.disabled) {
+          close();
+          return;
+        }
         const isOpen = wrap.classList.contains('is-open');
         if (isOpen) {
           close();
@@ -2890,6 +2964,9 @@
       });
 
       wrap.addEventListener('click', (event) => {
+        if (select.disabled) {
+          return;
+        }
         if (event.target.closest('.select-menu')) {
           return;
         }
@@ -2942,6 +3019,7 @@
     const selectNodes = [roleFilter, rankFilter, regionFilter, availabilityFilter, proofFilter];
 
     initFilterSelectToggles(selectNodes);
+    syncExploreRankFilterOptions();
 
     if (searchInput) {
       searchInput.addEventListener('input', () => {
@@ -2972,6 +3050,7 @@
         document.querySelectorAll('#gameChips .chip').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         state.game = chip.dataset.game || 'Any';
+        syncExploreRankFilterOptions();
         applyFiltersTracking();
         renderResults();
       });
