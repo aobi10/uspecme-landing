@@ -84,6 +84,8 @@
     ZA: 'd.country.za'
   };
 
+  const EXPLORE_ROLE_OPTIONS = ['Tank', 'Support', 'DPS', 'Jungle', 'IGL', 'Scout'];
+
   const state = {
     mode: 'players',
     search: '',
@@ -1658,6 +1660,7 @@
       searchInput.placeholder = state.mode === 'players' ? t('d.search.placeholder.players') : t('d.search.placeholder.teams');
     }
 
+    syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
 
     const themeToggle = document.getElementById('themeToggle');
@@ -1796,6 +1799,36 @@
     return schedule
       .replace('Mon/Wed/Fri', t('d.schedule.monWedFri'))
       .replace('Tue/Thu', t('d.schedule.tueThu'));
+  }
+
+  function getExploreRoleOptions() {
+    if (state.game === 'Overwatch') {
+      return ['Any', 'Tank', 'DPS', 'Support'];
+    }
+    return ['Any'].concat(EXPLORE_ROLE_OPTIONS);
+  }
+
+  function syncExploreRoleFilterOptions() {
+    const roleFilter = document.getElementById('roleFilter');
+    if (!roleFilter) {
+      return;
+    }
+
+    const options = getExploreRoleOptions();
+    setSelectOptions(roleFilter, options, (value) => {
+      if (value === 'Any') {
+        return t('d.filter.any');
+      }
+      return formatRole(value);
+    });
+
+    const isValidSelection = options.includes(state.role);
+    state.role = isValidSelection ? state.role : 'Any';
+    roleFilter.value = state.role;
+
+    if (typeof roleFilter._uspecRebuildMenu === 'function') {
+      roleFilter._uspecRebuildMenu();
+    }
   }
 
   function getProfileGameKeyFromExploreGame(gameName) {
@@ -3019,6 +3052,7 @@
     const selectNodes = [roleFilter, rankFilter, regionFilter, availabilityFilter, proofFilter];
 
     initFilterSelectToggles(selectNodes);
+    syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
 
     if (searchInput) {
@@ -3050,6 +3084,7 @@
         document.querySelectorAll('#gameChips .chip').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         state.game = chip.dataset.game || 'Any';
+        syncExploreRoleFilterOptions();
         syncExploreRankFilterOptions();
         applyFiltersTracking();
         renderResults();
