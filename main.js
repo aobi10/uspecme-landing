@@ -84,12 +84,29 @@
     ZA: 'd.country.za'
   };
 
+  const GAME_IDS = {
+    ANY: 'any',
+    OVERWATCH: 'overwatch',
+    LOL: 'lol',
+    FORTNITE: 'fortnite',
+    ARCRAIDERS: 'arcraiders',
+    RIVALS: 'rivals'
+  };
+
+  const ALLOWED_GAME_IDS = [
+    GAME_IDS.OVERWATCH,
+    GAME_IDS.LOL,
+    GAME_IDS.FORTNITE,
+    GAME_IDS.ARCRAIDERS,
+    GAME_IDS.RIVALS
+  ];
+
   const EXPLORE_ROLE_OPTIONS = ['Tank', 'Support', 'DPS', 'Jungle', 'IGL', 'Scout'];
 
   const state = {
     mode: 'players',
     search: '',
-    game: 'Any',
+    game: GAME_IDS.ANY,
     role: 'Any',
     rank: 'Any',
     region: 'Any',
@@ -135,6 +152,150 @@
     } catch (_err) {
       // no-op
     }
+  }
+
+  function getUnifiedStateApi() {
+    if (window.usmState && typeof window.usmState === 'object') {
+      return window.usmState;
+    }
+    return null;
+  }
+
+  function loadUnifiedState(path, fallbackValue, legacyReader) {
+    const api = getUnifiedStateApi();
+    if (api && typeof api.loadState === 'function') {
+      return api.loadState(path, fallbackValue, legacyReader);
+    }
+    if (typeof legacyReader === 'function') {
+      const legacyValue = legacyReader();
+      if (legacyValue !== undefined && legacyValue !== null) {
+        return legacyValue;
+      }
+    }
+    return fallbackValue;
+  }
+
+  function saveUnifiedState(path, value) {
+    const api = getUnifiedStateApi();
+    if (api && typeof api.saveState === 'function') {
+      api.saveState(path, value);
+    }
+    return value;
+  }
+
+  function updateUnifiedState(path, updater, fallbackValue) {
+    const api = getUnifiedStateApi();
+    if (api && typeof api.updateState === 'function') {
+      return api.updateState(path, updater, fallbackValue);
+    }
+    const nextValue = typeof updater === 'function' ? updater(fallbackValue) : updater;
+    return saveUnifiedState(path, nextValue);
+  }
+
+  function makeUnifiedId(prefix) {
+    const api = getUnifiedStateApi();
+    if (api && typeof api.makeId === 'function') {
+      return api.makeId(prefix);
+    }
+    const safePrefix = String(prefix || 'id').replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'id';
+    return `${safePrefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  function persistUiSubmitMeta(key, statusOrPayload, extra) {
+    const payload = typeof statusOrPayload === 'object' && statusOrPayload !== null
+      ? statusOrPayload
+      : { status: statusOrPayload };
+    updateUnifiedState(
+      `ui.submits.${key}`,
+      (prev) => ({
+        ...(prev && typeof prev === 'object' ? prev : {}),
+        ...(payload && typeof payload === 'object' ? payload : {}),
+        updatedAt: new Date().toISOString(),
+        ...(extra && typeof extra === 'object' ? extra : {})
+      }),
+      {}
+    );
+  }
+
+  function loadPersistedExploreFilters() {
+    return loadUnifiedState(
+      'explore.filters',
+      null,
+      () => null
+    );
+  }
+
+  function persistExploreFilters() {
+    saveUnifiedState('explore.filters', {
+      mode: state.mode,
+      search: state.search,
+      game: state.game,
+      role: state.role,
+      rank: state.rank,
+      region: state.region,
+      availability: state.availability,
+      proof: state.proof
+    });
+  }
+
+  function applyPersistedExploreFilters() {
+    const saved = loadPersistedExploreFilters();
+    if (!saved || typeof saved !== 'object') {
+      return;
+    }
+
+    const normalizedMode = saved.mode === 'teams' ? 'teams' : 'players';
+    state.mode = normalizedMode;
+    state.search = typeof saved.search === 'string' ? saved.search : '';
+    state.game = normalizeGameId(saved.game, GAME_IDS.ANY);
+    state.role = typeof saved.role === 'string' ? saved.role : 'Any';
+    state.rank = typeof saved.rank === 'string' ? saved.rank : 'Any';
+    state.region = typeof saved.region === 'string' ? saved.region : 'Any';
+    state.availability = typeof saved.availability === 'string' ? saved.availability : 'Any';
+    state.proof = typeof saved.proof === 'string' ? saved.proof : 'Any';
+  }
+
+  function getGameLabel(gameId) {
+    if (gameId === GAME_IDS.OVERWATCH) return t('d.game.overwatch');
+    if (gameId === GAME_IDS.LOL) return t('d.game.lol');
+    if (gameId === GAME_IDS.FORTNITE) return t('d.game.fortnite');
+    if (gameId === GAME_IDS.ARCRAIDERS) return t('d.game.arcraiders');
+    if (gameId === GAME_IDS.RIVALS) return t('d.editor.public.game.rivals');
+    return String(gameId || '-');
+  }
+
+  function normalizeGameId(value, fallback) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw === GAME_IDS.OVERWATCH) return GAME_IDS.OVERWATCH;
+    if (raw === GAME_IDS.LOL || raw === 'league') return GAME_IDS.LOL;
+    if (raw === GAME_IDS.FORTNITE) return GAME_IDS.FORTNITE;
+    if (raw === GAME_IDS.ARCRAIDERS || raw === 'arc raiders') return GAME_IDS.ARCRAIDERS;
+    if (raw === GAME_IDS.RIVALS) return GAME_IDS.RIVALS;
+    if (raw === GAME_IDS.ANY || raw === 'any') return GAME_IDS.ANY;
+    return fallback;
+  }
+
+  async function callMockApi(action, payload, options) {
+    if (typeof window.usmMockApi === 'function') {
+      return window.usmMockApi(action, payload, {
+        minDelay: 300,
+        maxDelay: 900,
+        failureRate: 0.06,
+        ...(options && typeof options === 'object' ? options : {})
+      });
+    }
+
+    return new Promise((resolve) => {
+      window.setTimeout(() => {
+        resolve({
+          ok: true,
+          id: makeUnifiedId(action || 'req'),
+          action: action || 'unknown',
+          payload: payload || {},
+          createdAt: new Date().toISOString()
+        });
+      }, 300);
+    });
   }
 
   function normalizeIdentity(value) {
@@ -596,8 +757,8 @@
       availability: 'Weeknights',
       lookingFor: ['Team', 'Tryouts'],
       games: [
-        { game: 'Overwatch', role: 'Support', rank: 'Master 3', peak: 'GM 5', proof: PROOF_STATUS.ACCOUNT_CONNECTED },
-        { game: 'LoL', role: 'Support', rank: 'Diamond II', peak: 'Master', proof: PROOF_STATUS.RANK_VERIFIED }
+        { game: GAME_IDS.OVERWATCH, role: 'Support', rank: 'Master 3', peak: 'GM 5', proof: PROOF_STATUS.ACCOUNT_CONNECTED },
+        { game: GAME_IDS.LOL, role: 'Support', rank: 'Diamond II', peak: 'Master', proof: PROOF_STATUS.RANK_VERIFIED }
       ]
     },
     {
@@ -608,8 +769,8 @@
       availability: 'Weekend',
       lookingFor: ['Scrims', 'Tryouts'],
       games: [
-        { game: 'ArcRaiders', role: 'Scout', rank: 'N/A', peak: 'N/A', proof: PROOF_STATUS.SELF_DECLARED },
-        { game: 'Fortnite', role: 'IGL', rank: 'Champion', peak: 'Unreal', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+        { game: GAME_IDS.ARCRAIDERS, role: 'Scout', rank: 'N/A', peak: 'N/A', proof: PROOF_STATUS.SELF_DECLARED },
+        { game: GAME_IDS.FORTNITE, role: 'IGL', rank: 'Champion', peak: 'Unreal', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
       ]
     },
     {
@@ -620,8 +781,8 @@
       availability: 'Weeknights',
       lookingFor: ['Tryouts', 'Team'],
       games: [
-        { game: 'Overwatch', role: 'Flex DPS', rank: 'Master', peak: 'Grandmaster', proof: PROOF_STATUS.SELF_DECLARED },
-        { game: 'Fortnite', role: 'IGL', rank: 'Champion', peak: 'Unreal', proof: PROOF_STATUS.SELF_DECLARED }
+        { game: GAME_IDS.OVERWATCH, role: 'Flex DPS', rank: 'Master', peak: 'Grandmaster', proof: PROOF_STATUS.SELF_DECLARED },
+        { game: GAME_IDS.FORTNITE, role: 'IGL', rank: 'Champion', peak: 'Unreal', proof: PROOF_STATUS.SELF_DECLARED }
       ]
     }
   ];
@@ -634,14 +795,14 @@
       verified: PROOF_STATUS.ACCOUNT_CONNECTED,
       games: [
         {
-          game: 'Overwatch',
+          game: GAME_IDS.OVERWATCH,
           needs: [
             { role: 'Tank', rankMin: 'Master' },
             { role: 'Support', rankMin: 'Diamond' }
           ]
         },
         {
-          game: 'LoL',
+          game: GAME_IDS.LOL,
           needs: [{ role: 'Jungle', rankMin: 'Diamond' }]
         }
       ],
@@ -654,11 +815,11 @@
       verified: PROOF_STATUS.SELF_DECLARED,
       games: [
         {
-          game: 'Fortnite',
+          game: GAME_IDS.FORTNITE,
           needs: [{ role: 'IGL', rankMin: 'Champion' }]
         },
         {
-          game: 'ArcRaiders',
+          game: GAME_IDS.ARCRAIDERS,
           needs: [{ role: 'Scout', rankMin: 'N/A' }]
         }
       ],
@@ -668,10 +829,11 @@
 
   const ASSET_BASE = getAssetBase();
   const GAME_LOGO = {
-    Overwatch: `${ASSET_BASE}/logos/misc/overwatch_logo_2026.png`,
-    LoL: `${ASSET_BASE}/logos/misc/LoL.png`,
-    Fortnite: `${ASSET_BASE}/logos/misc/Fortnite.jpeg`,
-    ArcRaiders: `${ASSET_BASE}/logos/misc/rivals.png`
+    [GAME_IDS.OVERWATCH]: `${ASSET_BASE}/logos/misc/overwatch_logo_2026.png`,
+    [GAME_IDS.LOL]: `${ASSET_BASE}/logos/misc/LoL.png`,
+    [GAME_IDS.FORTNITE]: `${ASSET_BASE}/logos/misc/Fortnite.jpeg`,
+    [GAME_IDS.ARCRAIDERS]: `${ASSET_BASE}/logos/misc/rivals.png`,
+    [GAME_IDS.RIVALS]: `${ASSET_BASE}/logos/misc/rivals.png`
   };
 
   const I18N_D = {
@@ -690,16 +852,16 @@
       'd.toggle.themeLight': 'Theme: Light',
       'd.toggle.motionOn': 'Motion: On',
       'd.toggle.motionOff': 'Motion: Reduced',
-      'd.preview.tag': 'Shinobi Preview',
+      'd.preview.tag': 'Shinobi Profile',
       'd.preview.tag.live': 'Shinobi Live',
-      'd.preview.lock.note': 'This is a visible Shinobi preview. Log in to unlock full actions.',
+      'd.preview.lock.note': 'Shinobi profile is visible. Log in to unlock full actions.',
       'd.preview.lock.cta': 'Login for full access',
       'd.page.network.title': 'Network',
       'd.page.network.lead': 'See how Shinobi would manage contacts, introductions, and relationship context in GameIn.',
       'd.page.requests.title': 'Requests',
       'd.page.requests.lead': 'Browse open tryout requests, recommended fits, and saved opportunities in a professional workflow.',
       'd.page.messages.title': 'Messages',
-      'd.page.messages.lead': 'Preview threaded communication, context summaries, and role-specific collaboration history.',
+      'd.page.messages.lead': 'Threaded communication, context summaries, and role-specific collaboration history.',
       'd.page.notifications.title': 'Notifications',
       'd.page.notifications.lead': 'Track mentions, request updates, and system notices in one timeline.',
       'd.module.network.your': 'Your Network',
@@ -709,7 +871,7 @@
       'd.module.requests.recommended': 'Recommended Fits',
       'd.module.requests.saved': 'Saved Opportunities',
       'd.module.messages.threads': 'Thread List',
-      'd.module.messages.preview': 'Conversation Preview',
+      'd.module.messages.preview': 'Conversation',
       'd.module.messages.compose': 'Compose',
       'd.module.notifications.mentions': 'Mentions',
       'd.module.notifications.updates': 'Request Updates',
@@ -729,10 +891,10 @@
       'd.messages.sample.one': 'Shinobi, can you join tonight at 20:00 CET for role trials?',
       'd.messages.sample.two': 'Confirmed. I can bring two VOD clips from last week scrims.',
       'd.messages.sample.three': 'Perfect. I will send lobby details after captain review.',
-      'd.messages.compose.placeholder': 'Write a message draft for the preview thread.',
+      'd.messages.compose.placeholder': 'Write a message draft for this thread.',
       'd.notifications.item.one': 'Your profile was mentioned in Vienna Ascend\'s request thread.',
       'd.notifications.item.two': 'FaZe Academy changed required rank from Diamond to Master.',
-      'd.notifications.item.three': 'Preview mode active: login unlocks messaging, invites, and workflow actions.',
+      'd.notifications.item.three': 'Login unlocks messaging, invites, and workflow actions.',
       'd.network.meta.self': 'EU · Flex DPS · Overwatch',
       'd.network.meta.valk': 'Support · Master 3 · 42 shared scrims',
       'd.network.meta.arc': 'Scout · Arc Raiders · Weekend availability',
@@ -760,7 +922,7 @@
       'd.notifications.meta.updates.oneTitle': 'Rank requirement update',
       'd.notifications.meta.updates.twoTitle': 'Tryout slot shift',
       'd.notifications.meta.updates.twoText': 'Cloud 25 moved Thursday block to 20:30 CET',
-      'd.notifications.meta.system.oneTitle': 'Preview Mode',
+      'd.notifications.meta.system.oneTitle': 'Account Access',
       'd.notifications.meta.system.twoTitle': 'Profile proof state',
       'd.notifications.meta.system.twoText': 'Connected account badges are visible, rank verification expands in early access.',
       'd.hero.badge': 'GameIn',
@@ -855,16 +1017,19 @@
       'd.toast.tryoutsSoon': 'Tryouts are coming soon.',
       'd.toast.messagesSoon': 'Messages are coming soon.',
       'd.toast.maxCompare': 'You can compare at most 2 players.',
+      'd.toast.error.generic': 'Something went wrong. Please try again.',
       'd.invite.title': 'Invite to Tryout',
       'd.invite.game': 'Game',
       'd.invite.role': 'Role needed / offered',
       'd.invite.slot': 'Suggested slot',
       'd.invite.notes': 'Notes',
       'd.invite.submit': 'Send tryout request',
-      'd.invite.success': 'Intent captured. Join early access to activate real invites.',
+      'd.invite.submitting': 'Sending...',
+      'd.invite.success': 'Tryout request sent. You\'ll be notified when early access opens.',
       'd.connect.title': 'Connect account',
       'd.connect.lead': 'Choose a provider to confirm ownership and improve trust signals.',
-      'd.connect.success': 'Connection intent captured. Full verification goes live in early access.',
+      'd.connect.connecting': 'Connecting...',
+      'd.connect.success': 'Connection recorded. Verification expands in early access.',
       'd.modal.close': 'Close',
       'd.card.region': 'Region',
       'd.card.country': 'Country',
@@ -930,8 +1095,9 @@
       'd.network.reference.text.placeholder': 'Write a short reference.',
       'd.network.submit.intro': 'Send intro request',
       'd.network.submit.reference': 'Submit reference',
-      'd.network.success': 'Networking intent captured locally. Join early access for live intros and references.',
-      'd.toast.networkCaptured': 'Networking intent captured.',
+      'd.network.submitting': 'Sending...',
+      'd.network.success': 'Request sent. You\'ll be notified when early access opens.',
+      'd.toast.networkCaptured': 'Request sent.',
       'd.auth.open.register': 'Register',
       'd.auth.open.login': 'Login',
       'd.auth.entry.online': 'Shinobi · Online',
@@ -947,7 +1113,7 @@
       'd.account.logout.confirm': 'Do you want to log out now?',
       'd.auth.title.register': 'Create your account',
       'd.auth.title.login': 'Log in to your account',
-      'd.auth.lead': 'Log in for full access. Register keeps the waitlist preview flow.',
+      'd.auth.lead': 'Log in for full access. Register continues to waitlist.',
       'd.auth.tab.register': 'Register',
       'd.auth.tab.login': 'Login',
       'd.auth.field.email': 'Email',
@@ -958,7 +1124,8 @@
       'd.auth.placeholder.password': 'At least 6 characters',
       'd.auth.submit.register': 'Register and continue',
       'd.auth.submit.login': 'Login',
-      'd.auth.success': 'Preview auth completed.',
+      'd.auth.submitting': 'Please wait...',
+      'd.auth.success': 'Authentication complete.',
       'd.auth.success.login': 'Logged in successfully.',
       'd.auth.error.invalid': 'Invalid email/username or password.',
       'd.auth.error.exists': 'An account with this email already exists.',
@@ -970,8 +1137,9 @@
       'd.edit.section.setup': 'Pro Setup',
       'd.editor.title': 'Edit profile',
       'd.editor.save': 'Save changes',
+      'd.editor.saving': 'Saving...',
       'd.editor.cancel': 'Cancel',
-      'd.editor.saved': 'Profile saved locally.',
+      'd.editor.saved': 'Profile saved.',
       'd.editor.public.displayName': 'Display name',
       'd.editor.public.role': 'Role',
       'd.editor.public.country': 'Country',
@@ -1065,16 +1233,16 @@
       'd.toggle.themeLight': 'Theme: Hell',
       'd.toggle.motionOn': 'Motion: An',
       'd.toggle.motionOff': 'Motion: Reduziert',
-      'd.preview.tag': 'Shinobi Vorschau',
+      'd.preview.tag': 'Shinobi Profil',
       'd.preview.tag.live': 'Shinobi Live',
-      'd.preview.lock.note': 'Das ist eine sichtbare Shinobi-Vorschau. Für volle Aktionen bitte einloggen.',
+      'd.preview.lock.note': 'Shinobi-Profil ist sichtbar. Für volle Aktionen bitte einloggen.',
       'd.preview.lock.cta': 'Login für vollen Zugriff',
       'd.page.network.title': 'Netzwerk',
       'd.page.network.lead': 'Sieh, wie Shinobi Kontakte, Intros und Beziehungs-Kontext in GameIn organisiert.',
       'd.page.requests.title': 'Anfragen',
       'd.page.requests.lead': 'Durchsuche offene Tryout-Anfragen, empfohlene Fits und gespeicherte Chancen im professionellen Flow.',
       'd.page.messages.title': 'Nachrichten',
-      'd.page.messages.lead': 'Vorschau auf Thread-Kommunikation, Kontext-Zusammenfassungen und rollenbasierte Zusammenarbeit.',
+      'd.page.messages.lead': 'Thread-Kommunikation, Kontext-Zusammenfassungen und rollenbasierte Zusammenarbeit.',
       'd.page.notifications.title': 'Mitteilungen',
       'd.page.notifications.lead': 'Verfolge Mentions, Request-Updates und Systemhinweise in einer Timeline.',
       'd.module.network.your': 'Dein Netzwerk',
@@ -1084,7 +1252,7 @@
       'd.module.requests.recommended': 'Empfohlene Fits',
       'd.module.requests.saved': 'Gespeicherte Chancen',
       'd.module.messages.threads': 'Thread-Liste',
-      'd.module.messages.preview': 'Konversations-Vorschau',
+      'd.module.messages.preview': 'Konversation',
       'd.module.messages.compose': 'Verfassen',
       'd.module.notifications.mentions': 'Mentions',
       'd.module.notifications.updates': 'Request-Updates',
@@ -1230,16 +1398,19 @@
       'd.toast.tryoutsSoon': 'Tryouts kommen bald.',
       'd.toast.messagesSoon': 'Nachrichten kommen bald.',
       'd.toast.maxCompare': 'Du kannst maximal 2 Spieler vergleichen.',
+      'd.toast.error.generic': 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
       'd.invite.title': 'Zum Tryout einladen',
       'd.invite.game': 'Spiel',
       'd.invite.role': 'Gesuchte / angebotene Rolle',
       'd.invite.slot': 'Vorgeschlagener Slot',
       'd.invite.notes': 'Notizen',
       'd.invite.submit': 'Tryout-Anfrage senden',
-      'd.invite.success': 'Intent erfasst. Für echte Einladungen der Early-Access-Warteliste beitreten.',
+      'd.invite.submitting': 'Wird gesendet...',
+      'd.invite.success': 'Tryout-Anfrage gesendet. Du wirst benachrichtigt, sobald Early Access startet.',
       'd.connect.title': 'Account verbinden',
       'd.connect.lead': 'Wähle einen Provider, um Ownership zu bestätigen und Trust-Signale zu verbessern.',
-      'd.connect.success': 'Connection-Intent erfasst. Vollständige Verifikation folgt im Early Access.',
+      'd.connect.connecting': 'Verbinde...',
+      'd.connect.success': 'Verbindung gespeichert. Verifikation wird im Early Access erweitert.',
       'd.modal.close': 'Schließen',
       'd.card.region': 'Region',
       'd.card.country': 'Herkunftsland',
@@ -1305,8 +1476,9 @@
       'd.network.reference.text.placeholder': 'Schreibe eine kurze Referenz.',
       'd.network.submit.intro': 'Intro-Anfrage senden',
       'd.network.submit.reference': 'Referenz übermitteln',
-      'd.network.success': 'Networking-Intent lokal erfasst. Für Live-Intros und Referenzen dem Early Access beitreten.',
-      'd.toast.networkCaptured': 'Networking-Intent erfasst.',
+      'd.network.submitting': 'Wird gesendet...',
+      'd.network.success': 'Anfrage gesendet. Du wirst benachrichtigt, sobald Early Access startet.',
+      'd.toast.networkCaptured': 'Anfrage gesendet.',
       'd.auth.open.register': 'Registrieren',
       'd.auth.open.login': 'Login',
       'd.auth.entry.online': 'Shinobi · Online',
@@ -1322,7 +1494,7 @@
       'd.account.logout.confirm': 'Möchtest du dich jetzt abmelden?',
       'd.auth.title.register': 'Konto erstellen',
       'd.auth.title.login': 'In dein Konto einloggen',
-      'd.auth.lead': 'Login gibt vollen Zugriff. Registrierung bleibt im Wartelisten-Preview-Flow.',
+      'd.auth.lead': 'Login gibt vollen Zugriff. Registrierung führt weiter zur Warteliste.',
       'd.auth.tab.register': 'Registrieren',
       'd.auth.tab.login': 'Login',
       'd.auth.field.email': 'E-Mail',
@@ -1333,7 +1505,8 @@
       'd.auth.placeholder.password': 'Mindestens 6 Zeichen',
       'd.auth.submit.register': 'Registrieren und fortfahren',
       'd.auth.submit.login': 'Einloggen',
-      'd.auth.success': 'Preview-Auth abgeschlossen.',
+      'd.auth.submitting': 'Bitte warten...',
+      'd.auth.success': 'Authentifizierung abgeschlossen.',
       'd.auth.success.login': 'Erfolgreich eingeloggt.',
       'd.auth.error.invalid': 'E-Mail/Benutzername oder Passwort ist ungültig.',
       'd.auth.error.exists': 'Ein Konto mit dieser E-Mail existiert bereits.',
@@ -1345,8 +1518,9 @@
       'd.edit.section.setup': 'Pro Setup',
       'd.editor.title': 'Profil bearbeiten',
       'd.editor.save': 'Änderungen speichern',
+      'd.editor.saving': 'Speichert...',
       'd.editor.cancel': 'Abbrechen',
-      'd.editor.saved': 'Profil lokal gespeichert.',
+      'd.editor.saved': 'Profil gespeichert.',
       'd.editor.public.displayName': 'Anzeigename',
       'd.editor.public.role': 'Rolle',
       'd.editor.public.country': 'Herkunftsland',
@@ -1682,20 +1856,55 @@
     applyProfileStateToDOM();
   }
 
-  function showToast(messageKeyOrText) {
+  function showToast(messageKeyOrText, tone) {
     const node = document.getElementById('uiNotice');
     if (!node) {
       return;
     }
 
     const text = messageKeyOrText && messageKeyOrText.startsWith && messageKeyOrText.startsWith('d.') ? t(messageKeyOrText) : messageKeyOrText;
+    const normalizedTone = tone === 'error' ? 'error' : tone === 'success' ? 'success' : 'success';
     node.textContent = text || '';
+    node.classList.remove('success', 'error');
+    node.classList.add(normalizedTone);
     node.classList.remove('hidden');
 
     window.clearTimeout(showToast._timer);
     showToast._timer = window.setTimeout(() => {
       node.classList.add('hidden');
     }, 1800);
+  }
+
+  function setButtonLoading(button, isLoading, loadingLabel) {
+    if (!button) {
+      return;
+    }
+
+    if (isLoading) {
+      if (!button.dataset.defaultLabel) {
+        button.dataset.defaultLabel = button.textContent;
+      }
+      if (!button.dataset.defaultDisabled) {
+        button.dataset.defaultDisabled = button.disabled ? '1' : '0';
+      }
+      button.classList.add('is-loading');
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      if (loadingLabel) {
+        button.textContent = loadingLabel;
+      }
+      return;
+    }
+
+    button.classList.remove('is-loading');
+    button.removeAttribute('aria-busy');
+    if (button.dataset.defaultLabel) {
+      button.textContent = button.dataset.defaultLabel;
+      delete button.dataset.defaultLabel;
+    }
+    const wasDisabled = button.dataset.defaultDisabled === '1';
+    button.disabled = wasDisabled;
+    delete button.dataset.defaultDisabled;
   }
 
   function getCurrentPage() {
@@ -1802,7 +2011,7 @@
   }
 
   function getExploreRoleOptions() {
-    if (state.game === 'Overwatch') {
+    if (state.game === GAME_IDS.OVERWATCH) {
       return ['Any', 'Tank', 'DPS', 'Support'];
     }
     return ['Any'].concat(EXPLORE_ROLE_OPTIONS);
@@ -1832,16 +2041,8 @@
   }
 
   function getProfileGameKeyFromExploreGame(gameName) {
-    if (gameName === 'Overwatch') {
-      return 'overwatch';
-    }
-    if (gameName === 'LoL') {
-      return 'lol';
-    }
-    if (gameName === 'Fortnite') {
-      return 'fortnite';
-    }
-    return '';
+    const normalized = normalizeGameId(gameName, '');
+    return ALLOWED_GAME_IDS.includes(normalized) ? normalized : '';
   }
 
   function extractTierFromExploreRank(gameKey, rankValue) {
@@ -1860,7 +2061,7 @@
   }
 
   function getExploreRankFilterGameKey() {
-    if (state.game === 'Any') {
+    if (state.game === GAME_IDS.ANY) {
       return '';
     }
     return getProfileGameKeyFromExploreGame(state.game);
@@ -2269,11 +2470,15 @@
     document.body.style.overflow = 'hidden';
   }
 
-  function saveProfileFromEditor(form) {
+  async function saveProfileFromEditor(form) {
     const inputs = getProfileEditorInputs();
     if (!form || !inputs.displayName || !form.reportValidity()) {
       return;
     }
+
+    const saveButton = document.querySelector('button[form="profileEditorForm"][type="submit"]');
+    setButtonLoading(saveButton, true, t('d.editor.saving'));
+    persistUiSubmitMeta('profileEditor', { status: 'pending', section: state.profileEditorSection });
 
     const draft = {
       version: PROFILE_VERSION,
@@ -2324,15 +2529,31 @@
       }
     };
 
-    state.profile = normalizeProfileState(draft);
-    persistProfileState();
-    applyProfileStateToDOM();
+    try {
+      await callMockApi('profile_editor_save', { section: state.profileEditorSection });
+      state.profile = normalizeProfileState(draft);
+      persistProfileState();
+      applyProfileStateToDOM();
 
-    const saved = document.getElementById('profileEditorSaved');
-    if (saved) {
-      saved.classList.remove('hidden');
+      const saved = document.getElementById('profileEditorSaved');
+      if (saved) {
+        saved.classList.remove('hidden');
+      }
+      persistUiSubmitMeta('profileEditor', {
+        status: 'success',
+        section: state.profileEditorSection,
+        requestId: makeUnifiedId('profile')
+      });
+      showToast('d.editor.saved', 'success');
+    } catch (_err) {
+      persistUiSubmitMeta('profileEditor', {
+        status: 'error',
+        section: state.profileEditorSection
+      });
+      showToast('d.toast.error.generic', 'error');
+    } finally {
+      setButtonLoading(saveButton, false);
     }
-    showToast('d.editor.saved');
   }
 
   function applyProfileEditorI18n() {
@@ -2356,7 +2577,7 @@
 
   function getPrimaryGame(player) {
     const game = state.game;
-    if (game !== 'Any') {
+    if (game !== GAME_IDS.ANY) {
       const match = player.games.find((entry) => entry.game === game);
       if (match) {
         return match;
@@ -2378,7 +2599,7 @@
       return false;
     }
 
-    const games = player.games.filter((entry) => state.game === 'Any' || entry.game === state.game);
+    const games = player.games.filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game);
     if (!games.length) {
       return false;
     }
@@ -2416,7 +2637,7 @@
       return false;
     }
 
-    if (state.game !== 'Any' && !team.games.some((entry) => entry.game === state.game)) {
+    if (state.game !== GAME_IDS.ANY && !team.games.some((entry) => entry.game === state.game)) {
       return false;
     }
 
@@ -2443,7 +2664,7 @@
       '<article class="result-card">',
       '<div class="result-top">',
       `<h3 class="result-handle">${player.handle}</h3>`,
-      `<span class="primary-chip">${game.game}</span>`,
+      `<span class="primary-chip">${getGameLabel(game.game)}</span>`,
       '</div>',
       '<div class="result-main">',
       `<strong>${formatRole(game.role) || '-'}</strong>`,
@@ -2468,8 +2689,8 @@
   function renderTeamCard(team) {
     const proof = mapProof(team.verified);
     const needs = team.games
-      .filter((entry) => state.game === 'Any' || entry.game === state.game)
-      .flatMap((entry) => entry.needs.map((need) => `${entry.game}: ${formatRole(need.role)} (${need.rankMin}+)`));
+      .filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game)
+      .flatMap((entry) => entry.needs.map((need) => `${getGameLabel(entry.game)}: ${formatRole(need.role)} (${need.rankMin}+)`));
 
     return [
       '<article class="result-card">',
@@ -2499,11 +2720,13 @@
     if (state.mode === 'players') {
       const filteredPlayers = players.filter(passesPlayerFilters);
       list.innerHTML = filteredPlayers.map(renderPlayerCard).join('');
-      empty.classList.toggle('hidden', filteredPlayers.length > 0);
+      const hasResults = filteredPlayers.length > 0;
+      empty.classList.toggle('hidden', hasResults);
     } else {
       const filteredTeams = teams.filter(passesTeamFilters);
       list.innerHTML = filteredTeams.map(renderTeamCard).join('');
-      empty.classList.toggle('hidden', filteredTeams.length > 0);
+      const hasResults = filteredTeams.length > 0;
+      empty.classList.toggle('hidden', hasResults);
     }
 
     bindCardActions();
@@ -2580,6 +2803,7 @@
       track('view_explore_players', {});
     }
 
+    persistExploreFilters();
     applyCustomI18n();
     renderResults();
     renderCompareDrawer();
@@ -2620,7 +2844,7 @@
     const success = document.getElementById('inviteSuccess');
 
     if (gameSelect && context && context.game) {
-      gameSelect.value = context.game;
+      gameSelect.value = normalizeGameId(context.game, context.game);
     }
     if (roleInput) {
       roleInput.value = context && context.role ? context.role : '';
@@ -3051,13 +3275,24 @@
     const proofFilter = document.getElementById('proofFilter');
     const selectNodes = [roleFilter, rankFilter, regionFilter, availabilityFilter, proofFilter];
 
+    applyPersistedExploreFilters();
     initFilterSelectToggles(selectNodes);
     syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
 
     if (searchInput) {
+      searchInput.value = state.search;
+    }
+
+    document.querySelectorAll('#gameChips .chip').forEach((chip) => {
+      const gameId = chip.dataset.game || GAME_IDS.ANY;
+      chip.classList.toggle('active', gameId === state.game);
+    });
+
+    if (searchInput) {
       searchInput.addEventListener('input', () => {
         state.search = searchInput.value.trim();
+        persistExploreFilters();
         renderResults();
       });
     }
@@ -3074,6 +3309,7 @@
       if (!node) return;
       node.addEventListener('change', () => {
         state[key] = node.value;
+        persistExploreFilters();
         applyFiltersTracking();
         renderResults();
       });
@@ -3083,7 +3319,8 @@
       chip.addEventListener('click', () => {
         document.querySelectorAll('#gameChips .chip').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
-        state.game = chip.dataset.game || 'Any';
+        state.game = chip.dataset.game || GAME_IDS.ANY;
+        persistExploreFilters();
         syncExploreRoleFilterOptions();
         syncExploreRankFilterOptions();
         applyFiltersTracking();
@@ -3098,6 +3335,15 @@
     }
     if (modeTeams) {
       modeTeams.addEventListener('click', () => setMode('teams'));
+    }
+
+    if (modePlayers) {
+      modePlayers.classList.toggle('active', state.mode === 'players');
+      modePlayers.setAttribute('aria-selected', String(state.mode === 'players'));
+    }
+    if (modeTeams) {
+      modeTeams.classList.toggle('active', state.mode === 'teams');
+      modeTeams.setAttribute('aria-selected', String(state.mode === 'teams'));
     }
 
     const clearCompare = document.getElementById('clearCompare');
@@ -3115,13 +3361,14 @@
         if (!state.compare.length) {
           return;
         }
-        track('click_invite_tryout', { handle: state.compare.join(','), game: state.game === 'Any' ? 'mixed' : state.game });
+        track('click_invite_tryout', { handle: state.compare.join(','), game: state.game === GAME_IDS.ANY ? 'mixed' : state.game });
         state.metrics.tryouts += 1;
         syncMetrics();
-        openInviteModal({ type: 'multi', game: state.game === 'Any' ? 'Overwatch' : state.game });
+        openInviteModal({ type: 'multi', game: state.game === GAME_IDS.ANY ? GAME_IDS.OVERWATCH : state.game });
       });
     }
 
+    persistExploreFilters();
     renderResults();
     renderCompareDrawer();
   }
@@ -3134,22 +3381,43 @@
     const form = document.getElementById('inviteForm');
     if (!form) return;
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!form.reportValidity()) {
         return;
       }
 
+      const submit = form.querySelector('button[type="submit"]');
+      setButtonLoading(submit, true, t('d.invite.submitting'));
+      persistUiSubmitMeta('invite', { status: 'pending' });
+
       const game = form.querySelector('#inviteGame').value;
       const role = form.querySelector('#inviteRole').value;
-      track('submit_invite_request', { game, role, region: state.region });
-
+      const slot = form.querySelector('#inviteSlot').value;
       const success = document.getElementById('inviteSuccess');
-      if (success) {
-        success.classList.remove('hidden');
-      }
 
-      showToast('d.invite.success');
+      try {
+        await callMockApi('invite_submit', { game, role, slot, region: state.region });
+        track('submit_invite_request', { game, role, region: state.region });
+
+        if (success) {
+          success.classList.remove('hidden');
+        }
+
+        persistUiSubmitMeta('invite', {
+          status: 'success',
+          requestId: makeUnifiedId('invite')
+        });
+        showToast('d.invite.success', 'success');
+      } catch (_err) {
+        if (success) {
+          success.classList.add('hidden');
+        }
+        persistUiSubmitMeta('invite', { status: 'error' });
+        showToast('d.toast.error.generic', 'error');
+      } finally {
+        setButtonLoading(submit, false);
+      }
     });
   }
 
@@ -3164,14 +3432,31 @@
     }
 
     document.querySelectorAll('#connectModal [data-provider]').forEach((button) => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', async () => {
         const provider = button.dataset.provider;
-        track('click_connect_provider', { provider });
-        track('complete_connect_fake', { provider });
+        setButtonLoading(button, true, t('d.connect.connecting'));
+        persistUiSubmitMeta('connect', { status: 'pending', provider });
 
-        const success = document.getElementById('connectSuccess');
-        if (success) {
-          success.classList.remove('hidden');
+        try {
+          await callMockApi('connect_provider', { provider });
+          track('click_connect_provider', { provider });
+          track('complete_connect_fake', { provider });
+
+          const success = document.getElementById('connectSuccess');
+          if (success) {
+            success.classList.remove('hidden');
+          }
+          persistUiSubmitMeta('connect', {
+            status: 'success',
+            provider,
+            requestId: makeUnifiedId('connect')
+          });
+          showToast('d.connect.success', 'success');
+        } catch (_err) {
+          persistUiSubmitMeta('connect', { status: 'error', provider });
+          showToast('d.toast.error.generic', 'error');
+        } finally {
+          setButtonLoading(button, false);
         }
       });
     });
@@ -3267,11 +3552,13 @@
         return;
       }
 
-      form.addEventListener('submit', (event) => {
+      form.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!form.reportValidity()) {
           return;
         }
+
+        const submitButton = form.querySelector('button[type="submit"]');
 
         if (mode === 'login') {
           const usernameField = form.querySelector('input[name="email"]');
@@ -3282,18 +3569,33 @@
 
           if (!user) {
             track('submit_login_fake', { status: 'invalid' });
-            showToast('d.auth.error.invalid');
+            showToast('d.auth.error.invalid', 'error');
             return;
           }
 
-          setAuthenticatedUser(user);
-          state.authEmail = user.email;
-          track('submit_login_fake', { status: 'success', username: user.username });
-          showAuthSuccess('login');
+          setButtonLoading(submitButton, true, t('d.auth.submitting'));
+          persistUiSubmitMeta('authLogin', { status: 'pending', identity: username });
+          try {
+            await callMockApi('auth_login', { identity: username });
+            setAuthenticatedUser(user);
+            state.authEmail = user.email;
+            track('submit_login_fake', { status: 'success', username: user.username });
+            showAuthSuccess('login');
+            persistUiSubmitMeta('authLogin', {
+              status: 'success',
+              identity: username,
+              requestId: makeUnifiedId('auth')
+            });
 
-          window.setTimeout(() => {
-            closeAuthModal();
-          }, 280);
+            window.setTimeout(() => {
+              closeAuthModal();
+            }, 280);
+          } catch (_err) {
+            persistUiSubmitMeta('authLogin', { status: 'error', identity: username });
+            showToast('d.toast.error.generic', 'error');
+          } finally {
+            setButtonLoading(submitButton, false);
+          }
           return;
         }
 
@@ -3301,23 +3603,48 @@
         const passwordField = form.querySelector('input[name="password"]');
         const email = emailField ? emailField.value.trim() : '';
         const password = passwordField ? passwordField.value : '';
-        const created = registerAuthUser(email, password);
-        if (!created.ok) {
-          track('submit_register_fake', { status: created.reason || 'error' });
-          showToast(created.reason === 'exists' ? 'd.auth.error.exists' : 'd.auth.error.invalid');
+
+        const normalizedEmail = normalizeIdentity(email);
+        const emailExists = (state.authUsers || []).some((user) => normalizeIdentity(user.email) === normalizedEmail);
+        if (!normalizedEmail || emailExists) {
+          track('submit_register_fake', { status: emailExists ? 'exists' : 'invalid' });
+          showToast(emailExists ? 'd.auth.error.exists' : 'd.auth.error.invalid', 'error');
           return;
         }
 
-        setAuthenticatedUser(created.user);
-        state.authEmail = created.user.email;
-        track('submit_register_fake', { status: 'success', username: created.user.username });
-        showAuthSuccess('register');
+        setButtonLoading(submitButton, true, t('d.auth.submitting'));
+        persistUiSubmitMeta('authRegister', { status: 'pending', email: normalizedEmail });
+        try {
+          await callMockApi('auth_register', { email: normalizedEmail });
+          const created = registerAuthUser(email, password);
+          if (!created.ok) {
+            track('submit_register_fake', { status: created.reason || 'error' });
+            showToast(created.reason === 'exists' ? 'd.auth.error.exists' : 'd.auth.error.invalid', 'error');
+            persistUiSubmitMeta('authRegister', { status: 'error', email: normalizedEmail });
+            return;
+          }
 
-        window.setTimeout(() => {
-          track('continue_to_waitlist_after_auth', { mode });
-          closeAuthModal();
-          openWaitlistAfterAuth(state.authEmail);
-        }, 260);
+          setAuthenticatedUser(created.user);
+          state.authEmail = created.user.email;
+          track('submit_register_fake', { status: 'success', username: created.user.username });
+          showAuthSuccess('register');
+          persistUiSubmitMeta('authRegister', {
+            status: 'success',
+            email: normalizedEmail,
+            requestId: makeUnifiedId('auth')
+          });
+
+          window.setTimeout(() => {
+            track('continue_to_waitlist_after_auth', { mode });
+            closeAuthModal();
+            openWaitlistAfterAuth(state.authEmail);
+          }, 260);
+        } catch (_err) {
+          persistUiSubmitMeta('authRegister', { status: 'error', email: normalizedEmail });
+          showToast('d.toast.error.generic', 'error');
+        } finally {
+          setButtonLoading(submitButton, false);
+        }
       });
     }
 
@@ -3344,43 +3671,75 @@
 
     const introForm = document.getElementById('networkIntroForm');
     if (introForm) {
-      introForm.addEventListener('submit', (event) => {
+      introForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!introForm.reportValidity()) {
           return;
         }
 
-        track('submit_intro_fake', {
-          organization: introForm.querySelector('input[name="organization"]').value.trim(),
-          role: introForm.querySelector('input[name="role"]').value.trim()
-        });
+        const submit = introForm.querySelector('button[type="submit"]');
+        setButtonLoading(submit, true, t('d.network.submitting'));
+        persistUiSubmitMeta('networkIntro', { status: 'pending' });
 
-        const success = document.getElementById('networkSuccess');
-        if (success) {
-          success.classList.remove('hidden');
+        const organization = introForm.querySelector('input[name="organization"]').value.trim();
+        const role = introForm.querySelector('input[name="role"]').value.trim();
+
+        try {
+          await callMockApi('network_intro', { organization, role });
+          track('submit_intro_fake', { organization, role });
+
+          const success = document.getElementById('networkSuccess');
+          if (success) {
+            success.classList.remove('hidden');
+          }
+          persistUiSubmitMeta('networkIntro', {
+            status: 'success',
+            requestId: makeUnifiedId('network')
+          });
+          showToast('d.network.success', 'success');
+        } catch (_err) {
+          persistUiSubmitMeta('networkIntro', { status: 'error' });
+          showToast('d.toast.error.generic', 'error');
+        } finally {
+          setButtonLoading(submit, false);
         }
-        showToast('d.toast.networkCaptured');
       });
     }
 
     const referenceForm = document.getElementById('networkReferenceForm');
     if (referenceForm) {
-      referenceForm.addEventListener('submit', (event) => {
+      referenceForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!referenceForm.reportValidity()) {
           return;
         }
 
-        track('submit_reference_fake', {
-          authorRole: referenceForm.querySelector('input[name="authorRole"]').value.trim(),
-          relationship: referenceForm.querySelector('input[name="relationship"]').value.trim()
-        });
+        const submit = referenceForm.querySelector('button[type="submit"]');
+        setButtonLoading(submit, true, t('d.network.submitting'));
+        persistUiSubmitMeta('networkReference', { status: 'pending' });
 
-        const success = document.getElementById('networkSuccess');
-        if (success) {
-          success.classList.remove('hidden');
+        const authorRole = referenceForm.querySelector('input[name="authorRole"]').value.trim();
+        const relationship = referenceForm.querySelector('input[name="relationship"]').value.trim();
+
+        try {
+          await callMockApi('network_reference', { authorRole, relationship });
+          track('submit_reference_fake', { authorRole, relationship });
+
+          const success = document.getElementById('networkSuccess');
+          if (success) {
+            success.classList.remove('hidden');
+          }
+          persistUiSubmitMeta('networkReference', {
+            status: 'success',
+            requestId: makeUnifiedId('network')
+          });
+          showToast('d.network.success', 'success');
+        } catch (_err) {
+          persistUiSubmitMeta('networkReference', { status: 'error' });
+          showToast('d.toast.error.generic', 'error');
+        } finally {
+          setButtonLoading(submit, false);
         }
-        showToast('d.toast.networkCaptured');
       });
     }
 
@@ -3462,19 +3821,20 @@
     const themeToggle = document.getElementById('themeToggle');
     const motionToggle = document.getElementById('motionToggle');
 
-    const storedTheme = safeStorageGet(THEME_KEY);
+    const storedTheme = loadUnifiedState('settings.theme', null, () => safeStorageGet(THEME_KEY));
     if (storedTheme === 'light') {
       root.classList.remove('dark');
     } else {
       root.classList.add('dark');
     }
 
-    const reducedMotion = safeStorageGet(MOTION_KEY) === '1';
+    const reducedMotion = loadUnifiedState('settings.motionReduced', null, () => safeStorageGet(MOTION_KEY) === '1') === true;
     root.classList.toggle('reduce-motion', reducedMotion);
 
     if (themeToggle) {
       themeToggle.addEventListener('click', () => {
         const dark = root.classList.toggle('dark');
+        saveUnifiedState('settings.theme', dark ? 'dark' : 'light');
         safeStorageSet(THEME_KEY, dark ? 'dark' : 'light');
         applyCustomI18n();
       });
@@ -3483,6 +3843,7 @@
     if (motionToggle) {
       motionToggle.addEventListener('click', () => {
         const reduced = root.classList.toggle('reduce-motion');
+        saveUnifiedState('settings.motionReduced', reduced);
         safeStorageSet(MOTION_KEY, reduced ? '1' : '0');
         applyCustomI18n();
       });
@@ -3523,20 +3884,18 @@
   }
 
   function initWaitlistTracking() {
-    const form = document.getElementById('waitlistForm');
-    if (!form) {
-      return;
-    }
+    document.addEventListener('usm:waitlist:success', (event) => {
+      const detail = (event && event.detail && typeof event.detail === 'object') ? event.detail : {};
+      const role = detail.role || 'unknown';
+      const game = detail.game || 'unknown';
 
-    form.addEventListener('submit', () => {
-      if (!form.reportValidity()) {
-        return;
-      }
-      const role = form.querySelector('select[name="role"]').value;
-      const game = form.querySelector('select[name="game"]').value;
       track('submit_waitlist', { persona: role, games: game, region: state.region === 'Any' ? 'unknown' : state.region });
       state.metrics.waitlist += 1;
       syncMetrics();
+      persistUiSubmitMeta('waitlist', {
+        status: 'success',
+        requestId: detail.requestId || makeUnifiedId('waitlist')
+      });
     });
   }
 
@@ -3569,6 +3928,8 @@
   }
 
   document.addEventListener('uspecme:langchange', onLanguageChange);
+  window.usmShowToast = showToast;
+  window.usmSetButtonLoading = setButtonLoading;
 
   document.addEventListener('DOMContentLoaded', () => {
     initNavigationState();

@@ -1,6 +1,153 @@
 (function () {
   const STORAGE_KEY = 'uspecme_lang';
+  const APP_STATE_KEY = 'usm_v1_state';
+  const APP_STATE_VERSION = 1;
   const SUPPORTED = ['en', 'de'];
+
+  function cloneValue(value) {
+    if (value === undefined) {
+      return undefined;
+    }
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function safeReadRootState() {
+    try {
+      const raw = localStorage.getItem(APP_STATE_KEY);
+      if (!raw) {
+        return { version: APP_STATE_VERSION };
+      }
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return { version: APP_STATE_VERSION };
+      }
+      if (!Object.prototype.hasOwnProperty.call(parsed, 'version')) {
+        parsed.version = APP_STATE_VERSION;
+      }
+      return parsed;
+    } catch (_err) {
+      return { version: APP_STATE_VERSION };
+    }
+  }
+
+  function safeWriteRootState(rootState) {
+    try {
+      localStorage.setItem(APP_STATE_KEY, JSON.stringify(rootState));
+    } catch (_err) {
+      // no-op
+    }
+  }
+
+  function getByPath(source, path) {
+    if (!path) {
+      return source;
+    }
+    const segments = String(path).split('.').filter(Boolean);
+    let cursor = source;
+    for (let i = 0; i < segments.length; i += 1) {
+      if (!cursor || typeof cursor !== 'object') {
+        return undefined;
+      }
+      cursor = cursor[segments[i]];
+    }
+    return cursor;
+  }
+
+  function setByPath(target, path, value) {
+    const segments = String(path).split('.').filter(Boolean);
+    if (!segments.length) {
+      return value;
+    }
+
+    const root = target && typeof target === 'object' ? cloneValue(target) : {};
+    let cursor = root;
+    for (let i = 0; i < segments.length - 1; i += 1) {
+      const key = segments[i];
+      if (!cursor[key] || typeof cursor[key] !== 'object' || Array.isArray(cursor[key])) {
+        cursor[key] = {};
+      }
+      cursor[key] = cloneValue(cursor[key]);
+      cursor = cursor[key];
+    }
+    cursor[segments[segments.length - 1]] = value;
+    if (!Object.prototype.hasOwnProperty.call(root, 'version')) {
+      root.version = APP_STATE_VERSION;
+    }
+    return root;
+  }
+
+  function loadState(path, fallbackValue, legacyReader) {
+    const root = safeReadRootState();
+    const currentValue = getByPath(root, path);
+    if (currentValue !== undefined) {
+      return cloneValue(currentValue);
+    }
+
+    if (typeof legacyReader === 'function') {
+      const legacyValue = legacyReader();
+      if (legacyValue !== undefined && legacyValue !== null) {
+        saveState(path, legacyValue);
+        return cloneValue(legacyValue);
+      }
+    }
+
+    return cloneValue(fallbackValue);
+  }
+
+  function saveState(path, value) {
+    if (!path) {
+      const fullRoot = value && typeof value === 'object' ? cloneValue(value) : { version: APP_STATE_VERSION };
+      if (!Object.prototype.hasOwnProperty.call(fullRoot, 'version')) {
+        fullRoot.version = APP_STATE_VERSION;
+      }
+      safeWriteRootState(fullRoot);
+      return cloneValue(fullRoot);
+    }
+
+    const root = safeReadRootState();
+    const nextRoot = setByPath(root, path, value);
+    safeWriteRootState(nextRoot);
+    return cloneValue(value);
+  }
+
+  function updateState(path, updater, fallbackValue) {
+    const current = loadState(path, fallbackValue);
+    const nextValue = typeof updater === 'function' ? updater(current) : updater;
+    return saveState(path, nextValue);
+  }
+
+  function makeId(prefix) {
+    const safePrefix = String(prefix || 'id').replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'id';
+    return `${safePrefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  function mockApi(action, payload, options) {
+    const config = options || {};
+    const minDelay = Number.isFinite(config.minDelay) ? config.minDelay : 300;
+    const maxDelay = Number.isFinite(config.maxDelay) ? config.maxDelay : 900;
+    const failureRate = Number.isFinite(config.failureRate) ? config.failureRate : 0.06;
+    const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
+
+    return new Promise((resolve, reject) => {
+      window.setTimeout(() => {
+        if (Math.random() < failureRate) {
+          const error = new Error('Temporary issue. Please try again.');
+          error.code = 'MOCK_API_FAILURE';
+          error.action = action;
+          reject(error);
+          return;
+        }
+
+        resolve({
+          ok: true,
+          id: makeId(action || 'req'),
+          action: action || 'unknown',
+          payload: payload || {},
+          createdAt: new Date().toISOString()
+        });
+      }, delay);
+    });
+  }
 
   const I18N = {
     en: {
@@ -70,11 +217,11 @@
       'wait.heading': 'Join the waitlist',
       'wait.lead': 'Get early access to proof-first teamfinding for competitive online games.',
       'wait.panel.title': 'Early Access Invite',
-      'wait.panel.text': 'Tell us your role and main game. The form is frontend-only in this preview.',
+      'wait.panel.text': 'Tell us your role and main game to join early access.',
       'wait.panel.cta': 'Open Waitlist',
       'footer.note': 'Early access product in active construction.',
       'modal.title': 'Join the Waitlist',
-      'modal.lead': 'This preview form is local-only and does not transmit data.',
+      'modal.lead': 'Share your details to join the early access list.',
       'modal.email.label': 'Email',
       'modal.email.placeholder': 'you@example.com',
       'modal.role.label': 'Role',
@@ -99,8 +246,9 @@
       'c.hero.monitor.queueTime': 'Queue Time',
       'modal.submit': 'Join Waitlist',
       'modal.submitted': 'Submitted',
-      'modal.success': 'You are on the preview waitlist. No data is sent or stored.',
-      'modal.micro': 'This interaction is a frontend preview only.',
+      'modal.success': 'Thanks. You\'ll be notified when early access opens.',
+      'modal.micro': 'You can update this form anytime.',
+      'modal.error': 'Something went wrong. Please try again.',
       'modal.close': 'Close'
     },
     de: {
@@ -170,11 +318,11 @@
       'wait.heading': 'Zur Warteliste',
       'wait.lead': 'Sichere dir frühen Zugang zu proof-basiertem Teamfinding für kompetitive Online-Games.',
       'wait.panel.title': 'Early Access Invite',
-      'wait.panel.text': 'Nenne uns Rolle und Main Game. Das Formular bleibt in dieser Vorschau rein frontendseitig.',
+      'wait.panel.text': 'Nenne uns Rolle und Main Game, um auf die Early-Access-Liste zu kommen.',
       'wait.panel.cta': 'Warteliste öffnen',
       'footer.note': 'Early-Access-Produkt im aktiven Aufbau.',
       'modal.title': 'Zur Warteliste',
-      'modal.lead': 'Dieses Vorschau-Formular ist rein lokal und überträgt keine Daten.',
+      'modal.lead': 'Teile deine Angaben, um dich für Early Access einzutragen.',
       'modal.email.label': 'E-Mail',
       'modal.email.placeholder': 'du@beispiel.de',
       'modal.role.label': 'Rolle',
@@ -199,24 +347,31 @@
       'c.hero.monitor.queueTime': 'Wartezeit',
       'modal.submit': 'Zur Warteliste',
       'modal.submitted': 'Gesendet',
-      'modal.success': 'Du bist auf der Preview-Warteliste. Es werden keine Daten gesendet oder gespeichert.',
-      'modal.micro': 'Diese Interaktion ist nur eine Frontend-Vorschau.',
+      'modal.success': 'Danke. Du wirst benachrichtigt, sobald Early Access startet.',
+      'modal.micro': 'Du kannst diese Angaben jederzeit aktualisieren.',
+      'modal.error': 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
       'modal.close': 'Schließen'
     }
   };
 
   let currentLang = 'en';
 
-  function safeGetStoredLang() {
+  function readLegacyLanguage() {
     try {
       const value = localStorage.getItem(STORAGE_KEY);
-      return SUPPORTED.includes(value) ? value : 'en';
+      return SUPPORTED.includes(value) ? value : null;
     } catch (_err) {
-      return 'en';
+      return null;
     }
   }
 
+  function safeGetStoredLang() {
+    const value = loadState('settings.language', 'en', readLegacyLanguage);
+    return SUPPORTED.includes(value) ? value : 'en';
+  }
+
   function safeSetStoredLang(lang) {
+    saveState('settings.language', lang);
     try {
       localStorage.setItem(STORAGE_KEY, lang);
     } catch (_err) {
@@ -329,6 +484,40 @@
     document.body.style.overflow = '';
   }
 
+  function setExternalLoadingState(button, isLoading, loadingLabel) {
+    if (!button) {
+      return;
+    }
+
+    if (typeof window.usmSetButtonLoading === 'function') {
+      window.usmSetButtonLoading(button, isLoading, loadingLabel);
+      return;
+    }
+
+    if (isLoading) {
+      if (!button.dataset.defaultLabel) {
+        button.dataset.defaultLabel = button.textContent;
+      }
+      button.disabled = true;
+      if (loadingLabel) {
+        button.textContent = loadingLabel;
+      }
+      return;
+    }
+
+    button.disabled = false;
+    if (button.dataset.defaultLabel) {
+      button.textContent = button.dataset.defaultLabel;
+      delete button.dataset.defaultLabel;
+    }
+  }
+
+  function emitToast(message, tone) {
+    if (typeof window.usmShowToast === 'function') {
+      window.usmShowToast(message, tone);
+    }
+  }
+
   function initModal() {
     document.querySelectorAll('[data-open-modal]').forEach((trigger) => {
       trigger.addEventListener('click', openModal);
@@ -349,7 +538,7 @@
       return;
     }
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
       if (!form.reportValidity()) {
@@ -358,15 +547,85 @@
 
       const success = document.getElementById('waitlistSuccess');
       const submit = form.querySelector('button[type="submit"]');
+      const email = form.querySelector('input[name="email"]');
+      const role = form.querySelector('select[name="role"]');
+      const game = form.querySelector('select[name="game"]');
 
-      if (success) {
-        success.classList.remove('hidden');
-      }
+      setExternalLoadingState(submit, true, translate('modal.submitted'));
 
-      if (submit) {
-        submit.disabled = true;
-        submit.dataset.submitted = 'true';
-        submit.textContent = translate('modal.submitted');
+      updateState(
+        'ui.waitlistSubmit',
+        (prev) => ({
+          ...(prev && typeof prev === 'object' ? prev : {}),
+          status: 'pending',
+          startedAt: new Date().toISOString()
+        }),
+        {}
+      );
+
+      try {
+        await mockApi('waitlist_submit', {
+          email: email ? email.value.trim() : '',
+          role: role ? role.value : '',
+          game: game ? game.value : ''
+        });
+
+        if (success) {
+          success.classList.remove('hidden');
+        }
+
+        if (submit) {
+          submit.disabled = true;
+          submit.dataset.submitted = 'true';
+          submit.textContent = translate('modal.submitted');
+        }
+
+        updateState(
+          'ui.waitlistSubmit',
+          (prev) => ({
+            ...(prev && typeof prev === 'object' ? prev : {}),
+            status: 'success',
+            requestId: makeId('waitlist'),
+            completedAt: new Date().toISOString()
+          }),
+          {}
+        );
+
+        emitToast(translate('modal.success'), 'success');
+        document.dispatchEvent(new CustomEvent('usm:waitlist:success', {
+          detail: {
+            role: role ? role.value : '',
+            game: game ? game.value : '',
+            requestId: makeId('waitlist')
+          }
+        }));
+      } catch (_err) {
+        if (success) {
+          success.classList.add('hidden');
+        }
+        if (submit) {
+          submit.dataset.submitted = 'false';
+          submit.textContent = translate('modal.submit');
+        }
+
+        updateState(
+          'ui.waitlistSubmit',
+          (prev) => ({
+            ...(prev && typeof prev === 'object' ? prev : {}),
+            status: 'error',
+            completedAt: new Date().toISOString()
+          }),
+          {}
+        );
+
+        emitToast(translate('modal.error'), 'error');
+      } finally {
+        if (!(submit && submit.dataset.submitted === 'true')) {
+          setExternalLoadingState(submit, false);
+        } else {
+          setExternalLoadingState(submit, false);
+          submit.disabled = true;
+        }
       }
     });
   }
@@ -383,4 +642,6 @@
   window.uspecmeTranslate = translate;
   window.uspecmeGetLang = () => currentLang;
   window.uspecmeSetLang = setLanguage;
+  window.usmState = { key: APP_STATE_KEY, loadState, saveState, updateState, makeId };
+  window.usmMockApi = mockApi;
 })();

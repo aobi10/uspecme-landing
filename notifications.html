@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GameIn · Notifications Preview</title>
-  <meta name="description" content="GameIn notifications preview in Shinobi mode with locked management actions.">
+  <title>GameIn · Notifications</title>
+  <meta name="description" content="GameIn notifications view with Shinobi context and locked management actions.">
   <link rel="stylesheet" href="main.css">
 </head>
 <body class="variant-gamein" data-page="notifications" data-preview-state="preview">
@@ -50,7 +50,7 @@
           <article class="subpage-card">
             <div class="subpage-card-head">
               <h2 data-d18n="d.module.notifications.mentions">Mentions</h2>
-              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Preview</span>
+              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Profile</span>
             </div>
             <ul class="list-stack">
               <li class="list-row">
@@ -63,7 +63,7 @@
               </li>
             </ul>
             <div class="preview-lock" data-preview-lock>
-              <p class="preview-lock-note"><strong data-d18n="d.action.openThread">Open full thread</strong><span data-d18n="d.preview.lock.note">This is a visible Shinobi preview. Log in to unlock full actions.</span></p>
+              <p class="preview-lock-note"><strong data-d18n="d.action.openThread">Open full thread</strong><span data-d18n="d.preview.lock.note">Shinobi profile is visible. Log in to unlock full actions.</span></p>
               <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="notifications.mentions" data-lock-action="open_thread" data-d18n="d.preview.lock.cta">Login for full access</button>
             </div>
           </article>
@@ -71,7 +71,7 @@
           <article class="subpage-card">
             <div class="subpage-card-head">
               <h2 data-d18n="d.module.notifications.updates">Request Updates</h2>
-              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Preview</span>
+              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Profile</span>
             </div>
             <ul class="list-stack">
               <li class="list-row">
@@ -84,7 +84,7 @@
               </li>
             </ul>
             <div class="preview-lock" data-preview-lock>
-              <p class="preview-lock-note"><strong data-d18n="d.action.markAllRead">Mark all as read</strong><span data-d18n="d.preview.lock.note">This is a visible Shinobi preview. Log in to unlock full actions.</span></p>
+              <p class="preview-lock-note"><strong data-d18n="d.action.markAllRead">Mark all as read</strong><span data-d18n="d.preview.lock.note">Shinobi profile is visible. Log in to unlock full actions.</span></p>
               <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="notifications.updates" data-lock-action="mark_all_read" data-d18n="d.preview.lock.cta">Login for full access</button>
             </div>
           </article>
@@ -92,12 +92,12 @@
           <article class="subpage-card wide">
             <div class="subpage-card-head">
               <h2 data-d18n="d.module.notifications.system">System Notices</h2>
-              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Preview</span>
+              <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Profile</span>
             </div>
             <ul class="list-stack">
               <li class="list-row">
-                <strong data-d18n="d.notifications.meta.system.oneTitle">Preview Mode</strong>
-                <p data-d18n="d.notifications.item.three">Preview mode active: login unlocks messaging, invites, and workflow actions.</p>
+                <strong data-d18n="d.notifications.meta.system.oneTitle">Account Access</strong>
+                <p data-d18n="d.notifications.item.three">Login unlocks messaging, invites, and workflow actions.</p>
               </li>
               <li class="list-row">
                 <strong data-d18n="d.notifications.meta.system.twoTitle">Profile proof state</strong>
@@ -105,7 +105,7 @@
               </li>
             </ul>
             <div class="preview-lock" data-preview-lock>
-              <p class="preview-lock-note"><strong data-d18n="d.action.managePrefs">Manage preferences</strong><span data-d18n="d.preview.lock.note">This is a visible Shinobi preview. Log in to unlock full actions.</span></p>
+              <p class="preview-lock-note"><strong data-d18n="d.action.managePrefs">Manage preferences</strong><span data-d18n="d.preview.lock.note">Shinobi profile is visible. Log in to unlock full actions.</span></p>
               <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="notifications.system" data-lock-action="manage_preferences" data-d18n="d.preview.lock.cta">Login for full access</button>
             </div>
           </article>
@@ -173,7 +173,7 @@
         </form>
 
         <div id="authSuccess" class="success hidden" role="status" aria-live="polite">
-          <strong data-d18n="d.auth.success">Preview auth completed.</strong>
+          <strong data-d18n="d.auth.success">Authentication complete.</strong>
           <p data-d18n="d.auth.continueWaitlist">Continuing to waitlist...</p>
         </div>
       </div>
@@ -192,7 +192,7 @@
       </div>
 
       <div class="modal-body">
-        <p data-i18n="modal.lead">This preview form is local-only and does not transmit data.</p>
+        <p data-i18n="modal.lead">Share your details to join the early access list.</p>
         <form id="waitlistForm" class="form">
           <label>
             <span data-i18n="modal.email.label">Email</span>
@@ -213,7 +213,7 @@
             <select name="game" required>
               <option value="" selected disabled data-i18n="modal.game.placeholder">Select main game</option>
               <option value="overwatch" data-i18n="modal.game.overwatch">Overwatch</option>
-              <option value="league" data-i18n="modal.game.lol">League of Legends</option>
+              <option value="lol" data-i18n="modal.game.lol">League of Legends</option>
               <option value="fortnite" data-i18n="modal.game.fortnite">Fortnite</option>
               <option value="arcraiders" data-i18n="modal.game.arcraiders">Arc Raiders</option>
               <option value="other" data-i18n="modal.game.other">Other</option>
@@ -223,8 +223,8 @@
           <button class="button primary wide" type="submit" data-i18n="modal.submit">Join Waitlist</button>
         </form>
 
-        <div id="waitlistSuccess" class="success hidden" role="status" aria-live="polite" data-i18n="modal.success">You are on the preview waitlist. No data is sent or stored.</div>
-        <p class="micro" data-i18n="modal.micro">This interaction is a frontend preview only.</p>
+        <div id="waitlistSuccess" class="success hidden" role="status" aria-live="polite" data-i18n="modal.success">Thanks. You'll be notified when early access opens.</div>
+        <p class="micro" data-i18n="modal.micro">You can update this form anytime.</p>
       </div>
 
       <div class="modal-footer">

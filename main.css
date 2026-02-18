@@ -478,6 +478,10 @@ body.is-authenticated .preview-lock {
 }
 .button.small { padding: 7px 10px; font-size: 13px; }
 .button.wide { width: 100%; }
+.button.is-loading {
+  opacity: 0.88;
+  cursor: wait;
+}
 
 .hero-kpis {
   margin-top: 1rem;
@@ -1492,6 +1496,14 @@ textarea {
   padding: 9px 11px;
   max-width: min(360px, calc(100% - 28px));
   box-shadow: 0 12px 30px rgb(0 0 0 / 0.28);
+}
+.toast.success {
+  border-color: rgb(var(--mint) / 0.45);
+  background: rgb(var(--mint) / 0.14);
+}
+.toast.error {
+  border-color: rgb(var(--danger) / 0.55);
+  background: rgb(var(--danger) / 0.14);
 }
 
 .sr-only {
