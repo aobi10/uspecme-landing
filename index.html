@@ -252,8 +252,18 @@
               <button type="button" id="clearCompare" class="link-btn" data-d18n="d.compare.clear">Clear</button>
             </div>
 
+            <div class="compare-bar">
+              <div class="compare-bar__slots">
+                <span class="compare-bar__slot" id="compareSlotA" data-d18n="d.compare.slot.empty">Empty</span>
+                <span class="compare-bar__slot" id="compareSlotB" data-d18n="d.compare.slot.empty">Empty</span>
+              </div>
+              <div class="compare-bar__actions">
+                <button type="button" id="compareNow" class="button ghost small" data-d18n="d.compare.now">Compare now</button>
+              </div>
+            </div>
+
             <div id="compareEmpty" class="drawer-empty" data-d18n="d.compare.empty">Select up to 2 players to compare role, rank, proof and availability.</div>
-            <div id="compareContent" class="hidden"></div>
+            <div id="compareContent" class="compare-panel hidden"></div>
 
             <button type="button" id="inviteSelected" class="button primary wide" disabled data-d18n="d.compare.invite">Invite selected</button>
           </aside>

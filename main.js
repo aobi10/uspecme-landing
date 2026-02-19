@@ -119,6 +119,7 @@
     availability: 'Any',
     proof: 'Any',
     compare: [],
+    compareExpanded: false,
     networkMode: 'intro',
     authMode: 'register',
     authEmail: '',
@@ -1879,6 +1880,9 @@
       'd.proof.selfDeclared': 'Self Declared',
       'd.compare.title': 'Compare (max 2)',
       'd.compare.clear': 'Clear',
+      'd.compare.now': 'Compare now',
+      'd.compare.hide': 'Hide compare',
+      'd.compare.slot.empty': 'Empty',
       'd.compare.empty': 'Select up to 2 players to compare role, rank, proof, country and availability.',
       'd.compare.invite': 'Invite selected',
       'd.empty': 'No results for current filters.',
@@ -2326,6 +2330,9 @@
       'd.proof.selfDeclared': 'Selbst angegeben',
       'd.compare.title': 'Vergleich (max 2)',
       'd.compare.clear': 'Leeren',
+      'd.compare.now': 'Jetzt vergleichen',
+      'd.compare.hide': 'Vergleich ausblenden',
+      'd.compare.slot.empty': 'Leer',
       'd.compare.empty': 'Wähle bis zu 2 Spieler für Rollen-, Rank-, Proof-, Herkunftsland- und Verfügbarkeitsvergleich.',
       'd.compare.invite': 'Ausgewählte einladen',
       'd.empty': 'Keine Ergebnisse für diese Filter.',
@@ -3755,19 +3762,50 @@
     const compareEmpty = document.getElementById('compareEmpty');
     const compareContent = document.getElementById('compareContent');
     const inviteSelected = document.getElementById('inviteSelected');
+    const compareSlotA = document.getElementById('compareSlotA');
+    const compareSlotB = document.getElementById('compareSlotB');
+    const compareNow = document.getElementById('compareNow');
 
     if (!compareEmpty || !compareContent || !inviteSelected) {
       return;
     }
 
     const selected = players.filter((player) => state.compare.includes(player.handle));
+    const setSlot = (node, player) => {
+      if (!node) return;
+      if (player) {
+        node.textContent = player.handle;
+        node.classList.add('is-filled');
+        delete node.dataset.d18n;
+        return;
+      }
+      node.textContent = t('d.compare.slot.empty');
+      node.dataset.d18n = 'd.compare.slot.empty';
+      node.classList.remove('is-filled');
+    };
+
+    setSlot(compareSlotA, selected[0]);
+    setSlot(compareSlotB, selected[1]);
 
     if (!selected.length) {
+      state.compareExpanded = false;
       compareEmpty.classList.remove('hidden');
       compareContent.classList.add('hidden');
       compareContent.innerHTML = '';
       inviteSelected.disabled = true;
+      if (compareNow) {
+        compareNow.disabled = true;
+        compareNow.dataset.d18n = 'd.compare.now';
+        compareNow.textContent = t('d.compare.now');
+      }
       return;
+    }
+
+    if (compareNow) {
+      compareNow.disabled = false;
+      const compareNowKey = state.compareExpanded ? 'd.compare.hide' : 'd.compare.now';
+      compareNow.dataset.d18n = compareNowKey;
+      compareNow.textContent = t(compareNowKey);
     }
 
     const rows = [
@@ -3791,7 +3829,7 @@
     ].join('');
 
     compareEmpty.classList.add('hidden');
-    compareContent.classList.remove('hidden');
+    compareContent.classList.toggle('hidden', !state.compareExpanded);
     inviteSelected.disabled = false;
   }
 
@@ -5335,7 +5373,19 @@
     if (clearCompare) {
       clearCompare.addEventListener('click', () => {
         state.compare = [];
+        state.compareExpanded = false;
         renderResults();
+        renderCompareDrawer();
+      });
+    }
+
+    const compareNow = document.getElementById('compareNow');
+    if (compareNow) {
+      compareNow.addEventListener('click', () => {
+        if (!state.compare.length) {
+          return;
+        }
+        state.compareExpanded = !state.compareExpanded;
         renderCompareDrawer();
       });
     }
