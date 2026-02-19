@@ -521,6 +521,18 @@ body.is-authenticated .preview-lock {
   gap: 9px;
   flex-wrap: wrap;
 }
+.hero-actions .button.primary {
+  box-shadow: 0 10px 22px rgb(var(--primary) / 0.28);
+}
+.hero-actions .button.secondary {
+  border-color: rgb(var(--primary) / 0.42);
+  background: rgb(var(--surface-1));
+  color: rgb(var(--text));
+}
+.hero-actions .button.secondary:hover {
+  border-color: rgb(var(--primary) / 0.58);
+  background: rgb(var(--surface-3));
+}
 .network-cta-row {
   margin-top: 0.75rem;
   display: flex;
@@ -529,6 +541,28 @@ body.is-authenticated .preview-lock {
 }
 .network-cta-row .button {
   min-width: 170px;
+}
+.hero-tertiary {
+  margin-top: 0.65rem;
+  gap: 14px;
+}
+.hero-tertiary .button {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgb(var(--text-2));
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.hero-tertiary .button:hover {
+  color: rgb(var(--text));
+}
+.hero-tertiary .button:focus-visible {
+  outline: 2px solid rgb(var(--primary) / 0.62);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .button {
