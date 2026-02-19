@@ -359,6 +359,77 @@ body.is-authenticated .preview-tag {
   color: rgb(var(--text-2));
   line-height: 1.55;
 }
+.row-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.list-row-actions {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--border));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+}
+.status-chip.pending {
+  border-color: rgb(var(--warning) / 0.55);
+  background: rgb(var(--warning) / 0.14);
+  color: rgb(var(--text));
+}
+.status-chip.completed {
+  border-color: rgb(var(--mint) / 0.55);
+  background: rgb(var(--mint) / 0.16);
+  color: rgb(var(--text));
+}
+.status-chip.verified {
+  border-color: rgb(var(--mint) / 0.62);
+  background: rgb(var(--mint) / 0.24);
+  color: rgb(var(--text));
+}
+.status-chip.waiting {
+  border-color: rgb(var(--primary) / 0.56);
+  background: rgb(var(--primary) / 0.18);
+  color: rgb(var(--text));
+}
+.status-chip.cancelled {
+  border-color: rgb(var(--danger) / 0.55);
+  background: rgb(var(--danger) / 0.14);
+  color: rgb(var(--text));
+}
+.micro-row {
+  font-size: 12px;
+  color: rgb(var(--muted));
+}
+.list-row .micro-row {
+  color: rgb(var(--muted));
+}
+.thread-item {
+  cursor: pointer;
+}
+.thread-item.active {
+  border-color: rgb(var(--primary) / 0.55);
+  background: rgb(var(--surface-3) / 0.85);
+}
+.notification-item.unread {
+  border-color: rgb(var(--mint) / 0.6);
+  background: rgb(var(--mint) / 0.12);
+}
+.notification-item.read {
+  opacity: 0.88;
+}
+.entity-highlight {
+  box-shadow: 0 0 0 2px rgb(var(--primary) / 0.45) inset;
+}
 .preview-lock {
   margin-top: 10px;
   border: 1px dashed rgb(var(--primary) / 0.48);
@@ -575,6 +646,11 @@ body.is-authenticated .preview-lock {
   grid-template-columns: 64px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
+}
+.hero-preview-badges {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
 }
 .hero-preview-avatar {
   width: 64px;
@@ -906,6 +982,10 @@ body.is-authenticated .preview-lock {
   color: rgb(var(--muted));
   font-size: 13px;
 }
+.conduct-line {
+  color: rgb(var(--text));
+  font-weight: 600;
+}
 .result-actions { display: flex; gap: 7px; flex-wrap: wrap; }
 
 .team-needs {
@@ -1058,6 +1138,18 @@ body.is-authenticated .preview-lock {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+.conduct-summary {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgb(var(--border));
+  border-radius: 999px;
+  background: rgb(var(--surface-1));
+  color: rgb(var(--text-2));
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .profile-avatar {
   position: relative;
@@ -1261,6 +1353,15 @@ body.is-authenticated .preview-lock {
   align-items: flex-start;
 }
 .waitlist-panel p { color: rgb(var(--text-2)); margin: 4px 0 0; }
+[data-waitlist-cta][data-waitlist-state="joined"] {
+  opacity: 0.72;
+  cursor: not-allowed;
+  filter: saturate(0.72);
+  pointer-events: none;
+}
+[data-waitlist-cta][data-waitlist-state="joined"]:hover {
+  background: linear-gradient(140deg, rgb(var(--primary)), rgb(var(--mint)));
+}
 
 .footer {
   border-top: 1px solid rgb(var(--border));
@@ -1353,9 +1454,32 @@ body.is-authenticated .preview-lock {
 }
 .modal-body { padding: 12px 14px; }
 .modal-body p { margin: 0 0 10px; color: rgb(var(--text-2)); }
+.rating-stars {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 6px;
+}
+.rating-stars legend {
+  margin: 0;
+  color: rgb(var(--text-2));
+  font-size: 13px;
+}
+.rating-stars label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(var(--text));
+}
 .form { display: grid; gap: 8px; }
 .form label { display: grid; gap: 4px; }
 .form span { color: rgb(var(--text-2)); font-size: 13px; }
+.form .rating-stars label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .auth-modal-content { width: min(500px, calc(100% - 1.2rem)); }
 .auth-tabs {
   display: grid;

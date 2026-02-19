@@ -100,6 +100,14 @@
   ];
 
   const EXPLORE_ROLE_OPTIONS = ['Tank', 'Support', 'DPS', 'Jungle', 'IGL', 'Scout'];
+  const CONDUCT_REASON_CODES = [
+    'NO_SHOW',
+    'TOXIC_COMMUNICATION',
+    'UNRELIABLE_COMMITMENT',
+    'ROLE_MISMATCH'
+  ];
+  const CONDUCT_RATING_WINDOW_HOURS = 72;
+  const CONDUCT_MIN_VERIFIED_FOR_DISPLAY = 3;
 
   const state = {
     mode: 'players',
@@ -119,8 +127,12 @@
     authUsers: loadAuthUsers(),
     profile: null,
     profileEditorSection: 'public',
+    uiDemoMode: loadUnifiedState('ui.demoMode', false, () => false) === true,
     metrics: loadMetrics(),
-    selectedInviteContext: null
+    selectedInviteContext: null,
+    activeThreadId: '',
+    activeRatingRequestId: '',
+    activeRatingAuthorSide: 'self'
   };
 
   const authSession = loadAuthSession(state.authUsers);
@@ -215,6 +227,796 @@
     );
   }
 
+  function cloneJson(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function slugifyStableId(value) {
+    const normalized = String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    return normalized || 'unknown';
+  }
+
+  function toIsoOrNull(value) {
+    if (!value) {
+      return null;
+    }
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) {
+      return null;
+    }
+    return date.toISOString();
+  }
+
+  function addHoursIso(baseIso, hours) {
+    const base = new Date(baseIso || 0);
+    if (!Number.isFinite(base.getTime())) {
+      return null;
+    }
+    const next = new Date(base.getTime() + (hours * 60 * 60 * 1000));
+    return next.toISOString();
+  }
+
+  function normalizeTargetIdentity(request) {
+    if (!request || typeof request !== 'object') {
+      return request;
+    }
+
+    const source = request.source && typeof request.source === 'object' ? request.source : {};
+    let targetType = request.targetType === 'team' || request.targetType === 'player'
+      ? request.targetType
+      : '';
+    let targetId = typeof request.targetId === 'string' ? request.targetId.trim() : '';
+
+    if (!targetType || !targetId) {
+      if (source.type === 'team') {
+        targetType = 'team';
+        targetId = String(source.teamSlug || source.team || '').trim();
+      } else if (source.type === 'player') {
+        targetType = 'player';
+        targetId = String(source.handle || '').trim();
+      } else if (source.type === 'multi') {
+        targetType = 'player';
+        const compareHandles = Array.isArray(source.compareHandles) ? source.compareHandles : [];
+        targetId = compareHandles
+          .map((entry) => slugifyStableId(entry))
+          .filter(Boolean)
+          .sort()
+          .join('-');
+      }
+    }
+
+    if (!targetType) {
+      targetType = source.type === 'team' ? 'team' : 'player';
+    }
+    if (!targetId) {
+      targetId = String(request.id || 'unknown').trim();
+    }
+
+    request.targetType = targetType;
+    request.targetId = slugifyStableId(targetId);
+    return request;
+  }
+
+  function normalizeTryoutState(request) {
+    const sourceRequest = request && typeof request === 'object' ? request : {};
+    const rawTryout = sourceRequest.tryout && typeof sourceRequest.tryout === 'object'
+      ? sourceRequest.tryout
+      : {};
+
+    const selfConfirmedAt = toIsoOrNull(rawTryout.selfConfirmedAt);
+    const counterpartConfirmedAt = toIsoOrNull(rawTryout.counterpartConfirmedAt);
+    let verifiedAt = toIsoOrNull(rawTryout.verifiedAt);
+
+    if (!verifiedAt && selfConfirmedAt && counterpartConfirmedAt) {
+      const latest = Math.max(new Date(selfConfirmedAt).getTime(), new Date(counterpartConfirmedAt).getTime());
+      verifiedAt = new Date(latest).toISOString();
+    }
+
+    let ratingWindowOpenedAt = toIsoOrNull(rawTryout.ratingWindowOpenedAt);
+    if (!ratingWindowOpenedAt && verifiedAt) {
+      ratingWindowOpenedAt = verifiedAt;
+    }
+
+    let ratingWindowExpiresAt = toIsoOrNull(rawTryout.ratingWindowExpiresAt);
+    if (!ratingWindowExpiresAt && ratingWindowOpenedAt) {
+      ratingWindowExpiresAt = addHoursIso(ratingWindowOpenedAt, CONDUCT_RATING_WINDOW_HOURS);
+    }
+
+    const allowedRevealStates = ['pending', 'waiting', 'revealed', 'timeout_partial'];
+    let ratingRevealState = allowedRevealStates.includes(rawTryout.ratingRevealState)
+      ? rawTryout.ratingRevealState
+      : 'pending';
+
+    if (!verifiedAt) {
+      ratingRevealState = 'pending';
+      ratingWindowOpenedAt = null;
+      ratingWindowExpiresAt = null;
+    }
+
+    return {
+      selfConfirmedAt,
+      counterpartConfirmedAt,
+      verifiedAt,
+      ratingWindowOpenedAt,
+      ratingWindowExpiresAt,
+      ratingRevealState
+    };
+  }
+
+  function normalizeRatingEntry(rawEntry) {
+    if (!rawEntry || typeof rawEntry !== 'object') {
+      return null;
+    }
+
+    const stars = Number(rawEntry.stars);
+    if (!Number.isFinite(stars) || stars < 1 || stars > 5) {
+      return null;
+    }
+
+    const reasonCode = CONDUCT_REASON_CODES.includes(rawEntry.reasonCode)
+      ? rawEntry.reasonCode
+      : null;
+
+    return {
+      id: String(rawEntry.id || makeUnifiedId('rat')),
+      requestId: String(rawEntry.requestId || ''),
+      threadId: String(rawEntry.threadId || ''),
+      authorSide: rawEntry.authorSide === 'counterpart' ? 'counterpart' : 'self',
+      subjectType: rawEntry.subjectType === 'team' ? 'team' : 'player',
+      subjectId: slugifyStableId(rawEntry.subjectId),
+      stars: Math.max(1, Math.min(5, Math.round(stars))),
+      reasonCode,
+      submittedAt: toIsoOrNull(rawEntry.submittedAt) || new Date().toISOString(),
+      revealedAt: toIsoOrNull(rawEntry.revealedAt),
+      countedAt: toIsoOrNull(rawEntry.countedAt),
+      publicEligible: rawEntry.publicEligible === true
+    };
+  }
+
+  function normalizeRatingsState(entitiesState) {
+    const source = entitiesState && typeof entitiesState === 'object' ? entitiesState : {};
+    const ratings = Array.isArray(source.ratings)
+      ? source.ratings.map(normalizeRatingEntry).filter(Boolean)
+      : [];
+
+    const reputationSource = source.reputation && typeof source.reputation === 'object'
+      ? source.reputation
+      : {};
+
+    const minVerified = Number(reputationSource.minVerifiedForDisplay);
+    const bySubjectSource = reputationSource.bySubject && typeof reputationSource.bySubject === 'object'
+      ? reputationSource.bySubject
+      : {};
+    const bySubject = {};
+    Object.keys(bySubjectSource).forEach((key) => {
+      const item = bySubjectSource[key];
+      if (!item || typeof item !== 'object') {
+        return;
+      }
+      const avg = Number(item.avg);
+      const countVerified = Number(item.countVerified);
+      bySubject[key] = {
+        avg: Number.isFinite(avg) ? avg : 0,
+        countVerified: Number.isFinite(countVerified) ? Math.max(0, Math.floor(countVerified)) : 0,
+        displayMode: item.displayMode === 'score' ? 'score' : 'placeholder',
+        updatedAt: toIsoOrNull(item.updatedAt) || ''
+      };
+    });
+
+    source.ratings = ratings;
+    source.reputation = {
+      minVerifiedForDisplay: Number.isFinite(minVerified) && minVerified > 0
+        ? Math.floor(minVerified)
+        : CONDUCT_MIN_VERIFIED_FOR_DISPLAY,
+      bySubject,
+      updatedAt: toIsoOrNull(reputationSource.updatedAt) || ''
+    };
+    return source;
+  }
+
+  function normalizeRequestEntity(rawRequest) {
+    const request = rawRequest && typeof rawRequest === 'object' ? cloneJson(rawRequest) : {};
+    const status = String(request.status || 'PENDING').toUpperCase();
+    request.status = ['PENDING', 'CANCELLED', 'COMPLETED'].includes(status) ? status : 'PENDING';
+    request.game = normalizeGameId(request.game, GAME_IDS.OVERWATCH);
+    request.role = String(request.role || '').trim();
+    request.slot = String(request.slot || '').trim();
+    request.notes = String(request.notes || '').trim();
+    request.targetLabel = String(request.targetLabel || '').trim() || 'Unknown';
+    request.createdAt = toIsoOrNull(request.createdAt) || new Date().toISOString();
+    request.updatedAt = toIsoOrNull(request.updatedAt) || request.createdAt;
+    normalizeTargetIdentity(request);
+    request.tryout = normalizeTryoutState(request);
+
+    if (request.tryout.selfConfirmedAt && request.tryout.counterpartConfirmedAt && request.status !== 'CANCELLED') {
+      request.status = 'COMPLETED';
+      if (!request.tryout.verifiedAt) {
+        request.tryout.verifiedAt = request.tryout.counterpartConfirmedAt || request.tryout.selfConfirmedAt;
+      }
+      if (!request.tryout.ratingWindowOpenedAt) {
+        request.tryout.ratingWindowOpenedAt = request.tryout.verifiedAt;
+      }
+      if (!request.tryout.ratingWindowExpiresAt) {
+        request.tryout.ratingWindowExpiresAt = addHoursIso(request.tryout.ratingWindowOpenedAt, CONDUCT_RATING_WINDOW_HOURS);
+      }
+    }
+
+    return request;
+  }
+
+  function normalizeEntitiesState(raw) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const normalized = {
+      seedVersion: typeof source.seedVersion === 'string' ? source.seedVersion : '',
+      requests: Array.isArray(source.requests) ? source.requests.map(normalizeRequestEntity) : [],
+      threads: Array.isArray(source.threads) ? source.threads : [],
+      notifications: Array.isArray(source.notifications) ? source.notifications : [],
+      ratings: Array.isArray(source.ratings) ? source.ratings : [],
+      reputation: source.reputation && typeof source.reputation === 'object' ? source.reputation : {}
+    };
+    normalizeRatingsState(normalized);
+    return normalized;
+  }
+
+  function loadEntitiesState() {
+    return normalizeEntitiesState(loadUnifiedState('entities', {}, () => null));
+  }
+
+  function updateEntitiesState(updater) {
+    return updateUnifiedState(
+      'entities',
+      (previous) => {
+        const base = normalizeEntitiesState(previous);
+        const draft = cloneJson(base);
+        const next = typeof updater === 'function' ? updater(draft) : draft;
+        return normalizeEntitiesState(next || draft);
+      },
+      { seedVersion: '', requests: [], threads: [], notifications: [], ratings: [], reputation: {} }
+    );
+  }
+
+  function sanitizeThreadToken(value) {
+    const normalized = String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    return normalized || 'unknown';
+  }
+
+  function getContextCompareHandles(context) {
+    if (!context || typeof context !== 'object') {
+      return [];
+    }
+    const handles = Array.isArray(context.compareHandles) ? context.compareHandles : [];
+    const uniqueSorted = Array.from(new Set(handles.map((handle) => sanitizeThreadToken(handle)).filter(Boolean))).sort();
+    return uniqueSorted;
+  }
+
+  function getTargetLabelFromContext(context) {
+    if (!context || typeof context !== 'object') {
+      return 'Unknown';
+    }
+    if (context.type === 'team') {
+      const teamSlug = String(context.team || context.teamSlug || '').trim();
+      if (!teamSlug) {
+        return 'Team';
+      }
+      const found = teams.find((team) => team.slug === teamSlug);
+      return found ? found.name : teamSlug;
+    }
+    if (context.type === 'player') {
+      return String(context.handle || 'Player').trim() || 'Player';
+    }
+    if (context.type === 'multi') {
+      const labels = getContextCompareHandles(context).map((token) => {
+        const original = (context.compareHandles || []).find((handle) => sanitizeThreadToken(handle) === token);
+        return original || token;
+      });
+      return labels.length ? labels.join(', ') : 'Selected players';
+    }
+    return String(context.handle || context.team || 'Unknown').trim() || 'Unknown';
+  }
+
+  function getTargetIdentityFromContext(context) {
+    if (!context || typeof context !== 'object') {
+      return { targetType: 'player', targetId: 'unknown' };
+    }
+
+    if (context.type === 'team') {
+      const teamSlug = slugifyStableId(context.team || context.teamSlug || getTargetLabelFromContext(context));
+      return { targetType: 'team', targetId: teamSlug };
+    }
+
+    if (context.type === 'player') {
+      return { targetType: 'player', targetId: slugifyStableId(context.handle || getTargetLabelFromContext(context)) };
+    }
+
+    if (context.type === 'multi') {
+      const sortedHandles = getContextCompareHandles(context);
+      const joined = sortedHandles.length ? sortedHandles.join('-') : 'unknown';
+      return { targetType: 'player', targetId: slugifyStableId(joined) };
+    }
+
+    return { targetType: 'player', targetId: slugifyStableId(context.handle || context.team || 'unknown') };
+  }
+
+  function buildThreadKey(context, gameId) {
+    const normalizedGame = normalizeGameId(gameId, GAME_IDS.OVERWATCH);
+    const gameSegment = `game:${normalizedGame}`;
+    if (!context || typeof context !== 'object') {
+      return `${gameSegment}|unknown:unknown`;
+    }
+
+    if (context.type === 'team') {
+      const teamToken = sanitizeThreadToken(context.team || context.teamSlug || getTargetLabelFromContext(context));
+      return `${gameSegment}|team:${teamToken}`;
+    }
+
+    if (context.type === 'player') {
+      const playerToken = sanitizeThreadToken(context.handle || getTargetLabelFromContext(context));
+      return `${gameSegment}|player:${playerToken}`;
+    }
+
+    if (context.type === 'multi') {
+      const sortedHandles = getContextCompareHandles(context);
+      const multiToken = sortedHandles.length ? sortedHandles.join(',') : 'unknown';
+      return `${gameSegment}|multi:${multiToken}`;
+    }
+
+    return `${gameSegment}|unknown:${sanitizeThreadToken(getTargetLabelFromContext(context))}`;
+  }
+
+  function resolveActorIdentity() {
+    if (state.authUser) {
+      return {
+        username: state.authUser.username || 'player',
+        handle: state.authUser.handle || 'Shinobi'
+      };
+    }
+
+    const fallbackHandle = state.profile && state.profile.publicProfile
+      ? state.profile.publicProfile.displayName
+      : 'Shinobi';
+
+    return {
+      username: 'guest',
+      handle: fallbackHandle || 'Shinobi'
+    };
+  }
+
+  function createEntityMessage(kind, sender, text, createdAt) {
+    return {
+      id: makeUnifiedId('msg'),
+      kind: kind || 'SYSTEM',
+      sender: sender || 'system',
+      text: String(text || '').trim() || '-',
+      createdAt: createdAt || new Date().toISOString()
+    };
+  }
+
+  function getRequestDeepLink(requestId) {
+    return `requests.html#request=${encodeURIComponent(String(requestId || ''))}`;
+  }
+
+  function getThreadDeepLink(threadId) {
+    return `messages.html#thread=${encodeURIComponent(String(threadId || ''))}`;
+  }
+
+  function createNotificationWithDedupe(notifications, payload, nowIso) {
+    const list = Array.isArray(notifications) ? notifications : [];
+    const now = nowIso || new Date().toISOString();
+    const nowMs = new Date(now).getTime();
+    const dedupeWindowMs = 5000;
+
+    const existing = list.find((item) => {
+      if (!item || typeof item !== 'object') return false;
+      if (item.type !== payload.type) return false;
+      if ((item.requestId || '') !== (payload.requestId || '')) return false;
+      if ((item.threadId || '') !== (payload.threadId || '')) return false;
+      if ((item.deepLink || '') !== (payload.deepLink || '')) return false;
+      const createdMs = new Date(item.createdAt || 0).getTime();
+      if (!Number.isFinite(createdMs)) return false;
+      return Math.abs(nowMs - createdMs) <= dedupeWindowMs;
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    const created = {
+      id: makeUnifiedId('noti'),
+      type: payload.type || 'SYSTEM',
+      title: payload.title || '',
+      body: payload.body || '',
+      requestId: payload.requestId || '',
+      threadId: payload.threadId || '',
+      deepLink: payload.deepLink || '',
+      read: false,
+      createdAt: now,
+      updatedAt: now
+    };
+    list.push(created);
+    return created;
+  }
+
+  function getRequestSubject(request) {
+    const targetType = request && request.targetType === 'team' ? 'team' : 'player';
+    const targetId = slugifyStableId(request && request.targetId ? request.targetId : (request && request.id ? request.id : 'unknown'));
+    return { subjectType: targetType, subjectId: targetId };
+  }
+
+  function getOppositeSide(side) {
+    return side === 'counterpart' ? 'self' : 'counterpart';
+  }
+
+  function getRequestRatings(entitiesState, requestId) {
+    const list = Array.isArray(entitiesState && entitiesState.ratings) ? entitiesState.ratings : [];
+    return list.filter((entry) => entry.requestId === requestId);
+  }
+
+  function getRatingBySide(entitiesState, requestId, side) {
+    return getRequestRatings(entitiesState, requestId).find((entry) => entry.authorSide === side) || null;
+  }
+
+  function isRatingCounted(rating) {
+    return !!(rating && rating.publicEligible === true && rating.countedAt);
+  }
+
+  function recomputeReputationInDraft(draft, nowIso) {
+    normalizeRatingsState(draft);
+    const now = nowIso || new Date().toISOString();
+    const minVerified = Number(draft.reputation && draft.reputation.minVerifiedForDisplay);
+    const threshold = Number.isFinite(minVerified) && minVerified > 0
+      ? Math.floor(minVerified)
+      : CONDUCT_MIN_VERIFIED_FOR_DISPLAY;
+
+    const bySubjectAccum = {};
+    (draft.ratings || []).forEach((rating) => {
+      if (!isRatingCounted(rating)) {
+        return;
+      }
+      const key = `${rating.subjectType}:${slugifyStableId(rating.subjectId)}`;
+      if (!bySubjectAccum[key]) {
+        bySubjectAccum[key] = { sum: 0, count: 0 };
+      }
+      bySubjectAccum[key].sum += Number(rating.stars) || 0;
+      bySubjectAccum[key].count += 1;
+    });
+
+    const bySubject = {};
+    Object.keys(bySubjectAccum).forEach((key) => {
+      const item = bySubjectAccum[key];
+      const count = item.count;
+      const avg = count > 0 ? Number((item.sum / count).toFixed(1)) : 0;
+      bySubject[key] = {
+        avg,
+        countVerified: count,
+        displayMode: count >= threshold ? 'score' : 'placeholder',
+        updatedAt: now
+      };
+    });
+
+    draft.reputation = {
+      minVerifiedForDisplay: threshold,
+      bySubject,
+      updatedAt: now
+    };
+    return draft.reputation;
+  }
+
+  function applyRatingTimeoutsInDraft(draft, nowIso) {
+    normalizeRatingsState(draft);
+    const now = nowIso || new Date().toISOString();
+    const nowMs = new Date(now).getTime();
+    let changed = false;
+
+    (draft.requests || []).forEach((request) => {
+      if (!request || typeof request !== 'object' || request.status === 'CANCELLED') {
+        return;
+      }
+      request.tryout = normalizeTryoutState(request);
+
+      const tryout = request.tryout;
+      const selfRating = getRatingBySide(draft, request.id, 'self');
+      const counterpartRating = getRatingBySide(draft, request.id, 'counterpart');
+      const hasSelf = !!selfRating;
+      const hasCounterpart = !!counterpartRating;
+
+      if (!tryout.verifiedAt) {
+        if (tryout.ratingRevealState !== 'pending') {
+          tryout.ratingRevealState = 'pending';
+          changed = true;
+        }
+        return;
+      }
+
+      if (!tryout.ratingWindowOpenedAt) {
+        tryout.ratingWindowOpenedAt = tryout.verifiedAt;
+        changed = true;
+      }
+      if (!tryout.ratingWindowExpiresAt && tryout.ratingWindowOpenedAt) {
+        tryout.ratingWindowExpiresAt = addHoursIso(tryout.ratingWindowOpenedAt, CONDUCT_RATING_WINDOW_HOURS);
+        changed = true;
+      }
+
+      if (hasSelf && hasCounterpart) {
+        if (tryout.ratingRevealState !== 'revealed') {
+          tryout.ratingRevealState = 'revealed';
+          changed = true;
+        }
+        [selfRating, counterpartRating].forEach((entry) => {
+          if (!entry.revealedAt) {
+            entry.revealedAt = now;
+            changed = true;
+          }
+          if (!entry.publicEligible) {
+            entry.publicEligible = true;
+            changed = true;
+          }
+          if (!entry.countedAt) {
+            entry.countedAt = now;
+            changed = true;
+          }
+        });
+        return;
+      }
+
+      const singleRating = selfRating || counterpartRating;
+      if (!singleRating) {
+        if (tryout.ratingRevealState !== 'pending') {
+          tryout.ratingRevealState = 'pending';
+          changed = true;
+        }
+        return;
+      }
+
+      if (singleRating.publicEligible || singleRating.countedAt) {
+        singleRating.publicEligible = false;
+        singleRating.countedAt = null;
+        changed = true;
+      }
+
+      const expiryMs = new Date(tryout.ratingWindowExpiresAt || 0).getTime();
+      const isTimedOut = Number.isFinite(expiryMs) && nowMs >= expiryMs;
+      const nextState = isTimedOut ? 'timeout_partial' : 'waiting';
+      if (tryout.ratingRevealState !== nextState) {
+        tryout.ratingRevealState = nextState;
+        changed = true;
+      }
+    });
+
+    return changed;
+  }
+
+  function syncConductDerivedStateOnLoad() {
+    updateEntitiesState((draft) => {
+      const nowIso = new Date().toISOString();
+      draft.requests = (draft.requests || []).map(normalizeRequestEntity);
+      normalizeRatingsState(draft);
+      applyRatingTimeoutsInDraft(draft, nowIso);
+      recomputeReputationInDraft(draft, nowIso);
+      return draft;
+    });
+  }
+
+  function formatTemplate(template, values) {
+    let output = String(template || '');
+    Object.keys(values || {}).forEach((key) => {
+      output = output.replace(new RegExp(`\\{${key}\\}`, 'g'), String(values[key]));
+    });
+    return output;
+  }
+
+  function formatConductSummary(subjectType, subjectId, entitiesState) {
+    const normalizedType = subjectType === 'team' ? 'team' : 'player';
+    const normalizedId = slugifyStableId(subjectId);
+    const entities = entitiesState || loadEntitiesState();
+    const reputation = entities.reputation && typeof entities.reputation === 'object' ? entities.reputation : {};
+    const threshold = Number.isFinite(Number(reputation.minVerifiedForDisplay))
+      ? Math.max(1, Math.floor(Number(reputation.minVerifiedForDisplay)))
+      : CONDUCT_MIN_VERIFIED_FOR_DISPLAY;
+    const key = `${normalizedType}:${normalizedId}`;
+    const entry = reputation.bySubject && reputation.bySubject[key] ? reputation.bySubject[key] : null;
+    if (!entry || !Number.isFinite(Number(entry.countVerified)) || Number(entry.countVerified) < threshold) {
+      return t('d.conduct.new');
+    }
+    const score = Number.isFinite(Number(entry.avg)) ? Number(entry.avg).toFixed(1) : '0.0';
+    const count = Math.max(0, Math.floor(Number(entry.countVerified)));
+    return formatTemplate(t('d.conduct.summary'), { score, count });
+  }
+
+  function getRatingReasonLabel(reasonCode) {
+    if (!reasonCode) {
+      return '';
+    }
+    return t(`d.rating.reason.${String(reasonCode || '').toLowerCase()}`);
+  }
+
+  function getHashParam(key) {
+    const hash = String(window.location.hash || '').replace(/^#/, '');
+    if (!hash) {
+      return '';
+    }
+    const params = new URLSearchParams(hash);
+    return params.get(key) || '';
+  }
+
+  function setEntityHighlight(node) {
+    if (!node) {
+      return;
+    }
+    node.classList.add('entity-highlight');
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.setTimeout(() => {
+      node.classList.remove('entity-highlight');
+    }, 1800);
+  }
+
+  function findOrCreateThread(entitiesState, context, gameId, actorHandle, nowIso) {
+    const normalizedGame = normalizeGameId(gameId, GAME_IDS.OVERWATCH);
+    const threadKey = buildThreadKey(context, normalizedGame);
+    let thread = entitiesState.threads.find((entry) => entry.threadKey === threadKey);
+    if (thread) {
+      return thread;
+    }
+
+    const targetLabel = getTargetLabelFromContext(context);
+    const participants = Array.from(new Set([actorHandle, targetLabel].filter(Boolean)));
+    const now = nowIso || new Date().toISOString();
+    thread = {
+      id: makeUnifiedId('thr'),
+      threadKey,
+      title: targetLabel,
+      game: normalizedGame,
+      participants,
+      requestIds: [],
+      messages: [],
+      lastMessageAt: now,
+      updatedAt: now
+    };
+    entitiesState.threads.push(thread);
+    return thread;
+  }
+
+  function seedEntityStoreIfNeeded() {
+    updateEntitiesState((entitiesState) => {
+      const current = normalizeEntitiesState(entitiesState);
+      const hasAnyData = current.requests.length > 0
+        || current.threads.length > 0
+        || current.notifications.length > 0
+        || current.ratings.length > 0;
+      if (current.seedVersion === 'b1' || hasAnyData) {
+        return current;
+      }
+
+      const actor = resolveActorIdentity();
+      const now = new Date();
+      const t0 = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
+      const t1 = new Date(now.getTime() - 70 * 60 * 1000).toISOString();
+      const t2 = new Date(now.getTime() - 40 * 60 * 1000).toISOString();
+
+      const requestOne = {
+        id: makeUnifiedId('req'),
+        status: 'PENDING',
+        createdAt: t0,
+        updatedAt: t0,
+        game: GAME_IDS.OVERWATCH,
+        role: 'Support',
+        slot: 'Tue 20:00',
+        notes: '',
+        source: { type: 'team', teamSlug: 'vienna-ascend' },
+        targetLabel: 'Vienna Ascend',
+        targetType: 'team',
+        targetId: 'vienna-ascend',
+        threadId: '',
+        createdBy: { username: actor.username, handle: actor.handle },
+        tryout: {
+          selfConfirmedAt: null,
+          counterpartConfirmedAt: null,
+          verifiedAt: null,
+          ratingWindowOpenedAt: null,
+          ratingWindowExpiresAt: null,
+          ratingRevealState: 'pending'
+        }
+      };
+      const requestTwo = {
+        id: makeUnifiedId('req'),
+        status: 'PENDING',
+        createdAt: t1,
+        updatedAt: t1,
+        game: GAME_IDS.RIVALS,
+        role: 'Scout',
+        slot: 'Thu 19:30',
+        notes: '',
+        source: { type: 'team', teamSlug: 'cloud-quarter' },
+        targetLabel: 'Cloud 25',
+        targetType: 'team',
+        targetId: 'cloud-quarter',
+        threadId: '',
+        createdBy: { username: actor.username, handle: actor.handle },
+        tryout: {
+          selfConfirmedAt: null,
+          counterpartConfirmedAt: null,
+          verifiedAt: null,
+          ratingWindowOpenedAt: null,
+          ratingWindowExpiresAt: null,
+          ratingRevealState: 'pending'
+        }
+      };
+
+      const threadOne = {
+        id: makeUnifiedId('thr'),
+        threadKey: `game:${GAME_IDS.OVERWATCH}|team:vienna-ascend`,
+        title: 'Vienna Ascend',
+        game: GAME_IDS.OVERWATCH,
+        participants: [actor.handle, 'Vienna Ascend'],
+        requestIds: [requestOne.id],
+        messages: [createEntityMessage('SYSTEM', 'system', 'Invite request created for Vienna Ascend.', t0)],
+        lastMessageAt: t0,
+        updatedAt: t0
+      };
+      const threadTwo = {
+        id: makeUnifiedId('thr'),
+        threadKey: `game:${GAME_IDS.RIVALS}|team:cloud-quarter`,
+        title: 'Cloud 25',
+        game: GAME_IDS.RIVALS,
+        participants: [actor.handle, 'Cloud 25'],
+        requestIds: [requestTwo.id],
+        messages: [createEntityMessage('SYSTEM', 'system', 'Invite request created for Cloud 25.', t1)],
+        lastMessageAt: t1,
+        updatedAt: t1
+      };
+
+      requestOne.threadId = threadOne.id;
+      requestTwo.threadId = threadTwo.id;
+
+      const notificationOne = {
+        id: makeUnifiedId('noti'),
+        type: 'REQUEST_CREATED',
+        title: 'Tryout request created',
+        body: 'Vienna Ascend · Overwatch',
+        requestId: requestOne.id,
+        threadId: threadOne.id,
+        deepLink: getRequestDeepLink(requestOne.id),
+        read: false,
+        createdAt: t0,
+        updatedAt: t0
+      };
+      const notificationTwo = {
+        id: makeUnifiedId('noti'),
+        type: 'MESSAGE_POSTED',
+        title: 'New thread activity',
+        body: 'Cloud 25',
+        requestId: requestTwo.id,
+        threadId: threadTwo.id,
+        deepLink: getThreadDeepLink(threadTwo.id),
+        read: false,
+        createdAt: t2,
+        updatedAt: t2
+      };
+
+      return {
+        seedVersion: 'b1',
+        requests: [requestOne, requestTwo],
+        threads: [threadOne, threadTwo],
+        notifications: [notificationOne, notificationTwo],
+        ratings: [],
+        reputation: {
+          minVerifiedForDisplay: CONDUCT_MIN_VERIFIED_FOR_DISPLAY,
+          bySubject: {},
+          updatedAt: t2
+        }
+      };
+    });
+  }
+
   function loadPersistedExploreFilters() {
     return loadUnifiedState(
       'explore.filters',
@@ -270,6 +1072,17 @@
     if (raw === GAME_IDS.RIVALS) return GAME_IDS.RIVALS;
     if (raw === GAME_IDS.ANY || raw === 'any') return GAME_IDS.ANY;
     return fallback;
+  }
+
+  function normalizeProviderKey(provider) {
+    const raw = String(provider || '').trim().toLowerCase();
+    if (raw === 'battle.net' || raw === 'battlenet' || raw === 'battle net') return 'battle_net';
+    if (raw === 'riot') return 'riot';
+    if (raw === 'epic') return 'epic';
+    if (raw === 'steam') return 'steam';
+    if (raw === 'playstation' || raw === 'play station') return 'playstation';
+    if (raw === 'xbox' || raw === 'x-box') return 'xbox';
+    return slugifyStableId(raw || 'provider');
   }
 
   async function callMockApi(action, payload, options) {
@@ -912,8 +1725,53 @@
       'd.messages.meta.thread.one': 'Tryout prep · 4 unread · Updated 08:42',
       'd.messages.meta.thread.two': 'Roster review · 2 unread · Updated yesterday',
       'd.messages.meta.thread.three': 'Intro thread · 1 unread · Updated 2 days ago',
+      'd.messages.meta.count': 'messages',
+      'd.messages.meta.unread': 'unread',
+      'd.messages.threads.empty': 'No threads yet.',
+      'd.messages.empty': 'Select a thread to view messages.',
+      'd.messages.send': 'Send message',
+      'd.messages.sending': 'Sending...',
       'd.messages.field.to': 'To',
       'd.messages.field.draft': 'Draft',
+      'd.requests.empty': 'No requests yet.',
+      'd.requests.status.pending': 'Pending',
+      'd.requests.status.completed': 'Completed',
+      'd.requests.status.cancelled': 'Cancelled',
+      'd.requests.cancel': 'Cancel',
+      'd.requests.openThread': 'Open thread',
+      'd.requests.confirmCompleted': 'Confirm completed',
+      'd.requests.rate': 'Rate tryout',
+      'd.requests.processing': 'Updating...',
+      'd.requests.tryout.label': 'Tryout',
+      'd.requests.tryout.pending': 'Pending confirmation',
+      'd.requests.tryout.partial': 'Partially confirmed',
+      'd.requests.tryout.verified': 'Verified tryout',
+      'd.requests.tryout.cancelled': 'Cancelled',
+      'd.requests.rating.label': 'Rating',
+      'd.requests.rating.locked': 'Available after verified completion',
+      'd.requests.rating.notStarted': 'Not submitted',
+      'd.requests.rating.waitingCounterpart': 'Submitted. Waiting for counterpart',
+      'd.requests.rating.waitingYou': 'Counterpart submitted. Waiting for your rating',
+      'd.requests.rating.timeoutSelf': 'Submitted ★{stars}. Timeout: visible only to you',
+      'd.requests.rating.timeoutCounterpart': 'Counterpart timeout. You can still rate',
+      'd.requests.rating.revealed': 'Revealed · You ★{you} · Counterpart ★{counterpart}',
+      'd.requests.rating.saved': 'Rating saved.',
+      'd.requests.completion.saved': 'Completion saved.',
+      'd.requests.system.selfCompleted': 'You confirmed tryout completion.',
+      'd.requests.system.counterpartCompleted': 'Counterpart completion confirmed.',
+      'd.requests.demo.counterpartComplete': 'Demo: confirm counterpart',
+      'd.requests.demo.counterpartRate': 'Demo: counterpart rating',
+      'd.rating.title': 'Rate tryout conduct',
+      'd.rating.stars': 'Stars',
+      'd.rating.reason': 'Reason (required for 1–2 stars)',
+      'd.rating.reason.placeholder': 'Select reason',
+      'd.rating.reason.no_show': 'No-show',
+      'd.rating.reason.toxic_communication': 'Toxic communication',
+      'd.rating.reason.unreliable_commitment': 'Unreliable commitment',
+      'd.rating.reason.role_mismatch': 'Role mismatch',
+      'd.rating.submit': 'Submit rating',
+      'd.conduct.summary': '★ {score} ({count} verified)',
+      'd.conduct.new': '★ — (New)',
       'd.notifications.meta.mentions.two': '3 profile views · 1 direct mention · Last 24h',
       'd.notifications.meta.updates.oneTitle': 'Rank requirement update',
       'd.notifications.meta.updates.twoTitle': 'Tryout slot shift',
@@ -921,6 +1779,22 @@
       'd.notifications.meta.system.oneTitle': 'Account Access',
       'd.notifications.meta.system.twoTitle': 'Profile proof state',
       'd.notifications.meta.system.twoText': 'Connected account badges are visible, rank verification expands in early access.',
+      'd.notifications.empty.unread': 'No unread notifications.',
+      'd.notifications.empty.read': 'No read notifications yet.',
+      'd.notifications.markAllRead': 'Mark all as read',
+      'd.notifications.marking': 'Updating...',
+      'd.notifications.open': 'Open',
+      'd.notifications.markRead': 'Mark read',
+      'd.notifications.markUnread': 'Mark unread',
+      'd.notifications.title.requestCreated': 'Tryout request created',
+      'd.notifications.title.requestCancelled': 'Request cancelled',
+      'd.notifications.title.messagePosted': 'New message',
+      'd.notifications.title.accountConnectedPending': 'Account connection pending',
+      'd.notifications.body.accountConnectedPending': '{provider} linked. Verification is pending.',
+      'd.notifications.title.waitlistJoined': 'Waitlist joined',
+      'd.notifications.body.waitlistJoined': '{role} · {game}',
+      'd.system.inviteCreated': 'Tryout request created for',
+      'd.system.requestCancelled': 'Tryout request cancelled for',
       'd.hero.badge': 'GameIn',
       'd.hero.title': 'From solo queue to a real team.',
       'd.hero.lead': 'Find verified players and teams in Overwatch, LoL, Fortnite and Marvel Rivals. Compare fast. Tryouts made simple.',
@@ -1014,6 +1888,9 @@
       'd.toast.messagesSoon': 'Messages are coming soon.',
       'd.toast.maxCompare': 'You can compare at most 2 players.',
       'd.toast.error.generic': 'Something went wrong. Please try again.',
+      'd.toast.requestCancelled': 'Request cancelled.',
+      'd.toast.messageSent': 'Message sent.',
+      'd.toast.notificationsMarkedRead': 'All notifications marked as read.',
       'd.invite.title': 'Invite to Tryout',
       'd.invite.game': 'Game',
       'd.invite.role': 'Role needed / offered',
@@ -1125,6 +2002,7 @@
       'd.auth.success.login': 'Logged in successfully.',
       'd.auth.error.invalid': 'Invalid email/username or password.',
       'd.auth.error.exists': 'An account with this email already exists.',
+      'd.auth.requiredAction': 'Please log in to continue.',
       'd.auth.continueWaitlist': 'Continuing to waitlist...',
       'd.edit.tooltip': 'Edit',
       'd.edit.section.public': 'Public Profile',
@@ -1293,8 +2171,53 @@
       'd.messages.meta.thread.one': 'Tryout-Vorbereitung · 4 ungelesen · Aktualisiert 08:42',
       'd.messages.meta.thread.two': 'Roster-Review · 2 ungelesen · Aktualisiert gestern',
       'd.messages.meta.thread.three': 'Intro-Thread · 1 ungelesen · Aktualisiert vor 2 Tagen',
+      'd.messages.meta.count': 'Nachrichten',
+      'd.messages.meta.unread': 'ungelesen',
+      'd.messages.threads.empty': 'Noch keine Threads.',
+      'd.messages.empty': 'Wähle einen Thread, um Nachrichten zu sehen.',
+      'd.messages.send': 'Nachricht senden',
+      'd.messages.sending': 'Wird gesendet...',
       'd.messages.field.to': 'An',
       'd.messages.field.draft': 'Entwurf',
+      'd.requests.empty': 'Noch keine Anfragen.',
+      'd.requests.status.pending': 'Offen',
+      'd.requests.status.completed': 'Abgeschlossen',
+      'd.requests.status.cancelled': 'Storniert',
+      'd.requests.cancel': 'Stornieren',
+      'd.requests.openThread': 'Thread öffnen',
+      'd.requests.confirmCompleted': 'Abschluss bestätigen',
+      'd.requests.rate': 'Tryout bewerten',
+      'd.requests.processing': 'Aktualisiere...',
+      'd.requests.tryout.label': 'Tryout',
+      'd.requests.tryout.pending': 'Bestätigung ausstehend',
+      'd.requests.tryout.partial': 'Teilweise bestätigt',
+      'd.requests.tryout.verified': 'Verifiziertes Tryout',
+      'd.requests.tryout.cancelled': 'Storniert',
+      'd.requests.rating.label': 'Bewertung',
+      'd.requests.rating.locked': 'Nach verifiziertem Abschluss verfügbar',
+      'd.requests.rating.notStarted': 'Noch nicht abgegeben',
+      'd.requests.rating.waitingCounterpart': 'Abgegeben. Warte auf Gegenseite',
+      'd.requests.rating.waitingYou': 'Gegenseite abgegeben. Warte auf deine Bewertung',
+      'd.requests.rating.timeoutSelf': 'Abgegeben ★{stars}. Timeout: nur für dich sichtbar',
+      'd.requests.rating.timeoutCounterpart': 'Gegenseite Timeout. Du kannst noch bewerten',
+      'd.requests.rating.revealed': 'Aufgedeckt · Du ★{you} · Gegenseite ★{counterpart}',
+      'd.requests.rating.saved': 'Bewertung gespeichert.',
+      'd.requests.completion.saved': 'Abschluss gespeichert.',
+      'd.requests.system.selfCompleted': 'Du hast den Tryout-Abschluss bestätigt.',
+      'd.requests.system.counterpartCompleted': 'Abschluss durch Gegenseite bestätigt.',
+      'd.requests.demo.counterpartComplete': 'Demo: Gegenseite bestätigen',
+      'd.requests.demo.counterpartRate': 'Demo: Gegenseite bewerten',
+      'd.rating.title': 'Tryout-Verhalten bewerten',
+      'd.rating.stars': 'Sterne',
+      'd.rating.reason': 'Grund (Pflicht bei 1–2 Sternen)',
+      'd.rating.reason.placeholder': 'Grund auswählen',
+      'd.rating.reason.no_show': 'Nicht erschienen',
+      'd.rating.reason.toxic_communication': 'Toxische Kommunikation',
+      'd.rating.reason.unreliable_commitment': 'Unzuverlässige Verbindlichkeit',
+      'd.rating.reason.role_mismatch': 'Rollen-Mismatch',
+      'd.rating.submit': 'Bewertung senden',
+      'd.conduct.summary': '★ {score} ({count} verifiziert)',
+      'd.conduct.new': '★ — (Neu)',
       'd.notifications.meta.mentions.two': '3 Profilaufrufe · 1 direkte Mention · Letzte 24h',
       'd.notifications.meta.updates.oneTitle': 'Rank-Anforderung aktualisiert',
       'd.notifications.meta.updates.twoTitle': 'Tryout-Slot verschoben',
@@ -1302,6 +2225,22 @@
       'd.notifications.meta.system.oneTitle': 'Vorschau-Modus',
       'd.notifications.meta.system.twoTitle': 'Profil-Proof-Status',
       'd.notifications.meta.system.twoText': 'Connected-Account-Badges sind sichtbar, Rank-Verifikation wird im Early Access ausgebaut.',
+      'd.notifications.empty.unread': 'Keine ungelesenen Mitteilungen.',
+      'd.notifications.empty.read': 'Noch keine gelesenen Mitteilungen.',
+      'd.notifications.markAllRead': 'Alle als gelesen markieren',
+      'd.notifications.marking': 'Aktualisiere...',
+      'd.notifications.open': 'Öffnen',
+      'd.notifications.markRead': 'Als gelesen markieren',
+      'd.notifications.markUnread': 'Als ungelesen markieren',
+      'd.notifications.title.requestCreated': 'Tryout-Anfrage erstellt',
+      'd.notifications.title.requestCancelled': 'Anfrage storniert',
+      'd.notifications.title.messagePosted': 'Neue Nachricht',
+      'd.notifications.title.accountConnectedPending': 'Account-Verbindung ausstehend',
+      'd.notifications.body.accountConnectedPending': '{provider} verknüpft. Verifikation ist ausstehend.',
+      'd.notifications.title.waitlistJoined': 'Warteliste beigetreten',
+      'd.notifications.body.waitlistJoined': '{role} · {game}',
+      'd.system.inviteCreated': 'Tryout-Anfrage erstellt für',
+      'd.system.requestCancelled': 'Tryout-Anfrage storniert für',
       'd.hero.badge': 'GameIn',
       'd.hero.title': 'Von Solo-Queue zu einem echten Team.',
       'd.hero.lead': 'Finde verifizierte Spieler und Teams in Overwatch, LoL, Fortnite und Marvel Rivals. Schnell vergleichen. Tryouts einfach machen.',
@@ -1395,6 +2334,9 @@
       'd.toast.messagesSoon': 'Nachrichten kommen bald.',
       'd.toast.maxCompare': 'Du kannst maximal 2 Spieler vergleichen.',
       'd.toast.error.generic': 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
+      'd.toast.requestCancelled': 'Anfrage storniert.',
+      'd.toast.messageSent': 'Nachricht gesendet.',
+      'd.toast.notificationsMarkedRead': 'Alle Mitteilungen als gelesen markiert.',
       'd.invite.title': 'Zum Tryout einladen',
       'd.invite.game': 'Spiel',
       'd.invite.role': 'Gesuchte / angebotene Rolle',
@@ -1506,6 +2448,7 @@
       'd.auth.success.login': 'Erfolgreich eingeloggt.',
       'd.auth.error.invalid': 'E-Mail/Benutzername oder Passwort ist ungültig.',
       'd.auth.error.exists': 'Ein Konto mit dieser E-Mail existiert bereits.',
+      'd.auth.requiredAction': 'Bitte einloggen, um fortzufahren.',
       'd.auth.continueWaitlist': 'Weiter zur Warteliste...',
       'd.edit.tooltip': 'Bearbeiten',
       'd.edit.section.public': 'Public Profile',
@@ -2194,6 +3137,7 @@
   function applyProfileStateToDOM() {
     const normalized = normalizeProfileState(state.profile);
     state.profile = normalized;
+    const entitiesState = loadEntitiesState();
 
     const profile = normalized.publicProfile;
     setProfileField('public.displayName', profile.displayName);
@@ -2246,6 +3190,13 @@
       badge.classList.add(proof.cls);
       badge.setAttribute('title', proof.tooltip);
     });
+
+    const profileSubject = state.authUser && state.authUser.handle
+      ? state.authUser.handle
+      : profile.displayName;
+    const conductSummary = formatConductSummary('player', profileSubject, entitiesState);
+    setProfileField('public.conductSummary', conductSummary);
+    setProfileField('hero.conductSummary', conductSummary);
   }
 
   function getProfileEditorInputs() {
@@ -2651,10 +3602,11 @@
     return true;
   }
 
-  function renderPlayerCard(player) {
+  function renderPlayerCard(player, entitiesState) {
     const game = getPrimaryGame(player);
     const proof = mapProof(game.proof);
     const inCompare = state.compare.includes(player.handle);
+    const conduct = formatConductSummary('player', player.handle, entitiesState);
 
     return [
       '<article class="result-card">',
@@ -2672,6 +3624,7 @@
       `<span>${t('d.card.country')}: ${formatCountry(player.country)}</span>`,
       `<span>${t('d.card.availability')}: ${formatAvailability(player.availability)}</span>`,
       `<span>${player.language.join(', ')}</span>`,
+      `<span class="conduct-line">${conduct}</span>`,
       '</div>',
       '<div class="result-actions">',
       `<button type="button" class="button primary small" data-action="invite-player" data-handle="${player.handle}" data-game="${game.game}">${t('d.card.invite')}</button>`,
@@ -2682,8 +3635,9 @@
     ].join('');
   }
 
-  function renderTeamCard(team) {
+  function renderTeamCard(team, entitiesState) {
     const proof = mapProof(team.verified);
+    const conduct = formatConductSummary('team', team.slug, entitiesState);
     const needs = team.games
       .filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game)
       .flatMap((entry) => entry.needs.map((need) => `${getGameLabel(entry.game)}: ${formatRole(need.role)} (${need.rankMin}+)`));
@@ -2698,7 +3652,7 @@
       '<div class="team-needs">',
       needs.map((need) => `<span class="need-chip">${need}</span>`).join(''),
       '</div>',
-      `<div class="result-meta"><span>${t('d.card.availability')}: ${formatSchedule(team.schedule)}</span></div>`,
+      `<div class="result-meta"><span>${t('d.card.availability')}: ${formatSchedule(team.schedule)}</span><span class="conduct-line">${conduct}</span></div>`,
       '<div class="result-actions">',
       `<button type="button" class="button primary small" data-action="invite-team" data-team="${team.slug}" data-game="${team.games[0].game}">${t('d.card.apply')}</button>`,
       '</div>',
@@ -2712,15 +3666,16 @@
     if (!list || !empty) {
       return;
     }
+    const entitiesState = loadEntitiesState();
 
     if (state.mode === 'players') {
       const filteredPlayers = players.filter(passesPlayerFilters);
-      list.innerHTML = filteredPlayers.map(renderPlayerCard).join('');
+      list.innerHTML = filteredPlayers.map((player) => renderPlayerCard(player, entitiesState)).join('');
       const hasResults = filteredPlayers.length > 0;
       empty.classList.toggle('hidden', hasResults);
     } else {
       const filteredTeams = teams.filter(passesTeamFilters);
-      list.innerHTML = filteredTeams.map(renderTeamCard).join('');
+      list.innerHTML = filteredTeams.map((team) => renderTeamCard(team, entitiesState)).join('');
       const hasResults = filteredTeams.length > 0;
       empty.classList.toggle('hidden', hasResults);
     }
@@ -2770,6 +3725,949 @@
     compareEmpty.classList.add('hidden');
     compareContent.classList.remove('hidden');
     inviteSelected.disabled = false;
+  }
+
+  function requireAuthForAction(lockModule, lockAction) {
+    if (state.isAuthenticated) {
+      return true;
+    }
+    track('click_preview_locked_cta', {
+      page: getCurrentPage(),
+      module: lockModule || 'unknown',
+      action: lockAction || 'auth_required'
+    });
+    showToast('d.auth.requiredAction', 'error');
+    openAuthModal('login');
+    return false;
+  }
+
+  function getRequestStatusMeta(request) {
+    if (request.status === 'CANCELLED') {
+      return { key: 'd.requests.status.cancelled', cls: 'cancelled' };
+    }
+    if (request.status === 'COMPLETED') {
+      return { key: 'd.requests.status.completed', cls: 'completed' };
+    }
+    return { key: 'd.requests.status.pending', cls: 'pending' };
+  }
+
+  function getRequestTryoutMeta(request) {
+    const tryout = normalizeTryoutState(request);
+    if (request.status === 'CANCELLED') {
+      return { key: 'd.requests.tryout.cancelled', cls: 'cancelled' };
+    }
+    if (tryout.selfConfirmedAt && tryout.counterpartConfirmedAt && tryout.verifiedAt) {
+      return { key: 'd.requests.tryout.verified', cls: 'verified' };
+    }
+    if (tryout.selfConfirmedAt || tryout.counterpartConfirmedAt) {
+      return { key: 'd.requests.tryout.partial', cls: 'waiting' };
+    }
+    return { key: 'd.requests.tryout.pending', cls: 'pending' };
+  }
+
+  function getRequestRatingMeta(request, entitiesState) {
+    const tryout = normalizeTryoutState(request);
+    const selfRating = getRatingBySide(entitiesState, request.id, 'self');
+    const counterpartRating = getRatingBySide(entitiesState, request.id, 'counterpart');
+
+    if (request.status !== 'COMPLETED' || !tryout.verifiedAt) {
+      return { text: t('d.requests.rating.locked'), cls: 'pending', canOpen: false };
+    }
+
+    if (selfRating && counterpartRating) {
+      return {
+        text: formatTemplate(t('d.requests.rating.revealed'), {
+          you: selfRating.stars,
+          counterpart: counterpartRating.stars
+        }),
+        cls: 'verified',
+        canOpen: false
+      };
+    }
+
+    if (selfRating && !counterpartRating) {
+      if (tryout.ratingRevealState === 'timeout_partial') {
+        return {
+          text: formatTemplate(t('d.requests.rating.timeoutSelf'), { stars: selfRating.stars }),
+          cls: 'waiting',
+          canOpen: false
+        };
+      }
+      return { text: t('d.requests.rating.waitingCounterpart'), cls: 'waiting', canOpen: false };
+    }
+
+    if (!selfRating && counterpartRating) {
+      if (tryout.ratingRevealState === 'timeout_partial') {
+        return { text: t('d.requests.rating.timeoutCounterpart'), cls: 'waiting', canOpen: true };
+      }
+      return { text: t('d.requests.rating.waitingYou'), cls: 'waiting', canOpen: true };
+    }
+
+    return { text: t('d.requests.rating.notStarted'), cls: 'pending', canOpen: true };
+  }
+
+  function renderRequestsPage(highlightRequestId) {
+    const list = document.getElementById('requestsList');
+    const empty = document.getElementById('requestsEmpty');
+    if (!list || !empty) {
+      return;
+    }
+
+    const entitiesState = loadEntitiesState();
+    const requests = entitiesState.requests
+      .slice()
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    if (!requests.length) {
+      list.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+
+    empty.classList.add('hidden');
+    list.innerHTML = requests.map((request) => {
+      const statusMeta = getRequestStatusMeta(request);
+      const tryoutMeta = getRequestTryoutMeta(request);
+      const ratingMeta = getRequestRatingMeta(request, entitiesState);
+      const tryout = normalizeTryoutState(request);
+      const selfRating = getRatingBySide(entitiesState, request.id, 'self');
+      const counterpartRating = getRatingBySide(entitiesState, request.id, 'counterpart');
+
+      const canCancel = state.isAuthenticated && request.status === 'PENDING';
+      const canConfirmCompleted = state.isAuthenticated && request.status !== 'CANCELLED' && !tryout.selfConfirmedAt;
+      const canRate = state.isAuthenticated
+        && request.status === 'COMPLETED'
+        && !!tryout.verifiedAt
+        && ratingMeta.canOpen
+        && !selfRating;
+      const canDemoCounterpartComplete = state.isAuthenticated
+        && state.uiDemoMode
+        && request.status !== 'CANCELLED'
+        && !tryout.counterpartConfirmedAt;
+      const canDemoCounterpartRate = state.isAuthenticated
+        && state.uiDemoMode
+        && request.status === 'COMPLETED'
+        && !!tryout.verifiedAt
+        && !counterpartRating;
+
+      const openThreadButton = request.threadId
+        ? `<button type="button" class="button ghost small" data-action="open-request-thread" data-thread-id="${request.threadId}">${t('d.requests.openThread')}</button>`
+        : '';
+      const cancelButton = canCancel
+        ? `<button type="button" class="button ghost small" data-action="cancel-request" data-request-id="${request.id}">${t('d.requests.cancel')}</button>`
+        : '';
+      const confirmCompletedButton = canConfirmCompleted
+        ? `<button type="button" class="button ghost small" data-action="confirm-completed" data-request-id="${request.id}">${t('d.requests.confirmCompleted')}</button>`
+        : '';
+      const rateButton = canRate
+        ? `<button type="button" class="button ghost small" data-action="open-rating" data-request-id="${request.id}" data-author-side="self">${t('d.requests.rate')}</button>`
+        : '';
+      const demoCounterpartCompleteButton = canDemoCounterpartComplete
+        ? `<button type="button" class="button ghost small" data-action="demo-counterpart-complete" data-request-id="${request.id}">${t('d.requests.demo.counterpartComplete')}</button>`
+        : '';
+      const demoCounterpartRateButton = canDemoCounterpartRate
+        ? `<button type="button" class="button ghost small" data-action="demo-counterpart-rate" data-request-id="${request.id}" data-author-side="counterpart">${t('d.requests.demo.counterpartRate')}</button>`
+        : '';
+
+      return [
+        `<li class="list-row" data-request-id="${request.id}">`,
+        `<strong>${request.targetLabel} · ${getGameLabel(request.game)}</strong>`,
+        `<span>${request.role} · ${request.slot}</span>`,
+        `<span class="status-chip ${statusMeta.cls}">${t(statusMeta.key)}</span>`,
+        `<span class="micro-row">${t('d.requests.tryout.label')}: <span class="status-chip ${tryoutMeta.cls}">${t(tryoutMeta.key)}</span></span>`,
+        `<span class="micro-row">${t('d.requests.rating.label')}: <span class="status-chip ${ratingMeta.cls}">${ratingMeta.text}</span></span>`,
+        '<div class="list-row-actions">',
+        confirmCompletedButton,
+        rateButton,
+        openThreadButton,
+        cancelButton,
+        demoCounterpartCompleteButton,
+        demoCounterpartRateButton,
+        '</div>',
+        '</li>'
+      ].join('');
+    }).join('');
+
+    if (highlightRequestId) {
+      const node = list.querySelector(`[data-request-id="${highlightRequestId}"]`);
+      setEntityHighlight(node);
+    }
+  }
+
+  function openRatingModal(requestId, authorSide) {
+    const modal = document.getElementById('ratingModal');
+    const form = document.getElementById('ratingForm');
+    if (!modal || !form) {
+      return;
+    }
+
+    const normalizedSide = authorSide === 'counterpart' ? 'counterpart' : 'self';
+    state.activeRatingRequestId = requestId;
+    state.activeRatingAuthorSide = normalizedSide;
+
+    const entitiesState = loadEntitiesState();
+    const existing = getRatingBySide(entitiesState, requestId, normalizedSide);
+    const starsValue = existing ? String(existing.stars) : '';
+    const reasonValue = existing && existing.reasonCode ? existing.reasonCode : '';
+
+    form.reset();
+    const starsInputs = form.querySelectorAll('input[name="stars"]');
+    starsInputs.forEach((input) => {
+      input.checked = input.value === starsValue;
+    });
+    const reason = document.getElementById('ratingReason');
+    if (reason) {
+      reason.value = reasonValue;
+    }
+
+    const reasonWrap = document.getElementById('ratingReasonWrap');
+    const requiresReason = Number(starsValue) > 0 && Number(starsValue) <= 2;
+    if (reasonWrap) {
+      reasonWrap.classList.toggle('hidden', !requiresReason);
+    }
+    if (reason) {
+      reason.required = requiresReason;
+    }
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    track('open_rating_modal', { requestId, authorSide: normalizedSide });
+  }
+
+  function closeRatingModal() {
+    const modal = document.getElementById('ratingModal');
+    if (!modal) {
+      return;
+    }
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+    state.activeRatingRequestId = '';
+    state.activeRatingAuthorSide = 'self';
+  }
+
+  function initRatingModal() {
+    const modal = document.getElementById('ratingModal');
+    const form = document.getElementById('ratingForm');
+    if (!modal || !form) {
+      return;
+    }
+
+    document.querySelectorAll('[data-close-rating]').forEach((button) => {
+      button.addEventListener('click', closeRatingModal);
+    });
+
+    const starsInputs = form.querySelectorAll('input[name="stars"]');
+    const reason = document.getElementById('ratingReason');
+    const reasonWrap = document.getElementById('ratingReasonWrap');
+
+    const syncReasonState = () => {
+      const selected = form.querySelector('input[name="stars"]:checked');
+      const stars = Number(selected ? selected.value : 0);
+      const requiresReason = stars > 0 && stars <= 2;
+      if (reasonWrap) {
+        reasonWrap.classList.toggle('hidden', !requiresReason);
+      }
+      if (reason) {
+        reason.required = requiresReason;
+      }
+    };
+
+    starsInputs.forEach((input) => {
+      input.addEventListener('change', syncReasonState);
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!requireAuthForAction('requests.open', 'submit_rating')) {
+        return;
+      }
+
+      const requestId = state.activeRatingRequestId;
+      const authorSide = state.activeRatingAuthorSide === 'counterpart' ? 'counterpart' : 'self';
+      if (!requestId) {
+        return;
+      }
+
+      if (authorSide === 'counterpart' && !state.uiDemoMode) {
+        showToast('d.toast.error.generic', 'error');
+        return;
+      }
+
+      syncReasonState();
+      if (!form.reportValidity()) {
+        return;
+      }
+
+      const selectedStars = form.querySelector('input[name="stars"]:checked');
+      const stars = Number(selectedStars ? selectedStars.value : 0);
+      const reasonCode = reason && reason.value ? reason.value : null;
+      if (stars <= 2 && !reasonCode) {
+        return;
+      }
+
+      const submitButton = form.querySelector('button[type="submit"]');
+      setButtonLoading(submitButton, true, t('d.invite.submitting'));
+      persistUiSubmitMeta('conductRating', { status: 'pending', requestId, authorSide });
+
+      try {
+        await callMockApi('submit_conduct_rating', { requestId, stars, reasonCode, authorSide });
+        const nowIso = new Date().toISOString();
+        let txResult = null;
+
+        updateEntitiesState((draft) => {
+          const request = draft.requests.find((entry) => entry.id === requestId);
+          if (!request || request.status === 'CANCELLED') {
+            return draft;
+          }
+          request.tryout = normalizeTryoutState(request);
+          if (request.status !== 'COMPLETED' || !request.tryout.verifiedAt) {
+            return draft;
+          }
+
+          normalizeTargetIdentity(request);
+          const subject = getRequestSubject(request);
+
+          let rating = draft.ratings.find((entry) => entry.requestId === requestId && entry.authorSide === authorSide);
+          if (!rating) {
+            rating = {
+              id: makeUnifiedId('rat'),
+              requestId,
+              threadId: request.threadId || '',
+              authorSide,
+              subjectType: subject.subjectType,
+              subjectId: subject.subjectId,
+              stars,
+              reasonCode: stars <= 2 ? reasonCode : null,
+              submittedAt: nowIso,
+              revealedAt: null,
+              countedAt: null,
+              publicEligible: false
+            };
+            draft.ratings.push(rating);
+          } else {
+            rating.threadId = request.threadId || rating.threadId;
+            rating.subjectType = subject.subjectType;
+            rating.subjectId = subject.subjectId;
+            rating.stars = stars;
+            rating.reasonCode = stars <= 2 ? reasonCode : null;
+            rating.submittedAt = nowIso;
+            rating.publicEligible = false;
+            rating.countedAt = null;
+            rating.revealedAt = null;
+          }
+
+          applyRatingTimeoutsInDraft(draft, nowIso);
+          recomputeReputationInDraft(draft, nowIso);
+
+          const selfRating = getRatingBySide(draft, requestId, 'self');
+          const counterpartRating = getRatingBySide(draft, requestId, 'counterpart');
+          txResult = {
+            requestId,
+            authorSide,
+            revealed: !!(selfRating && counterpartRating),
+            counted: !!((selfRating && isRatingCounted(selfRating)) && (counterpartRating && isRatingCounted(counterpartRating)))
+          };
+          return draft;
+        });
+
+        track('submit_conduct_rating', { requestId, authorSide, stars, reasonCode: reasonCode || '' });
+        if (txResult && txResult.revealed) {
+          track('conduct_rating_revealed', { requestId });
+        }
+        track('conduct_score_recomputed', { requestId });
+        persistUiSubmitMeta('conductRating', { status: 'success', ...(txResult || { requestId, authorSide }) });
+        showToast('d.requests.rating.saved', 'success');
+        closeRatingModal();
+        renderRequestsPage(getHashParam('request'));
+        renderResults();
+        renderCompareDrawer();
+        applyProfileStateToDOM();
+      } catch (_err) {
+        persistUiSubmitMeta('conductRating', { status: 'error', requestId, authorSide });
+        showToast('d.toast.error.generic', 'error');
+      } finally {
+        setButtonLoading(submitButton, false);
+      }
+    });
+  }
+
+  function initRequestsPage() {
+    const list = document.getElementById('requestsList');
+    if (!list) {
+      return;
+    }
+
+    const render = () => renderRequestsPage(getHashParam('request'));
+    render();
+
+    list.addEventListener('click', async (event) => {
+      const cancelButton = event.target.closest('[data-action="cancel-request"]');
+      if (cancelButton) {
+        const requestId = cancelButton.dataset.requestId;
+        if (!requestId) {
+          return;
+        }
+        if (!requireAuthForAction('requests.open', 'cancel_request')) {
+          return;
+        }
+
+        setButtonLoading(cancelButton, true, t('d.invite.submitting'));
+        persistUiSubmitMeta('requestCancel', { status: 'pending', requestId });
+
+        try {
+          await callMockApi('request_cancel', { requestId });
+          const nowIso = new Date().toISOString();
+          let txResult = null;
+
+          updateEntitiesState((entitiesState) => {
+            const request = entitiesState.requests.find((entry) => entry.id === requestId);
+            if (!request || request.status === 'CANCELLED') {
+              return entitiesState;
+            }
+
+            request.status = 'CANCELLED';
+            request.updatedAt = nowIso;
+
+            const thread = entitiesState.threads.find((entry) => entry.id === request.threadId);
+            if (thread) {
+              const systemText = `${t('d.system.requestCancelled')} ${request.targetLabel}.`;
+              thread.messages.push(createEntityMessage('SYSTEM', 'system', systemText, nowIso));
+              thread.lastMessageAt = nowIso;
+              thread.updatedAt = nowIso;
+            }
+
+            const notification = createNotificationWithDedupe(entitiesState.notifications, {
+              type: 'REQUEST_CANCELLED',
+              title: t('d.notifications.title.requestCancelled'),
+              body: `${request.targetLabel} · ${getGameLabel(request.game)}`,
+              requestId: request.id,
+              threadId: request.threadId,
+              deepLink: getRequestDeepLink(request.id)
+            }, nowIso);
+
+            applyRatingTimeoutsInDraft(entitiesState, nowIso);
+            recomputeReputationInDraft(entitiesState, nowIso);
+
+            txResult = {
+              requestId: request.id,
+              threadId: request.threadId,
+              notificationId: notification.id
+            };
+            return entitiesState;
+          });
+
+          persistUiSubmitMeta('requestCancel', {
+            status: 'success',
+            ...(txResult || { requestId })
+          });
+          showToast('d.toast.requestCancelled', 'success');
+          render();
+        } catch (_err) {
+          persistUiSubmitMeta('requestCancel', { status: 'error', requestId });
+          showToast('d.toast.error.generic', 'error');
+        } finally {
+          setButtonLoading(cancelButton, false);
+        }
+        return;
+      }
+
+      const confirmCompletedButton = event.target.closest('[data-action="confirm-completed"]');
+      if (confirmCompletedButton) {
+        const requestId = confirmCompletedButton.dataset.requestId;
+        if (!requestId) {
+          return;
+        }
+        if (!requireAuthForAction('requests.open', 'confirm_completed')) {
+          return;
+        }
+
+        setButtonLoading(confirmCompletedButton, true, t('d.requests.processing'));
+        persistUiSubmitMeta('requestCompletion', { status: 'pending', requestId, side: 'self' });
+
+        try {
+          await callMockApi('request_confirm_completion', { requestId, side: 'self' });
+          const nowIso = new Date().toISOString();
+          let txResult = null;
+
+          updateEntitiesState((draft) => {
+            const request = draft.requests.find((entry) => entry.id === requestId);
+            if (!request || request.status === 'CANCELLED') {
+              return draft;
+            }
+
+            request.tryout = normalizeTryoutState(request);
+            if (!request.tryout.selfConfirmedAt) {
+              request.tryout.selfConfirmedAt = nowIso;
+            }
+            if (request.tryout.selfConfirmedAt && request.tryout.counterpartConfirmedAt) {
+              request.status = 'COMPLETED';
+              request.tryout.verifiedAt = request.tryout.verifiedAt || nowIso;
+              request.tryout.ratingWindowOpenedAt = request.tryout.ratingWindowOpenedAt || request.tryout.verifiedAt;
+              request.tryout.ratingWindowExpiresAt = request.tryout.ratingWindowExpiresAt
+                || addHoursIso(request.tryout.ratingWindowOpenedAt, CONDUCT_RATING_WINDOW_HOURS);
+            }
+            request.updatedAt = nowIso;
+
+            const thread = draft.threads.find((entry) => entry.id === request.threadId);
+            if (thread) {
+              thread.messages.push(createEntityMessage('SYSTEM', 'system', t('d.requests.system.selfCompleted'), nowIso));
+              thread.lastMessageAt = nowIso;
+              thread.updatedAt = nowIso;
+            }
+
+            applyRatingTimeoutsInDraft(draft, nowIso);
+            recomputeReputationInDraft(draft, nowIso);
+
+            txResult = {
+              requestId,
+              verified: request.status === 'COMPLETED' && !!request.tryout.verifiedAt
+            };
+            return draft;
+          });
+
+          track('request_confirm_completion', { requestId, side: 'self' });
+          if (txResult && txResult.verified) {
+            track('request_verify_tryout', { requestId });
+          }
+          track('conduct_score_recomputed', { requestId });
+          persistUiSubmitMeta('requestCompletion', { status: 'success', ...(txResult || { requestId }) });
+          showToast('d.requests.completion.saved', 'success');
+          render();
+        } catch (_err) {
+          persistUiSubmitMeta('requestCompletion', { status: 'error', requestId, side: 'self' });
+          showToast('d.toast.error.generic', 'error');
+        } finally {
+          setButtonLoading(confirmCompletedButton, false);
+        }
+        return;
+      }
+
+      const demoCounterpartCompleteButton = event.target.closest('[data-action="demo-counterpart-complete"]');
+      if (demoCounterpartCompleteButton) {
+        const requestId = demoCounterpartCompleteButton.dataset.requestId;
+        if (!requestId) {
+          return;
+        }
+        if (!requireAuthForAction('requests.open', 'demo_counterpart_complete')) {
+          return;
+        }
+        if (!state.uiDemoMode) {
+          return;
+        }
+
+        setButtonLoading(demoCounterpartCompleteButton, true, t('d.requests.processing'));
+        persistUiSubmitMeta('requestCompletion', { status: 'pending', requestId, side: 'counterpart' });
+
+        try {
+          await callMockApi('request_confirm_completion', { requestId, side: 'counterpart' });
+          const nowIso = new Date().toISOString();
+          let txResult = null;
+
+          updateEntitiesState((draft) => {
+            const request = draft.requests.find((entry) => entry.id === requestId);
+            if (!request || request.status === 'CANCELLED') {
+              return draft;
+            }
+
+            request.tryout = normalizeTryoutState(request);
+            if (!request.tryout.counterpartConfirmedAt) {
+              request.tryout.counterpartConfirmedAt = nowIso;
+            }
+            if (request.tryout.selfConfirmedAt && request.tryout.counterpartConfirmedAt) {
+              request.status = 'COMPLETED';
+              request.tryout.verifiedAt = request.tryout.verifiedAt || nowIso;
+              request.tryout.ratingWindowOpenedAt = request.tryout.ratingWindowOpenedAt || request.tryout.verifiedAt;
+              request.tryout.ratingWindowExpiresAt = request.tryout.ratingWindowExpiresAt
+                || addHoursIso(request.tryout.ratingWindowOpenedAt, CONDUCT_RATING_WINDOW_HOURS);
+            }
+            request.updatedAt = nowIso;
+
+            const thread = draft.threads.find((entry) => entry.id === request.threadId);
+            if (thread) {
+              thread.messages.push(createEntityMessage('SYSTEM', 'system', t('d.requests.system.counterpartCompleted'), nowIso));
+              thread.lastMessageAt = nowIso;
+              thread.updatedAt = nowIso;
+            }
+
+            applyRatingTimeoutsInDraft(draft, nowIso);
+            recomputeReputationInDraft(draft, nowIso);
+            txResult = {
+              requestId,
+              verified: request.status === 'COMPLETED' && !!request.tryout.verifiedAt
+            };
+            return draft;
+          });
+
+          track('request_confirm_completion', { requestId, side: 'counterpart' });
+          if (txResult && txResult.verified) {
+            track('request_verify_tryout', { requestId });
+          }
+          track('conduct_score_recomputed', { requestId });
+          persistUiSubmitMeta('requestCompletion', { status: 'success', ...(txResult || { requestId }) });
+          showToast('d.requests.completion.saved', 'success');
+          render();
+        } catch (_err) {
+          persistUiSubmitMeta('requestCompletion', { status: 'error', requestId, side: 'counterpart' });
+          showToast('d.toast.error.generic', 'error');
+        } finally {
+          setButtonLoading(demoCounterpartCompleteButton, false);
+        }
+        return;
+      }
+
+      const openRatingButton = event.target.closest('[data-action="open-rating"]');
+      if (openRatingButton) {
+        const requestId = openRatingButton.dataset.requestId;
+        const authorSide = openRatingButton.dataset.authorSide || 'self';
+        if (!requestId) {
+          return;
+        }
+        if (!requireAuthForAction('requests.open', 'open_rating')) {
+          return;
+        }
+        openRatingModal(requestId, authorSide);
+        return;
+      }
+
+      const demoCounterpartRateButton = event.target.closest('[data-action="demo-counterpart-rate"]');
+      if (demoCounterpartRateButton) {
+        const requestId = demoCounterpartRateButton.dataset.requestId;
+        if (!requestId || !state.uiDemoMode) {
+          return;
+        }
+        if (!requireAuthForAction('requests.open', 'demo_counterpart_rate')) {
+          return;
+        }
+        openRatingModal(requestId, 'counterpart');
+        return;
+      }
+
+      const openThreadButton = event.target.closest('[data-action="open-request-thread"]');
+      if (openThreadButton) {
+        const threadId = openThreadButton.dataset.threadId;
+        if (!threadId) {
+          return;
+        }
+        window.location.href = getThreadDeepLink(threadId);
+      }
+    });
+
+    window.addEventListener('hashchange', () => {
+      render();
+    });
+  }
+
+  function renderMessagesPage() {
+    const threadsList = document.getElementById('threadsList');
+    const threadsEmpty = document.getElementById('threadsEmpty');
+    const messageList = document.getElementById('messageList');
+    const messagesEmpty = document.getElementById('messagesEmpty');
+    const recipient = document.getElementById('messageRecipient');
+    const sendButton = document.getElementById('messageSendBtn');
+    if (!threadsList || !threadsEmpty || !messageList || !messagesEmpty) {
+      return;
+    }
+
+    const entitiesState = loadEntitiesState();
+    const threads = entitiesState.threads
+      .slice()
+      .sort((a, b) => new Date(b.lastMessageAt || b.updatedAt || 0).getTime() - new Date(a.lastMessageAt || a.updatedAt || 0).getTime());
+
+    const hashThreadId = getHashParam('thread');
+    if (hashThreadId && threads.some((thread) => thread.id === hashThreadId)) {
+      state.activeThreadId = hashThreadId;
+      saveUnifiedState('ui.messaging.activeThreadId', hashThreadId);
+    } else if (!state.activeThreadId) {
+      const persisted = loadUnifiedState('ui.messaging.activeThreadId', '', () => '');
+      if (persisted && threads.some((thread) => thread.id === persisted)) {
+        state.activeThreadId = persisted;
+      } else {
+        state.activeThreadId = threads.length ? threads[0].id : '';
+      }
+    }
+
+    if (!threads.length) {
+      threadsList.innerHTML = '';
+      messageList.innerHTML = '';
+      threadsEmpty.classList.remove('hidden');
+      messagesEmpty.classList.remove('hidden');
+      if (recipient) {
+        recipient.value = '-';
+      }
+      if (sendButton) {
+        sendButton.disabled = true;
+      }
+      return;
+    }
+
+    threadsEmpty.classList.add('hidden');
+    if (sendButton) {
+      sendButton.disabled = false;
+    }
+
+    threadsList.innerHTML = threads.map((thread) => {
+      const unreadCount = entitiesState.notifications.filter((notification) => !notification.read && notification.threadId === thread.id).length;
+      const isActive = thread.id === state.activeThreadId;
+      return [
+        `<li class="list-row thread-item ${isActive ? 'active' : ''}" data-thread-id="${thread.id}">`,
+        `<strong>${thread.title}</strong>`,
+        `<span>${thread.messages.length} ${t('d.messages.meta.count')} · ${unreadCount} ${t('d.messages.meta.unread')}</span>`,
+        '</li>'
+      ].join('');
+    }).join('');
+
+    const activeThread = threads.find((thread) => thread.id === state.activeThreadId) || threads[0];
+    if (!activeThread) {
+      messageList.innerHTML = '';
+      messagesEmpty.classList.remove('hidden');
+      if (recipient) {
+        recipient.value = '-';
+      }
+      return;
+    }
+
+    if (activeThread.id !== state.activeThreadId) {
+      state.activeThreadId = activeThread.id;
+      saveUnifiedState('ui.messaging.activeThreadId', activeThread.id);
+    }
+
+    if (recipient) {
+      recipient.value = activeThread.title;
+    }
+
+    const actor = resolveActorIdentity();
+    messageList.innerHTML = (activeThread.messages || []).map((message) => {
+      const isSelf = message.kind === 'USER' && sanitizeThreadToken(message.sender) === sanitizeThreadToken(actor.handle);
+      const bubbleClass = isSelf ? 'bubble self' : 'bubble';
+      return `<p class="${bubbleClass}">${message.text}</p>`;
+    }).join('');
+
+    messagesEmpty.classList.toggle('hidden', (activeThread.messages || []).length > 0);
+
+    if (hashThreadId && hashThreadId === activeThread.id) {
+      const activeNode = threadsList.querySelector(`[data-thread-id="${hashThreadId}"]`);
+      setEntityHighlight(activeNode);
+    }
+  }
+
+  function initMessagesPage() {
+    const threadsList = document.getElementById('threadsList');
+    const form = document.getElementById('messageSendForm');
+    const input = document.getElementById('messageInput');
+    if (!threadsList || !form || !input) {
+      return;
+    }
+
+    const render = () => renderMessagesPage();
+    render();
+
+    threadsList.addEventListener('click', (event) => {
+      const item = event.target.closest('[data-thread-id]');
+      if (!item) {
+        return;
+      }
+      state.activeThreadId = item.dataset.threadId || '';
+      saveUnifiedState('ui.messaging.activeThreadId', state.activeThreadId);
+      render();
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) {
+        return;
+      }
+      if (!state.activeThreadId) {
+        return;
+      }
+      if (!requireAuthForAction('messages.compose', 'send')) {
+        return;
+      }
+
+      const submit = document.getElementById('messageSendBtn') || form.querySelector('button[type="submit"]');
+      const text = input.value.trim();
+      if (!text) {
+        return;
+      }
+
+      setButtonLoading(submit, true, t('d.messages.sending'));
+      persistUiSubmitMeta('messageSend', { status: 'pending', threadId: state.activeThreadId });
+
+      try {
+        await callMockApi('message_send', { threadId: state.activeThreadId, text });
+        const actor = resolveActorIdentity();
+        const nowIso = new Date().toISOString();
+        let txResult = null;
+
+        updateEntitiesState((entitiesState) => {
+          const thread = entitiesState.threads.find((entry) => entry.id === state.activeThreadId);
+          if (!thread) {
+            return entitiesState;
+          }
+
+          thread.messages.push(createEntityMessage('USER', actor.handle, text, nowIso));
+          thread.lastMessageAt = nowIso;
+          thread.updatedAt = nowIso;
+
+          const notification = createNotificationWithDedupe(entitiesState.notifications, {
+            type: 'MESSAGE_POSTED',
+            title: t('d.notifications.title.messagePosted'),
+            body: `${thread.title}`,
+            requestId: '',
+            threadId: thread.id,
+            deepLink: getThreadDeepLink(thread.id)
+          }, nowIso);
+
+          txResult = {
+            threadId: thread.id,
+            notificationId: notification.id
+          };
+          return entitiesState;
+        });
+
+        saveUnifiedState('ui.messaging.activeThreadId', state.activeThreadId);
+        persistUiSubmitMeta('messageSend', {
+          status: 'success',
+          ...(txResult || { threadId: state.activeThreadId })
+        });
+        input.value = '';
+        showToast('d.toast.messageSent', 'success');
+        render();
+      } catch (_err) {
+        persistUiSubmitMeta('messageSend', { status: 'error', threadId: state.activeThreadId });
+        showToast('d.toast.error.generic', 'error');
+      } finally {
+        setButtonLoading(submit, false);
+      }
+    });
+
+    window.addEventListener('hashchange', render);
+  }
+
+  function renderNotificationsPage() {
+    const unreadList = document.getElementById('notificationsUnreadList');
+    const readList = document.getElementById('notificationsReadList');
+    const unreadEmpty = document.getElementById('notificationsUnreadEmpty');
+    const readEmpty = document.getElementById('notificationsReadEmpty');
+    if (!unreadList || !readList || !unreadEmpty || !readEmpty) {
+      return;
+    }
+
+    const entitiesState = loadEntitiesState();
+    const notifications = entitiesState.notifications
+      .slice()
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    const unread = notifications.filter((entry) => !entry.read);
+    const read = notifications.filter((entry) => entry.read);
+
+    const renderItem = (notification, isUnread) => [
+      `<li class="list-row notification-item ${isUnread ? 'unread' : 'read'}" data-notification-id="${notification.id}">`,
+      `<strong>${notification.title}</strong>`,
+      `<span>${notification.body}</span>`,
+      '<div class="list-row-actions">',
+      `<button type="button" class="button ghost small" data-action="open-notification" data-notification-id="${notification.id}">${t('d.notifications.open')}</button>`,
+      `<button type="button" class="button ghost small" data-action="toggle-notification-read" data-notification-id="${notification.id}">${isUnread ? t('d.notifications.markRead') : t('d.notifications.markUnread')}</button>`,
+      '</div>',
+      '</li>'
+    ].join('');
+
+    unreadList.innerHTML = unread.map((entry) => renderItem(entry, true)).join('');
+    readList.innerHTML = read.map((entry) => renderItem(entry, false)).join('');
+    unreadEmpty.classList.toggle('hidden', unread.length > 0);
+    readEmpty.classList.toggle('hidden', read.length > 0);
+  }
+
+  function initNotificationsPage() {
+    const unreadList = document.getElementById('notificationsUnreadList');
+    const readList = document.getElementById('notificationsReadList');
+    if (!unreadList || !readList) {
+      return;
+    }
+
+    const render = () => renderNotificationsPage();
+    render();
+
+    const listHandler = (event) => {
+      const openButton = event.target.closest('[data-action="open-notification"]');
+      if (openButton) {
+        const notificationId = openButton.dataset.notificationId;
+        if (!notificationId) {
+          return;
+        }
+        const entitiesState = loadEntitiesState();
+        const found = entitiesState.notifications.find((entry) => entry.id === notificationId);
+        if (!found) {
+          return;
+        }
+        updateEntitiesState((draft) => {
+          const current = draft.notifications.find((entry) => entry.id === notificationId);
+          if (current) {
+            current.read = true;
+            current.updatedAt = new Date().toISOString();
+          }
+          return draft;
+        });
+        render();
+        if (found.deepLink) {
+          window.location.href = found.deepLink;
+        }
+        return;
+      }
+
+      const toggleButton = event.target.closest('[data-action="toggle-notification-read"]');
+      if (toggleButton) {
+        const notificationId = toggleButton.dataset.notificationId;
+        if (!notificationId) {
+          return;
+        }
+        updateEntitiesState((draft) => {
+          const current = draft.notifications.find((entry) => entry.id === notificationId);
+          if (current) {
+            current.read = !current.read;
+            current.updatedAt = new Date().toISOString();
+          }
+          return draft;
+        });
+        render();
+      }
+    };
+
+    unreadList.addEventListener('click', listHandler);
+    readList.addEventListener('click', listHandler);
+
+    const markAllReadButton = document.getElementById('markAllReadBtn');
+    if (markAllReadButton) {
+      markAllReadButton.addEventListener('click', async () => {
+        if (!requireAuthForAction('notifications.updates', 'mark_all_read')) {
+          return;
+        }
+
+        setButtonLoading(markAllReadButton, true, t('d.notifications.marking'));
+        persistUiSubmitMeta('markAllRead', { status: 'pending' });
+
+        try {
+          await callMockApi('notifications_mark_all_read', {});
+          const nowIso = new Date().toISOString();
+          updateEntitiesState((draft) => {
+            draft.notifications.forEach((entry) => {
+              if (!entry.read) {
+                entry.read = true;
+                entry.updatedAt = nowIso;
+              }
+            });
+            return draft;
+          });
+          persistUiSubmitMeta('markAllRead', { status: 'success' });
+          showToast('d.toast.notificationsMarkedRead', 'success');
+          render();
+        } catch (_err) {
+          persistUiSubmitMeta('markAllRead', { status: 'error' });
+          showToast('d.toast.error.generic', 'error');
+        } finally {
+          setButtonLoading(markAllReadButton, false);
+        }
+      });
+    }
   }
 
   function applyFiltersTracking() {
@@ -3360,7 +5258,11 @@
         track('click_invite_tryout', { handle: state.compare.join(','), game: state.game === GAME_IDS.ANY ? 'mixed' : state.game });
         state.metrics.tryouts += 1;
         syncMetrics();
-        openInviteModal({ type: 'multi', game: state.game === GAME_IDS.ANY ? GAME_IDS.OVERWATCH : state.game });
+        openInviteModal({
+          type: 'multi',
+          compareHandles: state.compare.slice(),
+          game: state.game === GAME_IDS.ANY ? GAME_IDS.OVERWATCH : state.game
+        });
       });
     }
 
@@ -3382,19 +5284,94 @@
       if (!form.reportValidity()) {
         return;
       }
+      if (!requireAuthForAction('invite.modal', 'invite_submit')) {
+        return;
+      }
 
       const submit = form.querySelector('button[type="submit"]');
       setButtonLoading(submit, true, t('d.invite.submitting'));
       persistUiSubmitMeta('invite', { status: 'pending' });
 
-      const game = form.querySelector('#inviteGame').value;
+      const game = normalizeGameId(form.querySelector('#inviteGame').value, GAME_IDS.OVERWATCH);
       const role = form.querySelector('#inviteRole').value;
       const slot = form.querySelector('#inviteSlot').value;
+      const notes = form.querySelector('#inviteNotes') ? form.querySelector('#inviteNotes').value : '';
       const success = document.getElementById('inviteSuccess');
 
       try {
         await callMockApi('invite_submit', { game, role, slot, region: state.region });
         track('submit_invite_request', { game, role, region: state.region });
+
+        const context = state.selectedInviteContext || { type: 'multi', compareHandles: state.compare.slice(), game };
+        const actor = resolveActorIdentity();
+        const nowIso = new Date().toISOString();
+        let txResult = null;
+
+        updateEntitiesState((entitiesState) => {
+          const thread = findOrCreateThread(entitiesState, context, game, actor.handle, nowIso);
+          const targetIdentity = getTargetIdentityFromContext(context);
+          const request = {
+            id: makeUnifiedId('req'),
+            status: 'PENDING',
+            createdAt: nowIso,
+            updatedAt: nowIso,
+            game,
+            role: String(role || '').trim(),
+            slot: String(slot || '').trim(),
+            notes: String(notes || '').trim(),
+            source: {
+              type: context.type || 'multi',
+              handle: context.handle || '',
+              teamSlug: context.team || context.teamSlug || '',
+              compareHandles: Array.isArray(context.compareHandles) ? context.compareHandles.slice() : []
+            },
+            targetLabel: getTargetLabelFromContext(context),
+            targetType: targetIdentity.targetType,
+            targetId: targetIdentity.targetId,
+            threadId: thread.id,
+            createdBy: {
+              username: actor.username,
+              handle: actor.handle
+            },
+            tryout: {
+              selfConfirmedAt: null,
+              counterpartConfirmedAt: null,
+              verifiedAt: null,
+              ratingWindowOpenedAt: null,
+              ratingWindowExpiresAt: null,
+              ratingRevealState: 'pending'
+            }
+          };
+          entitiesState.requests.push(request);
+
+          if (!Array.isArray(thread.requestIds)) {
+            thread.requestIds = [];
+          }
+          if (!thread.requestIds.includes(request.id)) {
+            thread.requestIds.push(request.id);
+          }
+
+          const systemText = `${t('d.system.inviteCreated')} ${request.targetLabel} · ${getGameLabel(request.game)} · ${request.role} · ${request.slot}`;
+          thread.messages.push(createEntityMessage('SYSTEM', 'system', systemText, nowIso));
+          thread.lastMessageAt = nowIso;
+          thread.updatedAt = nowIso;
+
+          const notification = createNotificationWithDedupe(entitiesState.notifications, {
+            type: 'REQUEST_CREATED',
+            title: t('d.notifications.title.requestCreated'),
+            body: `${request.targetLabel} · ${getGameLabel(request.game)}`,
+            requestId: request.id,
+            threadId: thread.id,
+            deepLink: getRequestDeepLink(request.id)
+          }, nowIso);
+
+          txResult = {
+            requestId: request.id,
+            threadId: thread.id,
+            notificationId: notification.id
+          };
+          return entitiesState;
+        });
 
         if (success) {
           success.classList.remove('hidden');
@@ -3402,7 +5379,7 @@
 
         persistUiSubmitMeta('invite', {
           status: 'success',
-          requestId: makeUnifiedId('invite')
+          ...(txResult || { requestId: makeUnifiedId('invite') })
         });
         showToast('d.invite.success', 'success');
       } catch (_err) {
@@ -3430,6 +5407,9 @@
     document.querySelectorAll('#connectModal [data-provider]').forEach((button) => {
       button.addEventListener('click', async () => {
         const provider = button.dataset.provider;
+        if (!requireAuthForAction('connect.modal', 'connect_provider')) {
+          return;
+        }
         setButtonLoading(button, true, t('d.connect.connecting'));
         persistUiSubmitMeta('connect', { status: 'pending', provider });
 
@@ -3437,6 +5417,43 @@
           await callMockApi('connect_provider', { provider });
           track('click_connect_provider', { provider });
           track('complete_connect_fake', { provider });
+
+          const nowIso = new Date().toISOString();
+          const providerKey = normalizeProviderKey(provider);
+          updateUnifiedState(
+            'accounts',
+            (previous) => {
+              const next = previous && typeof previous === 'object' ? { ...previous } : {};
+              next[providerKey] = {
+                providerLabel: provider,
+                status: 'CONNECTED_PENDING',
+                updatedAt: nowIso
+              };
+              return next;
+            },
+            {}
+          );
+
+          const normalizedProfile = normalizeProfileState(state.profile);
+          if (normalizedProfile.publicProfile.proofStatus === PROOF_STATUS.SELF_DECLARED) {
+            normalizedProfile.publicProfile.proofStatus = PROOF_STATUS.ACCOUNT_CONNECTED;
+            state.profile = normalizedProfile;
+            persistProfileState();
+            applyProfileStateToDOM();
+          }
+
+          updateEntitiesState((entitiesState) => {
+            createNotificationWithDedupe(entitiesState.notifications, {
+              type: 'ACCOUNT_CONNECTED_PENDING',
+              title: t('d.notifications.title.accountConnectedPending'),
+              body: formatTemplate(t('d.notifications.body.accountConnectedPending'), { provider }),
+              requestId: `connect:${providerKey}`,
+              threadId: '',
+              deepLink: 'index.html#profile'
+            }, nowIso);
+            return entitiesState;
+          });
+          renderResults();
 
           const success = document.getElementById('connectSuccess');
           if (success) {
@@ -3884,13 +5901,32 @@
       const detail = (event && event.detail && typeof event.detail === 'object') ? event.detail : {};
       const role = detail.role || 'unknown';
       const game = detail.game || 'unknown';
+      const normalizedGame = normalizeGameId(game, '');
+      const gameLabel = normalizedGame ? getGameLabel(normalizedGame) : String(game || 'unknown');
+      const roleLabel = String(role || 'unknown');
+      const nowIso = new Date().toISOString();
+      const requestId = detail.requestId || makeUnifiedId('waitlist');
 
       track('submit_waitlist', { persona: role, games: game, region: state.region === 'Any' ? 'unknown' : state.region });
       state.metrics.waitlist += 1;
       syncMetrics();
       persistUiSubmitMeta('waitlist', {
         status: 'success',
-        requestId: detail.requestId || makeUnifiedId('waitlist')
+        requestId
+      });
+      updateEntitiesState((entitiesState) => {
+        createNotificationWithDedupe(entitiesState.notifications, {
+          type: 'WAITLIST_JOINED',
+          title: t('d.notifications.title.waitlistJoined'),
+          body: formatTemplate(t('d.notifications.body.waitlistJoined'), {
+            role: roleLabel,
+            game: gameLabel
+          }),
+          requestId,
+          threadId: '',
+          deepLink: 'index.html#waitlist'
+        }, nowIso);
+        return entitiesState;
       });
     });
   }
@@ -3908,6 +5944,7 @@
       if (event.key !== 'Escape') {
         return;
       }
+      closeRatingModal();
       closeInviteModal();
       closeConnectModal();
       closeNetworkModal();
@@ -3921,6 +5958,9 @@
     initNavigationState();
     renderResults();
     renderCompareDrawer();
+    renderRequestsPage(getHashParam('request'));
+    renderMessagesPage();
+    renderNotificationsPage();
   }
 
   document.addEventListener('uspecme:langchange', onLanguageChange);
@@ -3931,12 +5971,18 @@
     initNavigationState();
     initTheme();
     initHeroCTAs();
+    seedEntityStoreIfNeeded();
+    syncConductDerivedStateOnLoad();
     initExplore();
     initInviteModal();
+    initRatingModal();
     initConnectModal();
     initAuthModal();
     initNetworkModal();
     initProfileEditor();
+    initRequestsPage();
+    initMessagesPage();
+    initNotificationsPage();
     initWaitlistTracking();
     initGlobalToasts();
     bindGlobalEsc();

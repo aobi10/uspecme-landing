@@ -219,6 +219,8 @@
       'wait.panel.title': 'Early Access Invite',
       'wait.panel.text': 'Tell us your role and main game to join early access.',
       'wait.panel.cta': 'Open Waitlist',
+      'wait.panel.ctaJoined': 'You\'re on the waitlist \u2713',
+      'wait.validation.error': 'Enter a valid email and select role and main game.',
       'footer.note': 'Early access product in active construction.',
       'modal.title': 'Join the Waitlist',
       'modal.lead': 'Share your details to join the early access list.',
@@ -320,6 +322,8 @@
       'wait.panel.title': 'Early Access Invite',
       'wait.panel.text': 'Nenne uns Rolle und Main Game, um auf die Early-Access-Liste zu kommen.',
       'wait.panel.cta': 'Warteliste öffnen',
+      'wait.panel.ctaJoined': 'Du bist auf der Warteliste \u2713',
+      'wait.validation.error': 'Gib eine gültige E-Mail ein und wähle Rolle sowie Hauptspiel.',
       'footer.note': 'Early-Access-Produkt im aktiven Aufbau.',
       'modal.title': 'Zur Warteliste',
       'modal.lead': 'Teile deine Angaben, um dich für Early Access einzutragen.',
@@ -398,6 +402,7 @@
     }
 
     document.documentElement.lang = currentLang;
+    applyWaitlistCtaState();
   }
 
   function updateLanguageButtons() {
@@ -472,6 +477,32 @@
     if (success) {
       success.classList.add('hidden');
     }
+  }
+
+  function applyWaitlistCtaState() {
+    const buttons = document.querySelectorAll('[data-waitlist-cta]');
+    if (!buttons.length) {
+      return;
+    }
+
+    const waitlistState = loadState('waitlist', {}, () => null);
+    const joined = waitlistState && typeof waitlistState === 'object' && waitlistState.status === 'JOINED';
+
+    buttons.forEach((button) => {
+      if (joined) {
+        button.textContent = translate('wait.panel.ctaJoined');
+        button.disabled = true;
+        button.dataset.waitlistState = 'joined';
+        button.setAttribute('aria-disabled', 'true');
+        return;
+      }
+
+      const labelKey = button.dataset.i18n || 'wait.panel.cta';
+      button.textContent = translate(labelKey);
+      button.disabled = false;
+      button.dataset.waitlistState = 'open';
+      button.removeAttribute('aria-disabled');
+    });
   }
 
   function closeModal() {
@@ -550,6 +581,14 @@
       const email = form.querySelector('input[name="email"]');
       const role = form.querySelector('select[name="role"]');
       const game = form.querySelector('select[name="game"]');
+      const emailValue = email ? email.value.trim() : '';
+      const roleValue = role ? role.value : '';
+      const gameValue = game ? game.value : '';
+      if (!emailValue.includes('@') || !roleValue || !gameValue) {
+        emitToast(translate('wait.validation.error'), 'error');
+        setExternalLoadingState(submit, false);
+        return;
+      }
 
       setExternalLoadingState(submit, true, translate('modal.submitted'));
 
@@ -564,10 +603,12 @@
       );
 
       try {
+        const requestId = makeId('waitlist');
+        const nowIso = new Date().toISOString();
         await mockApi('waitlist_submit', {
-          email: email ? email.value.trim() : '',
-          role: role ? role.value : '',
-          game: game ? game.value : ''
+          email: emailValue,
+          role: roleValue,
+          game: gameValue
         });
 
         if (success) {
@@ -581,22 +622,38 @@
         }
 
         updateState(
-          'ui.waitlistSubmit',
-          (prev) => ({
-            ...(prev && typeof prev === 'object' ? prev : {}),
-            status: 'success',
-            requestId: makeId('waitlist'),
-            completedAt: new Date().toISOString()
+          'waitlist',
+          () => ({
+            status: 'JOINED',
+            email: emailValue,
+            role: roleValue,
+            game: gameValue,
+            requestId,
+            joinedAt: nowIso
           }),
           {}
         );
 
+        updateState(
+          'ui.waitlistSubmit',
+          (prev) => ({
+            ...(prev && typeof prev === 'object' ? prev : {}),
+            status: 'success',
+            requestId,
+            completedAt: nowIso
+          }),
+          {}
+        );
+
+        applyWaitlistCtaState();
         emitToast(translate('modal.success'), 'success');
         document.dispatchEvent(new CustomEvent('usm:waitlist:success', {
           detail: {
-            role: role ? role.value : '',
-            game: game ? game.value : '',
-            requestId: makeId('waitlist')
+            email: emailValue,
+            role: roleValue,
+            game: gameValue,
+            requestId,
+            status: 'JOINED'
           }
         }));
       } catch (_err) {
@@ -634,10 +691,13 @@
     initLanguageControls();
     initProfileAvatarFallbacks();
     initModal();
+    applyWaitlistCtaState();
 
     const defaultLang = safeGetStoredLang();
     setLanguage(defaultLang);
   });
+
+  document.addEventListener('uspecme:langchange', applyWaitlistCtaState);
 
   window.uspecmeTranslate = translate;
   window.uspecmeGetLang = () => currentLang;

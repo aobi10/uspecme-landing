@@ -52,16 +52,8 @@
               <h2 data-d18n="d.module.notifications.mentions">Mentions</h2>
               <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Profile</span>
             </div>
-            <ul class="list-stack">
-              <li class="list-row">
-                <strong>Vienna Ascend</strong>
-                <p data-d18n="d.notifications.item.one">Your profile was mentioned in Vienna Ascend's request thread.</p>
-              </li>
-              <li class="list-row">
-                <strong>FaZe Academy</strong>
-                <span data-d18n="d.notifications.meta.mentions.two">3 profile views · 1 direct mention · Last 24h</span>
-              </li>
-            </ul>
+            <ul id="notificationsUnreadList" class="list-stack"></ul>
+            <p id="notificationsUnreadEmpty" class="micro hidden" data-d18n="d.notifications.empty.unread">No unread notifications.</p>
             <div class="preview-lock" data-preview-lock>
               <p class="preview-lock-note"><strong data-d18n="d.action.openThread">Open full thread</strong><span data-d18n="d.preview.lock.note">Shinobi profile is visible. Log in to unlock full actions.</span></p>
               <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="notifications.mentions" data-lock-action="open_thread" data-d18n="d.preview.lock.cta">Login for full access</button>
@@ -73,16 +65,8 @@
               <h2 data-d18n="d.module.notifications.updates">Request Updates</h2>
               <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Profile</span>
             </div>
-            <ul class="list-stack">
-              <li class="list-row">
-                <strong data-d18n="d.notifications.meta.updates.oneTitle">Rank requirement update</strong>
-                <p data-d18n="d.notifications.item.two">FaZe Academy changed required rank from Diamond to Master.</p>
-              </li>
-              <li class="list-row">
-                <strong data-d18n="d.notifications.meta.updates.twoTitle">Tryout slot shift</strong>
-                <span data-d18n="d.notifications.meta.updates.twoText">Cloud 25 moved Thursday block to 20:30 CET</span>
-              </li>
-            </ul>
+            <ul id="notificationsReadList" class="list-stack"></ul>
+            <p id="notificationsReadEmpty" class="micro hidden" data-d18n="d.notifications.empty.read">No read notifications yet.</p>
             <div class="preview-lock" data-preview-lock>
               <p class="preview-lock-note"><strong data-d18n="d.action.markAllRead">Mark all as read</strong><span data-d18n="d.preview.lock.note">Shinobi profile is visible. Log in to unlock full actions.</span></p>
               <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="notifications.updates" data-lock-action="mark_all_read" data-d18n="d.preview.lock.cta">Login for full access</button>
@@ -93,6 +77,9 @@
             <div class="subpage-card-head">
               <h2 data-d18n="d.module.notifications.system">System Notices</h2>
               <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Profile</span>
+            </div>
+            <div class="row-actions">
+              <button id="markAllReadBtn" type="button" class="button ghost small" data-d18n="d.notifications.markAllRead">Mark all as read</button>
             </div>
             <ul class="list-stack">
               <li class="list-row">

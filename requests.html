@@ -52,20 +52,8 @@
               <h2 data-d18n="d.module.requests.open">Open Requests</h2>
               <span class="preview-tag" data-d18n="d.preview.tag">Shinobi Profile</span>
             </div>
-            <ul class="list-stack">
-              <li class="list-row">
-                <strong>Vienna Ascend · Overwatch</strong>
-                <span data-d18n="d.requests.meta.open.one">Needs: Support + Tank · Rank floor: Master · Tue 20:00 CET</span>
-              </li>
-              <li class="list-row">
-                <strong>Cloud 25 · Marvel Rivals</strong>
-                <span data-d18n="d.requests.meta.open.two">Needs: Scout · Regional scrim cluster · Thu 19:30 CET</span>
-              </li>
-              <li class="list-row">
-                <strong>Liquid Community · LoL</strong>
-                <span data-d18n="d.requests.meta.open.three">Needs: Jungle · Rank floor: Diamond · Weekend block</span>
-              </li>
-            </ul>
+            <ul id="requestsList" class="list-stack"></ul>
+            <p id="requestsEmpty" class="micro hidden" data-d18n="d.requests.empty">No requests yet.</p>
             <div class="preview-lock" data-preview-lock>
               <p class="preview-lock-note"><strong data-d18n="d.action.apply">Apply</strong><span data-d18n="d.preview.lock.note">Shinobi profile is visible. Log in to unlock full actions.</span></p>
               <button type="button" class="button primary small" data-open-auth data-auth-mode="login" data-lock-module="requests.open" data-lock-action="apply" data-d18n="d.preview.lock.cta">Login for full access</button>
@@ -233,6 +221,44 @@
 
       <div class="modal-footer">
         <button type="button" class="button ghost" data-close-modal data-i18n="modal.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ratingModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="ratingTitle">
+    <div class="modal-backdrop" data-close-rating aria-label="Close rating modal"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="ratingTitle" data-d18n="d.rating.title">Rate tryout conduct</h3>
+        <button type="button" class="close" data-close-rating aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="ratingForm" class="form">
+          <fieldset class="rating-stars">
+            <legend data-d18n="d.rating.stars">Stars</legend>
+            <label><input type="radio" name="stars" value="1" required> <span>★1</span></label>
+            <label><input type="radio" name="stars" value="2" required> <span>★2</span></label>
+            <label><input type="radio" name="stars" value="3" required> <span>★3</span></label>
+            <label><input type="radio" name="stars" value="4" required> <span>★4</span></label>
+            <label><input type="radio" name="stars" value="5" required> <span>★5</span></label>
+          </fieldset>
+
+          <label id="ratingReasonWrap" class="hidden">
+            <span data-d18n="d.rating.reason">Reason (required for 1–2 stars)</span>
+            <select id="ratingReason" name="reason">
+              <option value="" selected data-d18n="d.rating.reason.placeholder">Select reason</option>
+              <option value="NO_SHOW" data-d18n="d.rating.reason.no_show">No-show</option>
+              <option value="TOXIC_COMMUNICATION" data-d18n="d.rating.reason.toxic_communication">Toxic communication</option>
+              <option value="UNRELIABLE_COMMITMENT" data-d18n="d.rating.reason.unreliable_commitment">Unreliable commitment</option>
+              <option value="ROLE_MISMATCH" data-d18n="d.rating.reason.role_mismatch">Role mismatch</option>
+            </select>
+          </label>
+
+          <button type="submit" class="button primary wide" data-d18n="d.rating.submit">Submit rating</button>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="button ghost" data-close-rating data-d18n="d.modal.close">Close</button>
       </div>
     </div>
   </div>

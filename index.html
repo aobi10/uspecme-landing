@@ -88,7 +88,10 @@
                   <p data-profile-field="hero.role">Flex DPS</p>
                   <p class="hero-preview-country"><span data-d18n="d.profile.country.label">Country</span>: <span data-profile-field="hero.country">Germany</span></p>
                 </div>
-                <span class="proof-badge rank" data-profile-proof="hero" data-profile-field="hero.proof">Skill Verified</span>
+                <div class="hero-preview-badges">
+                  <span class="proof-badge rank" data-profile-proof="hero" data-profile-field="hero.proof">Skill Verified</span>
+                  <span class="conduct-summary" data-profile-field="hero.conductSummary">★ — (New)</span>
+                </div>
               </div>
 
               <div class="hero-preview-games" data-profile-games="hero">
@@ -277,6 +280,7 @@
               </div>
               <div class="profile-top-actions">
                 <span class="proof-badge rank" data-profile-proof="public" data-profile-field="public.proof">Skill Verified</span>
+                <span class="conduct-summary" data-profile-field="public.conductSummary">★ — (New)</span>
                 <button type="button" class="edit-trigger" data-open-profile-editor data-edit-section="public" data-edit-tooltip hidden>
                   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path d="M3 17.25V21h3.75L19.81 7.94l-3.75-3.75L3 17.25zm17.71-10.04a1.003 1.003 0 000-1.42l-2.5-2.5a1.003 1.003 0 00-1.42 0L14.96 5.1l3.75 3.75 2-1.64z"/>
@@ -422,7 +426,7 @@
           <h2 data-i18n="wait.heading">Join the waitlist</h2>
           <p data-i18n="wait.lead">Get early access to proof-first teamfinding for competitive online games.</p>
         </div>
-        <button type="button" class="button primary" data-open-auth data-auth-mode="register" data-i18n="wait.panel.cta">Open Waitlist</button>
+        <button type="button" class="button primary" data-open-auth data-auth-mode="register" data-waitlist-cta data-i18n="wait.panel.cta">Open Waitlist</button>
       </div>
     </section>
   </main>
