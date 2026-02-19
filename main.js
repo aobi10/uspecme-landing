@@ -99,7 +99,18 @@
     GAME_IDS.RIVALS
   ];
 
-  const EXPLORE_ROLE_OPTIONS = ['Tank', 'Support', 'DPS', 'Jungle', 'IGL', 'Scout'];
+  const ROLE_OPTIONS_BY_GAME = {
+    [GAME_IDS.OVERWATCH]: ['Tank', 'DPS', 'Support'],
+    [GAME_IDS.LOL]: ['Top', 'Jungle', 'Mid', 'ADC', 'Support'],
+    [GAME_IDS.FORTNITE]: ['IGL', 'Fragger', 'Support'],
+    [GAME_IDS.RIVALS]: ['Vanguard', 'Duelist', 'Strategist', 'Scout']
+  };
+  const RANK_OPTIONS_BY_GAME = {
+    [GAME_IDS.OVERWATCH]: PROFILE_RANKS.overwatch.tiers.slice(),
+    [GAME_IDS.LOL]: PROFILE_RANKS.lol.tiers.slice(),
+    [GAME_IDS.FORTNITE]: PROFILE_RANKS.fortnite.tiers.slice(),
+    [GAME_IDS.RIVALS]: PROFILE_RANKS.rivals.tiers.slice()
+  };
   const CONDUCT_REASON_CODES = [
     'NO_SHOW',
     'TOXIC_COMMUNICATION',
@@ -1817,14 +1828,18 @@
       'd.explore.title': 'Explore',
       'd.mode.players': 'Players',
       'd.mode.teams': 'Teams',
+      'd.explore.browse.players': 'Browse player profiles',
+      'd.explore.browse.teams': 'Browse team profiles',
       'd.filter.search': 'Search',
       'd.filter.title': 'Filters',
       'd.filter.role': 'Role',
+      'd.filter.roleNeeded': 'Role needed',
       'd.filter.rank': 'Rank',
       'd.filter.region': 'Region',
       'd.filter.availability': 'Availability',
       'd.filter.proof': 'Proof',
       'd.filter.any': 'Any',
+      'd.filter.gameHint': 'Select a game to filter roles/ranks',
       'd.game.overwatch': 'Overwatch',
       'd.game.lol': 'LoL',
       'd.game.fortnite': 'Fortnite',
@@ -1833,8 +1848,15 @@
       'd.role.support': 'Support',
       'd.role.dps': 'DPS',
       'd.role.flexDps': 'Flex DPS',
+      'd.role.top': 'Top',
       'd.role.jungle': 'Jungle',
+      'd.role.mid': 'Mid',
+      'd.role.adc': 'ADC',
       'd.role.igl': 'IGL',
+      'd.role.fragger': 'Fragger',
+      'd.role.vanguard': 'Vanguard',
+      'd.role.duelist': 'Duelist',
+      'd.role.strategist': 'Strategist',
       'd.role.scout': 'Scout',
       'd.rank.diamondPlus': 'Diamond+',
       'd.rank.masterPlus': 'Master+',
@@ -1882,7 +1904,7 @@
       'd.compare.clear': 'Clear',
       'd.compare.now': 'Compare now',
       'd.compare.hide': 'Hide compare',
-      'd.compare.slot.empty': 'Empty',
+      'd.compare.slot.empty': 'Select player',
       'd.compare.empty': 'Select up to 2 players to compare role, rank, proof, country and availability.',
       'd.compare.invite': 'Invite selected',
       'd.empty': 'No results for current filters.',
@@ -2267,14 +2289,18 @@
       'd.explore.title': 'Explore',
       'd.mode.players': 'Spieler',
       'd.mode.teams': 'Teams',
+      'd.explore.browse.players': 'Spielerprofile durchsuchen',
+      'd.explore.browse.teams': 'Teamprofile durchsuchen',
       'd.filter.search': 'Suche',
       'd.filter.title': 'Filter',
       'd.filter.role': 'Rolle',
+      'd.filter.roleNeeded': 'Benötigte Rolle',
       'd.filter.rank': 'Rank',
       'd.filter.region': 'Region',
       'd.filter.availability': 'Verfügbarkeit',
       'd.filter.proof': 'Proof',
       'd.filter.any': 'Alle',
+      'd.filter.gameHint': 'Wähle ein Spiel, um Rollen/Ranks zu filtern',
       'd.game.overwatch': 'Overwatch',
       'd.game.lol': 'LoL',
       'd.game.fortnite': 'Fortnite',
@@ -2283,8 +2309,15 @@
       'd.role.support': 'Support',
       'd.role.dps': 'DPS',
       'd.role.flexDps': 'Flex DPS',
+      'd.role.top': 'Top',
       'd.role.jungle': 'Jungle',
+      'd.role.mid': 'Mid',
+      'd.role.adc': 'ADC',
       'd.role.igl': 'IGL',
+      'd.role.fragger': 'Fragger',
+      'd.role.vanguard': 'Vanguard',
+      'd.role.duelist': 'Duelist',
+      'd.role.strategist': 'Strategist',
       'd.role.scout': 'Scout',
       'd.rank.diamondPlus': 'Diamond+',
       'd.rank.masterPlus': 'Master+',
@@ -2332,7 +2365,7 @@
       'd.compare.clear': 'Leeren',
       'd.compare.now': 'Jetzt vergleichen',
       'd.compare.hide': 'Vergleich ausblenden',
-      'd.compare.slot.empty': 'Leer',
+      'd.compare.slot.empty': 'Spieler wählen',
       'd.compare.empty': 'Wähle bis zu 2 Spieler für Rollen-, Rank-, Proof-, Herkunftsland- und Verfügbarkeitsvergleich.',
       'd.compare.invite': 'Ausgewählte einladen',
       'd.empty': 'Keine Ergebnisse für diese Filter.',
@@ -2784,6 +2817,7 @@
 
     syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
+    updateExploreModeSemantics();
 
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
@@ -2999,6 +3033,27 @@
     if (role === 'Scout') {
       return t('d.role.scout');
     }
+    if (role === 'Top') {
+      return t('d.role.top');
+    }
+    if (role === 'Mid') {
+      return t('d.role.mid');
+    }
+    if (role === 'ADC') {
+      return t('d.role.adc');
+    }
+    if (role === 'Fragger') {
+      return t('d.role.fragger');
+    }
+    if (role === 'Vanguard') {
+      return t('d.role.vanguard');
+    }
+    if (role === 'Duelist') {
+      return t('d.role.duelist');
+    }
+    if (role === 'Strategist') {
+      return t('d.role.strategist');
+    }
     return role;
   }
 
@@ -3009,10 +3064,71 @@
   }
 
   function getExploreRoleOptions() {
-    if (state.game === GAME_IDS.OVERWATCH) {
-      return ['Any', 'Tank', 'DPS', 'Support'];
+    if (state.game === GAME_IDS.ANY) {
+      return ['Any'];
     }
-    return ['Any'].concat(EXPLORE_ROLE_OPTIONS);
+    return ['Any'].concat(ROLE_OPTIONS_BY_GAME[state.game] || []);
+  }
+
+  function getExploreRankOptions() {
+    if (state.game === GAME_IDS.ANY) {
+      return ['Any'];
+    }
+    return ['Any'].concat(RANK_OPTIONS_BY_GAME[state.game] || []);
+  }
+
+  function setSelectEnabled(select, enabled) {
+    if (!select) {
+      return;
+    }
+    select.disabled = !enabled;
+    const wrap = select.closest('.select-wrap');
+    if (wrap) {
+      wrap.classList.toggle('is-disabled', !enabled);
+      if (!enabled) {
+        wrap.classList.remove('is-open');
+      }
+    }
+    const arrow = wrap ? wrap.querySelector(`[data-select-toggle="${select.id}"]`) : null;
+    if (arrow) {
+      arrow.disabled = !enabled;
+      arrow.setAttribute('aria-disabled', String(!enabled));
+      if (!enabled) {
+        arrow.setAttribute('aria-expanded', 'false');
+      }
+    }
+    const menu = wrap ? wrap.querySelector(`[data-select-menu="${select.id}"]`) : null;
+    if (menu && !enabled) {
+      menu.classList.add('hidden');
+    }
+  }
+
+  function updateGameFilterHint() {
+    const hint = document.getElementById('gameFilterHint');
+    if (!hint) {
+      return;
+    }
+    hint.classList.toggle('hidden', state.game !== GAME_IDS.ANY);
+  }
+
+  function updateExploreModeSemantics() {
+    const browseHint = document.getElementById('exploreBrowseHint');
+    if (browseHint) {
+      const browseKey = state.mode === 'teams'
+        ? 'd.explore.browse.teams'
+        : 'd.explore.browse.players';
+      browseHint.dataset.d18n = browseKey;
+      browseHint.textContent = t(browseKey);
+    }
+
+    const roleLabel = document.getElementById('roleFilterLabel');
+    if (roleLabel) {
+      const roleKey = state.mode === 'teams'
+        ? 'd.filter.roleNeeded'
+        : 'd.filter.role';
+      roleLabel.dataset.d18n = roleKey;
+      roleLabel.textContent = t(roleKey);
+    }
   }
 
   function syncExploreRoleFilterOptions() {
@@ -3029,13 +3145,19 @@
       return formatRole(value);
     });
 
+    const roleEnabled = state.game !== GAME_IDS.ANY;
+    if (!roleEnabled) {
+      state.role = 'Any';
+    }
     const isValidSelection = options.includes(state.role);
     state.role = isValidSelection ? state.role : 'Any';
     roleFilter.value = state.role;
+    setSelectEnabled(roleFilter, roleEnabled);
 
     if (typeof roleFilter._uspecRebuildMenu === 'function') {
       roleFilter._uspecRebuildMenu();
     }
+    updateGameFilterHint();
   }
 
   function getProfileGameKeyFromExploreGame(gameName) {
@@ -3072,8 +3194,8 @@
     }
 
     const gameKey = getExploreRankFilterGameKey();
-    const supportsRankCatalog = Boolean(gameKey && PROFILE_RANKS[gameKey]);
-    const options = supportsRankCatalog ? ['Any'].concat(PROFILE_RANKS[gameKey].tiers) : ['Any'];
+    const supportsRankCatalog = state.game !== GAME_IDS.ANY && Boolean(RANK_OPTIONS_BY_GAME[gameKey]);
+    const options = getExploreRankOptions();
 
     setSelectOptions(rankFilter, options, (value) => {
       if (value === 'Any') {
@@ -3083,24 +3205,18 @@
       return tierKey ? t(tierKey) : value;
     });
 
-    rankFilter.disabled = !supportsRankCatalog;
+    if (!supportsRankCatalog) {
+      state.rank = 'Any';
+    }
     const isValidSelection = options.includes(state.rank);
     state.rank = isValidSelection ? state.rank : 'Any';
     rankFilter.value = state.rank;
-
-    const wrap = rankFilter.closest('.select-wrap');
-    if (wrap) {
-      wrap.classList.toggle('is-disabled', rankFilter.disabled);
-    }
-    const arrow = wrap ? wrap.querySelector(`[data-select-toggle="${rankFilter.id}"]`) : null;
-    if (arrow) {
-      arrow.disabled = rankFilter.disabled;
-      arrow.setAttribute('aria-disabled', String(rankFilter.disabled));
-    }
+    setSelectEnabled(rankFilter, supportsRankCatalog);
 
     if (typeof rankFilter._uspecRebuildMenu === 'function') {
       rankFilter._uspecRebuildMenu();
     }
+    updateGameFilterHint();
   }
 
   function getRankTierKey(gameKey, tier) {
@@ -3659,8 +3775,29 @@
     }
 
     if (state.role !== 'Any') {
-      const roleMatch = team.games.some((entry) => entry.needs.some((need) => need.role === state.role));
+      const roleMatch = team.games.some((entry) => {
+        if (state.game !== GAME_IDS.ANY && entry.game !== state.game) {
+          return false;
+        }
+        return entry.needs.some((need) => need.role === state.role);
+      });
       if (!roleMatch) {
+        return false;
+      }
+    }
+
+    if (state.rank !== 'Any') {
+      const rankMatch = team.games.some((entry) => {
+        if (state.game !== GAME_IDS.ANY && entry.game !== state.game) {
+          return false;
+        }
+        const gameKey = getProfileGameKeyFromExploreGame(entry.game);
+        if (!gameKey) {
+          return false;
+        }
+        return entry.needs.some((need) => extractTierFromExploreRank(gameKey, need.rankMin) === state.rank);
+      });
+      if (!rankMatch) {
         return false;
       }
     }
@@ -3759,18 +3896,27 @@
   }
 
   function renderCompareDrawer() {
+    const compareDrawer = document.getElementById('compareDrawer');
     const compareEmpty = document.getElementById('compareEmpty');
     const compareContent = document.getElementById('compareContent');
     const inviteSelected = document.getElementById('inviteSelected');
     const compareSlotA = document.getElementById('compareSlotA');
     const compareSlotB = document.getElementById('compareSlotB');
     const compareNow = document.getElementById('compareNow');
+    const exploreLayout = compareDrawer ? compareDrawer.closest('.explore-layout') : null;
 
     if (!compareEmpty || !compareContent || !inviteSelected) {
       return;
     }
 
     const selected = players.filter((player) => state.compare.includes(player.handle));
+    const hasCompare = selected.length > 0;
+    if (compareDrawer) {
+      compareDrawer.classList.toggle('is-active', hasCompare);
+    }
+    if (exploreLayout) {
+      exploreLayout.classList.toggle('compare-active', hasCompare);
+    }
     const setSlot = (node, player) => {
       if (!node) return;
       if (player) {
@@ -3787,7 +3933,7 @@
     setSlot(compareSlotA, selected[0]);
     setSlot(compareSlotB, selected[1]);
 
-    if (!selected.length) {
+    if (!hasCompare) {
       state.compareExpanded = false;
       compareEmpty.classList.remove('hidden');
       compareContent.classList.add('hidden');
@@ -4826,6 +4972,7 @@
       track('view_explore_players', {});
     }
 
+    updateExploreModeSemantics();
     persistExploreFilters();
     applyCustomI18n();
     renderResults();
@@ -5302,6 +5449,7 @@
     initFilterSelectToggles(selectNodes);
     syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
+    updateExploreModeSemantics();
 
     if (searchInput) {
       searchInput.value = state.search;
@@ -5343,11 +5491,12 @@
         document.querySelectorAll('#gameChips .chip').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         state.game = chip.dataset.game || GAME_IDS.ANY;
-        persistExploreFilters();
         syncExploreRoleFilterOptions();
         syncExploreRankFilterOptions();
+        persistExploreFilters();
         applyFiltersTracking();
         renderResults();
+        renderCompareDrawer();
       });
     });
 

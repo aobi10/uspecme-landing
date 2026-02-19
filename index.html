@@ -156,6 +156,7 @@
             <button type="button" id="modeTeams" role="tab" aria-selected="false" data-d18n="d.mode.teams">Teams</button>
           </div>
         </div>
+        <p id="exploreBrowseHint" class="explore-mode-hint" data-d18n="d.explore.browse.players">Browse player profiles</p>
 
         <div class="explore-controls">
           <label class="search-wrap">
@@ -177,7 +178,7 @@
             <h3 data-d18n="d.filter.title">Filters</h3>
 
             <label>
-              <span data-d18n="d.filter.role">Role</span>
+              <span id="roleFilterLabel" data-d18n="d.filter.role">Role</span>
               <div class="select-wrap">
                 <select id="roleFilter">
                   <option value="Any" data-d18n="d.filter.any">Any</option>
@@ -201,6 +202,7 @@
                 <button type="button" class="select-arrow" data-select-toggle="rankFilter" aria-label="Toggle options"></button>
               </div>
             </label>
+            <p id="gameFilterHint" class="game-filter-hint hidden" data-d18n="d.filter.gameHint">Select a game to filter roles/ranks</p>
 
             <label>
               <span data-d18n="d.filter.region">Region</span>
@@ -254,8 +256,8 @@
 
             <div class="compare-bar">
               <div class="compare-bar__slots">
-                <span class="compare-bar__slot" id="compareSlotA" data-d18n="d.compare.slot.empty">Empty</span>
-                <span class="compare-bar__slot" id="compareSlotB" data-d18n="d.compare.slot.empty">Empty</span>
+                <span class="compare-bar__slot" id="compareSlotA" data-d18n="d.compare.slot.empty">Select player</span>
+                <span class="compare-bar__slot" id="compareSlotB" data-d18n="d.compare.slot.empty">Select player</span>
               </div>
               <div class="compare-bar__actions">
                 <button type="button" id="compareNow" class="button ghost small" data-d18n="d.compare.now">Compare now</button>
