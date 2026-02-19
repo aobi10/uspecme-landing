@@ -133,6 +133,8 @@ button, input, select, textarea { font: inherit; }
   display: inline-flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 .nav a,
 .nav-ghost {
@@ -142,6 +144,7 @@ button, input, select, textarea { font: inherit; }
   padding: 7px 9px;
   background: transparent;
   cursor: pointer;
+  white-space: nowrap;
 }
 .nav a:hover,
 .nav-ghost:hover {
@@ -1786,8 +1789,26 @@ textarea {
 .desktop-only { display: block; }
 
 @media (max-width: 1200px) {
-  .topbar-inner { align-items: flex-start; padding: 0.7rem 0; }
-  .toolbar { flex-wrap: wrap; justify-content: flex-end; }
+  .topbar-inner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 0.7rem 0;
+  }
+  .nav.desktop-only {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .toolbar {
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+  }
   .variant-links { width: 100%; justify-content: flex-end; }
   .explore-layout { grid-template-columns: 230px minmax(0, 1fr); }
   .compare-drawer {
