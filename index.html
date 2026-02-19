@@ -45,10 +45,16 @@
       <div class="container hero-grid">
         <div class="hero-copy">
           <span class="hero-pill" data-d18n="d.hero.badge">GameIn</span>
-          <h1 data-d18n="d.hero.title">From solo queue to a real team.</h1>
-          <p data-d18n="d.hero.lead">Find verified players and teams in Overwatch, LoL, Fortnite and Marvel Rivals. Compare fast. Tryouts made simple.</p>
+          <h1 data-d18n="d.hero.title">Build your roster faster.</h1>
+          <p data-d18n="d.hero.lead">Proof-first profiles. Instant compare. Clear tryout intent.</p>
 
           <div class="hero-actions">
+            <button type="button" class="button primary" id="ctaExplorePrimary" data-d18n="d.hero.ctaExplore">Explore players</button>
+            <button type="button" class="button secondary" id="ctaEarlyAccessSecondary" data-d18n="d.hero.ctaEarlyAccess">Join Early Access</button>
+          </div>
+
+          <div class="hero-tools-label" data-d18n="d.hero.toolsLabel">Proof tools</div>
+          <div class="hero-actions hero-actions-legacy">
             <button type="button" class="button primary" id="ctaPlayer" data-d18n="d.hero.ctaPlayer">I'm a Player</button>
             <button type="button" class="button secondary" id="ctaTeam" data-d18n="d.hero.ctaTeam">I'm a Team</button>
           </div>
@@ -71,6 +77,31 @@
               <h3 data-d18n="d.kpi.tryout.title">Invite to Tryout</h3>
               <p data-d18n="d.kpi.tryout.text">Trigger clear intent with one modal and capture early-access demand.</p>
             </article>
+          </div>
+
+          <div id="quickStart" class="quick-start panel" aria-label="Quick Start">
+            <h3 data-d18n="d.quick.title">Quick Start</h3>
+            <div class="quick-start-grid">
+              <div class="quick-step">
+                <span data-d18n="d.quick.stepGame">1. Pick game</span>
+                <div id="quickStartGames" class="chip-row quick-chip-row">
+                  <button type="button" class="chip" data-quick-game="overwatch" data-d18n="d.game.overwatch">Overwatch</button>
+                  <button type="button" class="chip" data-quick-game="lol" data-d18n="d.game.lol">LoL</button>
+                  <button type="button" class="chip" data-quick-game="fortnite" data-d18n="d.game.fortnite">Fortnite</button>
+                  <button type="button" class="chip" data-quick-game="rivals" data-d18n="d.game.rivals">Marvel Rivals</button>
+                </div>
+              </div>
+              <div class="quick-step">
+                <span data-d18n="d.quick.stepMode">2. Pick directory</span>
+                <div class="mode-toggle quick-mode-toggle" role="group" aria-label="Quick mode">
+                  <button type="button" id="quickStartModePlayers" class="active" data-d18n="d.quick.players">Players</button>
+                  <button type="button" id="quickStartModeTeams" data-d18n="d.quick.teams">Teams</button>
+                </div>
+              </div>
+              <div class="quick-run">
+                <button type="button" id="quickStartRun" class="button primary" data-d18n="d.quick.showMatches">Show matches</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -253,6 +284,7 @@
               <h3 data-d18n="d.compare.title">Compare (max 2)</h3>
               <button type="button" id="clearCompare" class="link-btn" data-d18n="d.compare.clear">Clear</button>
             </div>
+            <p id="compareHeadToHead" class="compare-headtohead hidden" data-d18n="d.compare.headtohead">Head-to-Head: who fits your system?</p>
 
             <div class="compare-bar">
               <div class="compare-bar__slots">
@@ -505,7 +537,7 @@
           <button type="submit" class="button primary wide" data-d18n="d.invite.submit">Send tryout request</button>
         </form>
 
-        <div id="inviteSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.invite.success">Tryout request sent. You'll be notified when early access opens.</div>
+        <div id="inviteSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.invite.success">Saved (Preview). Sending unlocks in Early Access.</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="button ghost" data-close-invite data-d18n="d.modal.close">Close</button>
@@ -531,7 +563,7 @@
           <button type="button" data-provider="Xbox">Xbox</button>
         </div>
 
-        <div id="connectSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.connect.success">Connection recorded. Verification expands in early access.</div>
+        <div id="connectSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.connect.success">Connection recorded. Rank verification arrives in Early Access.</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="button ghost" data-close-connect data-d18n="d.modal.close">Close</button>
@@ -584,7 +616,7 @@
           <button type="submit" class="button primary wide" data-d18n="d.network.submit.reference">Submit reference</button>
         </form>
 
-        <div id="networkSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.network.success">Request sent. You'll be notified when early access opens.</div>
+        <div id="networkSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.network.success">Saved (Preview). Intros & references go live in Early Access.</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="button ghost" data-close-network data-d18n="d.modal.close">Close</button>
@@ -681,7 +713,7 @@
           <button class="button primary wide" type="submit" data-i18n="modal.submit">Join Waitlist</button>
         </form>
 
-        <div id="waitlistSuccess" class="success hidden" role="status" aria-live="polite" data-i18n="modal.success">Thanks. You'll be notified when early access opens.</div>
+        <div id="waitlistSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.waitlist.success.tight">Thanks - you're on the list. We'll email you when Early Access opens.</div>
         <p class="micro" data-i18n="modal.micro">You can update this form anytime.</p>
       </div>
 

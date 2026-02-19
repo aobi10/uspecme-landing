@@ -111,6 +111,25 @@
     [GAME_IDS.FORTNITE]: PROFILE_RANKS.fortnite.tiers.slice(),
     [GAME_IDS.RIVALS]: PROFILE_RANKS.rivals.tiers.slice()
   };
+  const SCOUT_HOOK_KEYS = [
+    'calm',
+    'teamfirst',
+    'shotcall',
+    'macro',
+    'mapaware',
+    'anchor',
+    'vod',
+    'stable',
+    'utility',
+    'tempo',
+    'lateclutch',
+    'pathing',
+    'entry',
+    'structured',
+    'system',
+    'discipline',
+    'clutch'
+  ];
   const CONDUCT_REASON_CODES = [
     'NO_SHOW',
     'TOXIC_COMMUNICATION',
@@ -1577,7 +1596,9 @@
       country: 'DE',
       language: ['DE', 'EN'],
       availability: 'Weeknights',
+      availabilityDetail: 'Mon-Fri 19:00-22:00 CET',
       lookingFor: ['Team', 'Tryouts'],
+      hook: 'calm',
       games: [
         { game: GAME_IDS.OVERWATCH, role: 'Support', rank: 'Master 3', peak: 'GM 5', proof: PROOF_STATUS.ACCOUNT_CONNECTED },
         { game: GAME_IDS.LOL, role: 'Support', rank: 'Diamond II', peak: 'Master', proof: PROOF_STATUS.RANK_VERIFIED }
@@ -1589,9 +1610,11 @@
       country: 'AT',
       language: ['EN'],
       availability: 'Weekend',
+      availabilityDetail: 'Sat-Sun 10:00-13:00 CET',
       lookingFor: ['Scrims', 'Tryouts'],
+      hook: 'mapaware',
       games: [
-        { game: GAME_IDS.RIVALS, role: 'Scout', rank: 'N/A', peak: 'N/A', proof: PROOF_STATUS.SELF_DECLARED },
+        { game: GAME_IDS.RIVALS, role: 'Scout', rank: 'Diamond', peak: 'Grandmaster', proof: PROOF_STATUS.SELF_DECLARED },
         { game: GAME_IDS.FORTNITE, role: 'IGL', rank: 'Champion', peak: 'Unreal', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
       ]
     },
@@ -1602,9 +1625,270 @@
       language: ['EN', 'DE'],
       availability: 'Weeknights',
       lookingFor: ['Tryouts', 'Team'],
+      hook: 'teamfirst',
       games: [
         { game: GAME_IDS.OVERWATCH, role: 'Flex DPS', rank: 'Master', peak: 'Grandmaster', proof: PROOF_STATUS.SELF_DECLARED },
         { game: GAME_IDS.FORTNITE, role: 'IGL', rank: 'Champion', peak: 'Unreal', proof: PROOF_STATUS.SELF_DECLARED }
+      ]
+    },
+    {
+      handle: 'AegisTank',
+      region: 'NA',
+      country: 'US',
+      language: ['EN'],
+      availability: 'Weeknights',
+      lookingFor: ['Team'],
+      hook: 'anchor',
+      games: [
+        { game: GAME_IDS.OVERWATCH, role: 'Tank', rank: 'Grandmaster 4', peak: 'Champion 5', proof: PROOF_STATUS.RANK_VERIFIED }
+      ]
+    },
+    {
+      handle: 'PulseDPS',
+      region: 'APAC',
+      country: 'KR',
+      language: ['KR', 'EN'],
+      availability: 'Weeknights',
+      availabilityDetail: 'Mon-Thu 20:00-23:00 KST',
+      lookingFor: ['Tryouts'],
+      games: [
+        { game: GAME_IDS.OVERWATCH, role: 'DPS', rank: 'Master 2', peak: 'Grandmaster 3', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'OrbitSupport',
+      region: 'EU',
+      country: 'FR',
+      language: ['FR', 'EN'],
+      availability: 'Weekend',
+      lookingFor: ['Team', 'Scrims'],
+      hook: 'vod',
+      games: [
+        { game: GAME_IDS.OVERWATCH, role: 'Support', rank: 'Diamond 1', peak: 'Master 5', proof: PROOF_STATUS.SELF_DECLARED }
+      ]
+    },
+    {
+      handle: 'FrostAnchor',
+      region: 'EU',
+      country: 'SE',
+      language: ['EN', 'SE'],
+      availability: 'Weeknights',
+      lookingFor: ['Team'],
+      games: [
+        { game: GAME_IDS.OVERWATCH, role: 'Tank', rank: 'Master 4', peak: 'Grandmaster 5', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'ZenithTracer',
+      region: 'NA',
+      country: 'CA',
+      language: ['EN'],
+      availability: 'Weekend',
+      availabilityDetail: 'Fri-Sun 18:00-22:00 ET',
+      lookingFor: ['Tryouts', 'Scrims'],
+      hook: 'tempo',
+      games: [
+        { game: GAME_IDS.OVERWATCH, role: 'DPS', rank: 'Grandmaster 5', peak: 'Champion 3', proof: PROOF_STATUS.RANK_VERIFIED }
+      ]
+    },
+    {
+      handle: 'TopLaneTide',
+      region: 'EU',
+      country: 'NL',
+      language: ['EN', 'NL'],
+      availability: 'Weeknights',
+      lookingFor: ['Team'],
+      games: [
+        { game: GAME_IDS.LOL, role: 'Top', rank: 'Emerald I', peak: 'Diamond IV', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'JungleMint',
+      region: 'NA',
+      country: 'US',
+      language: ['EN'],
+      availability: 'Weeknights',
+      availabilityDetail: 'Mon-Fri 20:00-23:00 PT',
+      lookingFor: ['Tryouts'],
+      hook: 'macro',
+      games: [
+        { game: GAME_IDS.LOL, role: 'Jungle', rank: 'Master', peak: 'Grandmaster', proof: PROOF_STATUS.RANK_VERIFIED }
+      ]
+    },
+    {
+      handle: 'MidNova',
+      region: 'APAC',
+      country: 'JP',
+      language: ['JP', 'EN'],
+      availability: 'Weekend',
+      lookingFor: ['Team', 'Scrims'],
+      games: [
+        { game: GAME_IDS.LOL, role: 'Mid', rank: 'Diamond II', peak: 'Master', proof: PROOF_STATUS.SELF_DECLARED }
+      ]
+    },
+    {
+      handle: 'BotEcho',
+      region: 'EU',
+      country: 'GB',
+      language: ['EN'],
+      availability: 'Weeknights',
+      lookingFor: ['Tryouts'],
+      hook: 'stable',
+      games: [
+        { game: GAME_IDS.LOL, role: 'ADC', rank: 'Diamond I', peak: 'Master', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'RiftShield',
+      region: 'NA',
+      country: 'MX',
+      language: ['ES', 'EN'],
+      availability: 'Weekend',
+      availabilityDetail: 'Sat-Sun 12:00-16:00 CT',
+      lookingFor: ['Team'],
+      games: [
+        { game: GAME_IDS.LOL, role: 'Support', rank: 'Platinum II', peak: 'Diamond IV', proof: PROOF_STATUS.SELF_DECLARED }
+      ]
+    },
+    {
+      handle: 'TacticBloom',
+      region: 'EU',
+      country: 'DE',
+      language: ['DE', 'EN'],
+      availability: 'Weeknights',
+      lookingFor: ['Team', 'Tryouts'],
+      games: [
+        { game: GAME_IDS.LOL, role: 'Mid', rank: 'Diamond III', peak: 'Master', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'CrownIGL',
+      region: 'EU',
+      country: 'PL',
+      language: ['PL', 'EN'],
+      availability: 'Weeknights',
+      availabilityDetail: 'Mon-Thu 19:30-23:00 CET',
+      lookingFor: ['Team'],
+      hook: 'shotcall',
+      games: [
+        { game: GAME_IDS.FORTNITE, role: 'IGL', rank: 'Champion II', peak: 'Unreal', proof: PROOF_STATUS.RANK_VERIFIED }
+      ]
+    },
+    {
+      handle: 'StormFragger',
+      region: 'NA',
+      country: 'US',
+      language: ['EN'],
+      availability: 'Weekend',
+      lookingFor: ['Tryouts', 'Scrims'],
+      games: [
+        { game: GAME_IDS.FORTNITE, role: 'Fragger', rank: 'Elite', peak: 'Champion', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'PixelSupport',
+      region: 'APAC',
+      country: 'AU',
+      language: ['EN'],
+      availability: 'Weeknights',
+      lookingFor: ['Team'],
+      hook: 'utility',
+      games: [
+        { game: GAME_IDS.FORTNITE, role: 'Support', rank: 'Diamond III', peak: 'Elite', proof: PROOF_STATUS.SELF_DECLARED }
+      ]
+    },
+    {
+      handle: 'ZoneCaller',
+      region: 'EU',
+      country: 'IT',
+      language: ['IT', 'EN'],
+      availability: 'Weeknights',
+      availabilityDetail: 'Tue-Thu 20:00-22:30 CET',
+      lookingFor: ['Team', 'Tryouts'],
+      games: [
+        { game: GAME_IDS.FORTNITE, role: 'IGL', rank: 'Champion I', peak: 'Unreal', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'ClutchSpark',
+      region: 'NA',
+      country: 'CA',
+      language: ['EN', 'FR'],
+      availability: 'Weekend',
+      lookingFor: ['Scrims'],
+      hook: 'lateclutch',
+      games: [
+        { game: GAME_IDS.FORTNITE, role: 'Fragger', rank: 'Champion III', peak: 'Champion I', proof: PROOF_STATUS.SELF_DECLARED }
+      ]
+    },
+    {
+      handle: 'VanguardRay',
+      region: 'EU',
+      country: 'ES',
+      language: ['ES', 'EN'],
+      availability: 'Weeknights',
+      lookingFor: ['Team'],
+      games: [
+        { game: GAME_IDS.RIVALS, role: 'Vanguard', rank: 'Diamond', peak: 'Grandmaster', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'DuelistHex',
+      region: 'NA',
+      country: 'US',
+      language: ['EN'],
+      availability: 'Weeknights',
+      availabilityDetail: 'Mon-Fri 18:00-21:00 PT',
+      lookingFor: ['Tryouts'],
+      hook: 'entry',
+      games: [
+        { game: GAME_IDS.RIVALS, role: 'Duelist', rank: 'Grandmaster', peak: 'Celestial', proof: PROOF_STATUS.RANK_VERIFIED }
+      ]
+    },
+    {
+      handle: 'StrategistIvy',
+      region: 'APAC',
+      country: 'IN',
+      language: ['EN'],
+      availability: 'Weekend',
+      lookingFor: ['Team', 'Scrims'],
+      games: [
+        { game: GAME_IDS.RIVALS, role: 'Strategist', rank: 'Platinum', peak: 'Diamond', proof: PROOF_STATUS.SELF_DECLARED }
+      ]
+    },
+    {
+      handle: 'ScoutMako',
+      region: 'EU',
+      country: 'PT',
+      language: ['PT', 'EN'],
+      availability: 'Weeknights',
+      lookingFor: ['Tryouts'],
+      hook: 'pathing',
+      games: [
+        { game: GAME_IDS.RIVALS, role: 'Scout', rank: 'Diamond', peak: 'Grandmaster', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
+      ]
+    },
+    {
+      handle: 'CelestialV',
+      region: 'NA',
+      country: 'BR',
+      language: ['PT', 'EN'],
+      availability: 'Weekend',
+      availabilityDetail: 'Sat-Sun 11:00-15:00 BRT',
+      lookingFor: ['Team'],
+      games: [
+        { game: GAME_IDS.RIVALS, role: 'Vanguard', rank: 'Celestial', peak: 'Eternity', proof: PROOF_STATUS.SELF_DECLARED }
+      ]
+    },
+    {
+      handle: 'RuneDuel',
+      region: 'APAC',
+      country: 'KR',
+      language: ['KR', 'EN'],
+      availability: 'Weeknights',
+      lookingFor: ['Tryouts'],
+      games: [
+        { game: GAME_IDS.RIVALS, role: 'Duelist', rank: 'Grandmaster', peak: 'Celestial', proof: PROOF_STATUS.ACCOUNT_CONNECTED }
       ]
     }
   ];
@@ -1615,6 +1899,9 @@
       name: 'Vienna Ascend',
       region: 'EU',
       verified: PROOF_STATUS.ACCOUNT_CONNECTED,
+      availability: 'Weeknights',
+      availabilityDetail: 'Mon/Wed/Fri 19:00-22:00 CET',
+      hook: 'system',
       games: [
         {
           game: GAME_IDS.OVERWATCH,
@@ -1635,6 +1922,8 @@
       name: 'Cloud 25',
       region: 'EU',
       verified: PROOF_STATUS.SELF_DECLARED,
+      availability: 'Weeknights',
+      hook: 'discipline',
       games: [
         {
           game: GAME_IDS.FORTNITE,
@@ -1642,10 +1931,188 @@
         },
         {
           game: GAME_IDS.RIVALS,
-          needs: [{ role: 'Scout', rankMin: 'N/A' }]
+          needs: [{ role: 'Scout', rankMin: 'Diamond' }]
         }
       ],
       schedule: 'Tue/Thu 20:00-23:00 CET'
+    },
+    {
+      slug: 'northforge-ow',
+      name: 'Northforge OW',
+      region: 'NA',
+      verified: PROOF_STATUS.ACCOUNT_CONNECTED,
+      availability: 'Weeknights',
+      availabilityDetail: 'Mon-Thu 20:00-23:00 ET',
+      games: [
+        {
+          game: GAME_IDS.OVERWATCH,
+          needs: [
+            { role: 'Tank', rankMin: 'Diamond' },
+            { role: 'DPS', rankMin: 'Master' }
+          ]
+        }
+      ],
+      schedule: 'Mon/Wed/Fri 20:00-23:00 ET'
+    },
+    {
+      slug: 'payload-union',
+      name: 'Payload Union',
+      region: 'APAC',
+      verified: PROOF_STATUS.SELF_DECLARED,
+      availability: 'Weekend',
+      games: [
+        {
+          game: GAME_IDS.OVERWATCH,
+          needs: [
+            { role: 'Support', rankMin: 'Diamond' },
+            { role: 'DPS', rankMin: 'Diamond' }
+          ]
+        }
+      ],
+      schedule: 'Sat/Sun 18:00-22:00 KST'
+    },
+    {
+      slug: 'river-wardens',
+      name: 'River Wardens',
+      region: 'EU',
+      verified: PROOF_STATUS.RANK_VERIFIED,
+      availability: 'Weeknights',
+      hook: 'macro',
+      games: [
+        {
+          game: GAME_IDS.LOL,
+          needs: [
+            { role: 'Top', rankMin: 'Diamond' },
+            { role: 'Support', rankMin: 'Emerald' }
+          ]
+        }
+      ],
+      schedule: 'Tue/Thu 19:00-22:00 CET'
+    },
+    {
+      slug: 'midlane-district',
+      name: 'Midlane District',
+      region: 'NA',
+      verified: PROOF_STATUS.ACCOUNT_CONNECTED,
+      availability: 'Weekend',
+      availabilityDetail: 'Sat-Sun 14:00-18:00 PT',
+      games: [
+        {
+          game: GAME_IDS.LOL,
+          needs: [
+            { role: 'Mid', rankMin: 'Master' },
+            { role: 'Jungle', rankMin: 'Diamond' }
+          ]
+        }
+      ],
+      schedule: 'Sat/Sun 14:00-18:00 PT'
+    },
+    {
+      slug: 'storm-harbor',
+      name: 'Storm Harbor',
+      region: 'EU',
+      verified: PROOF_STATUS.RANK_VERIFIED,
+      availability: 'Weeknights',
+      games: [
+        {
+          game: GAME_IDS.FORTNITE,
+          needs: [
+            { role: 'IGL', rankMin: 'Champion' },
+            { role: 'Fragger', rankMin: 'Elite' }
+          ]
+        }
+      ],
+      schedule: 'Mon/Wed/Fri 20:00-23:00 CET'
+    },
+    {
+      slug: 'last-circle-labs',
+      name: 'Last Circle Labs',
+      region: 'APAC',
+      verified: PROOF_STATUS.SELF_DECLARED,
+      availability: 'Weekend',
+      hook: 'clutch',
+      games: [
+        {
+          game: GAME_IDS.FORTNITE,
+          needs: [
+            { role: 'Support', rankMin: 'Diamond' },
+            { role: 'Fragger', rankMin: 'Champion' }
+          ]
+        }
+      ],
+      schedule: 'Sat/Sun 19:00-23:00 AEST'
+    },
+    {
+      slug: 'neon-vanguard',
+      name: 'Neon Vanguard',
+      region: 'EU',
+      verified: PROOF_STATUS.ACCOUNT_CONNECTED,
+      availability: 'Weeknights',
+      availabilityDetail: 'Mon-Thu 19:30-22:30 CET',
+      games: [
+        {
+          game: GAME_IDS.RIVALS,
+          needs: [
+            { role: 'Vanguard', rankMin: 'Diamond' },
+            { role: 'Strategist', rankMin: 'Diamond' }
+          ]
+        }
+      ],
+      schedule: 'Mon/Thu 19:30-22:30 CET'
+    },
+    {
+      slug: 'quantum-sigil',
+      name: 'Quantum Sigil',
+      region: 'NA',
+      verified: PROOF_STATUS.SELF_DECLARED,
+      availability: 'Weekend',
+      games: [
+        {
+          game: GAME_IDS.RIVALS,
+          needs: [
+            { role: 'Duelist', rankMin: 'Grandmaster' },
+            { role: 'Scout', rankMin: 'Diamond' }
+          ]
+        }
+      ],
+      schedule: 'Sat/Sun 17:00-21:00 ET'
+    },
+    {
+      slug: 'crossfire-labs',
+      name: 'Crossfire Labs',
+      region: 'EU',
+      verified: PROOF_STATUS.ACCOUNT_CONNECTED,
+      availability: 'Any',
+      games: [
+        {
+          game: GAME_IDS.OVERWATCH,
+          needs: [{ role: 'Support', rankMin: 'Master' }]
+        },
+        {
+          game: GAME_IDS.FORTNITE,
+          needs: [{ role: 'IGL', rankMin: 'Champion' }]
+        }
+      ],
+      schedule: 'Flexible blocks'
+    },
+    {
+      slug: 'astral-path',
+      name: 'Astral Path',
+      region: 'APAC',
+      verified: PROOF_STATUS.RANK_VERIFIED,
+      availability: 'Weeknights',
+      hook: 'structured',
+      games: [
+        {
+          game: GAME_IDS.LOL,
+          needs: [{ role: 'ADC', rankMin: 'Diamond' }]
+        },
+        {
+          game: GAME_IDS.RIVALS,
+          needs: [{ role: 'Strategist', rankMin: 'Diamond' }]
+        }
+      ],
+      schedule: 'Tue/Thu 19:00-22:00 JST'
     }
   ];
 
@@ -1808,8 +2275,11 @@
       'd.system.inviteCreated': 'Tryout request created for',
       'd.system.requestCancelled': 'Tryout request cancelled for',
       'd.hero.badge': 'GameIn',
-      'd.hero.title': 'From solo queue to a real team.',
-      'd.hero.lead': 'Find verified players and teams in Overwatch, LoL, Fortnite and Marvel Rivals. Compare fast. Tryouts made simple.',
+      'd.hero.title': 'Build your roster faster.',
+      'd.hero.lead': 'Proof-first profiles. Instant compare. Clear tryout intent.',
+      'd.hero.ctaExplore': 'Explore players',
+      'd.hero.ctaEarlyAccess': 'Join Early Access',
+      'd.hero.toolsLabel': 'Proof tools',
       'd.hero.ctaPlayer': "I'm a Player",
       'd.hero.ctaTeam': "I'm a Team",
       'd.kpi.verified.title': 'Verified Ranks',
@@ -1828,6 +2298,12 @@
       'd.explore.title': 'Explore',
       'd.mode.players': 'Players',
       'd.mode.teams': 'Teams',
+      'd.quick.title': 'Quick Start',
+      'd.quick.stepGame': '1. Pick game',
+      'd.quick.stepMode': '2. Pick directory',
+      'd.quick.players': 'Players',
+      'd.quick.teams': 'Teams',
+      'd.quick.showMatches': 'Show matches',
       'd.explore.browse.players': 'Browse player profiles',
       'd.explore.browse.teams': 'Browse team profiles',
       'd.filter.search': 'Search',
@@ -1904,6 +2380,7 @@
       'd.compare.clear': 'Clear',
       'd.compare.now': 'Compare now',
       'd.compare.hide': 'Hide compare',
+      'd.compare.headtohead': 'Head-to-Head: who fits your system?',
       'd.compare.slot.empty': 'Select player',
       'd.compare.empty': 'Select up to 2 players to compare role, rank, proof, country and availability.',
       'd.compare.invite': 'Invite selected',
@@ -1918,6 +2395,9 @@
       'd.toast.requestCancelled': 'Request cancelled.',
       'd.toast.messageSent': 'Message sent.',
       'd.toast.notificationsMarkedRead': 'All notifications marked as read.',
+      'd.waitlist.validation.error': 'Add a valid email, role, and game to continue.',
+      'd.waitlist.submitting': 'Saving...',
+      'd.waitlist.success.tight': "Thanks - you're on the list. We'll email you when Early Access opens.",
       'd.invite.title': 'Invite to Tryout',
       'd.invite.game': 'Game',
       'd.invite.role': 'Role needed / offered',
@@ -1925,12 +2405,16 @@
       'd.invite.notes': 'Notes',
       'd.invite.submit': 'Send tryout request',
       'd.invite.submitting': 'Sending...',
-      'd.invite.success': 'Tryout request sent. You\'ll be notified when early access opens.',
+      'd.invite.success': 'Saved (Preview). Sending unlocks in Early Access.',
       'd.connect.title': 'Connect account',
       'd.connect.lead': 'Choose a provider to confirm ownership and improve trust signals.',
       'd.connect.connecting': 'Connecting...',
-      'd.connect.success': 'Connection recorded. Verification expands in early access.',
+      'd.connect.success': 'Connection recorded. Rank verification arrives in Early Access.',
       'd.modal.close': 'Close',
+      'd.card.chip.proof': 'Proof',
+      'd.card.chip.role': 'Role',
+      'd.card.chip.roleNeeded': 'Role needed',
+      'd.card.chip.availability': 'Availability',
       'd.card.region': 'Region',
       'd.card.country': 'Country',
       'd.card.availability': 'Availability',
@@ -1996,8 +2480,25 @@
       'd.network.submit.intro': 'Send intro request',
       'd.network.submit.reference': 'Submit reference',
       'd.network.submitting': 'Sending...',
-      'd.network.success': 'Request sent. You\'ll be notified when early access opens.',
-      'd.toast.networkCaptured': 'Request sent.',
+      'd.network.success': 'Saved (Preview). Intros & references go live in Early Access.',
+      'd.toast.networkCaptured': 'Saved (Preview).',
+      'd.scout.hook.calm': 'Calm comms. Consistent VOD review.',
+      'd.scout.hook.teamfirst': 'Team-first, fast adaptation.',
+      'd.scout.hook.shotcall': 'Shotcaller-leaning, system focused.',
+      'd.scout.hook.macro': 'Strong macro reads under pressure.',
+      'd.scout.hook.mapaware': 'Map-aware pathing and clean timings.',
+      'd.scout.hook.anchor': 'Reliable anchor with disciplined tempo.',
+      'd.scout.hook.vod': 'Prep-heavy routine, low-ego comms.',
+      'd.scout.hook.stable': 'Stable impact across long sets.',
+      'd.scout.hook.utility': 'Utility-first and role-flex ready.',
+      'd.scout.hook.tempo': 'High-tempo decisions, low noise.',
+      'd.scout.hook.lateclutch': 'Composed in late-game clutch spots.',
+      'd.scout.hook.pathing': 'Efficient pathing, clear info flow.',
+      'd.scout.hook.entry': 'Confident entry timings, team aligned.',
+      'd.scout.hook.structured': 'Structured practice and dependable execution.',
+      'd.scout.hook.system': 'System-driven roster with clear comm lanes.',
+      'd.scout.hook.discipline': 'Disciplined prep and reliable attendance.',
+      'd.scout.hook.clutch': 'Strong closeout discipline in tight games.',
       'd.auth.open.register': 'Register',
       'd.auth.open.login': 'Login',
       'd.auth.entry.online': 'Shinobi · Online',
@@ -2269,8 +2770,11 @@
       'd.system.inviteCreated': 'Tryout-Anfrage erstellt für',
       'd.system.requestCancelled': 'Tryout-Anfrage storniert für',
       'd.hero.badge': 'GameIn',
-      'd.hero.title': 'Von Solo-Queue zu einem echten Team.',
-      'd.hero.lead': 'Finde verifizierte Spieler und Teams in Overwatch, LoL, Fortnite und Marvel Rivals. Schnell vergleichen. Tryouts einfach machen.',
+      'd.hero.title': 'Stell dein Team schneller zusammen.',
+      'd.hero.lead': 'Proof-first Profile. Sofort vergleichen. Klarer Tryout-Intent.',
+      'd.hero.ctaExplore': 'Spieler entdecken',
+      'd.hero.ctaEarlyAccess': 'Early Access sichern',
+      'd.hero.toolsLabel': 'Proof-Tools',
       'd.hero.ctaPlayer': 'Ich bin ein Spieler',
       'd.hero.ctaTeam': 'Ich bin ein Team',
       'd.kpi.verified.title': 'Verifizierte Ranks',
@@ -2289,6 +2793,12 @@
       'd.explore.title': 'Explore',
       'd.mode.players': 'Spieler',
       'd.mode.teams': 'Teams',
+      'd.quick.title': 'Quick Start',
+      'd.quick.stepGame': '1. Spiel wählen',
+      'd.quick.stepMode': '2. Bereich wählen',
+      'd.quick.players': 'Spieler',
+      'd.quick.teams': 'Teams',
+      'd.quick.showMatches': 'Matches anzeigen',
       'd.explore.browse.players': 'Spielerprofile durchsuchen',
       'd.explore.browse.teams': 'Teamprofile durchsuchen',
       'd.filter.search': 'Suche',
@@ -2365,6 +2875,7 @@
       'd.compare.clear': 'Leeren',
       'd.compare.now': 'Jetzt vergleichen',
       'd.compare.hide': 'Vergleich ausblenden',
+      'd.compare.headtohead': 'Direktvergleich: Wer passt ins System?',
       'd.compare.slot.empty': 'Spieler wählen',
       'd.compare.empty': 'Wähle bis zu 2 Spieler für Rollen-, Rank-, Proof-, Herkunftsland- und Verfügbarkeitsvergleich.',
       'd.compare.invite': 'Ausgewählte einladen',
@@ -2379,6 +2890,9 @@
       'd.toast.requestCancelled': 'Anfrage storniert.',
       'd.toast.messageSent': 'Nachricht gesendet.',
       'd.toast.notificationsMarkedRead': 'Alle Mitteilungen als gelesen markiert.',
+      'd.waitlist.validation.error': 'Bitte gib eine gueltige E-Mail, Rolle und ein Spiel an.',
+      'd.waitlist.submitting': 'Speichern...',
+      'd.waitlist.success.tight': 'Danke - du bist auf der Liste. Wir mailen dir, wenn Early Access startet.',
       'd.invite.title': 'Zum Tryout einladen',
       'd.invite.game': 'Spiel',
       'd.invite.role': 'Gesuchte / angebotene Rolle',
@@ -2386,12 +2900,16 @@
       'd.invite.notes': 'Notizen',
       'd.invite.submit': 'Tryout-Anfrage senden',
       'd.invite.submitting': 'Wird gesendet...',
-      'd.invite.success': 'Tryout-Anfrage gesendet. Du wirst benachrichtigt, sobald Early Access startet.',
+      'd.invite.success': 'Gespeichert (Vorschau). Versenden startet mit Early Access.',
       'd.connect.title': 'Account verbinden',
       'd.connect.lead': 'Wähle einen Provider, um Ownership zu bestätigen und Trust-Signale zu verbessern.',
       'd.connect.connecting': 'Verbinde...',
-      'd.connect.success': 'Verbindung gespeichert. Verifikation wird im Early Access erweitert.',
+      'd.connect.success': 'Verknuepfung gespeichert. Rank-Verifizierung kommt mit Early Access.',
       'd.modal.close': 'Schließen',
+      'd.card.chip.proof': 'Proof',
+      'd.card.chip.role': 'Rolle',
+      'd.card.chip.roleNeeded': 'Benoetigte Rolle',
+      'd.card.chip.availability': 'Verfuegbarkeit',
       'd.card.region': 'Region',
       'd.card.country': 'Herkunftsland',
       'd.card.availability': 'Verfügbarkeit',
@@ -2457,8 +2975,25 @@
       'd.network.submit.intro': 'Intro-Anfrage senden',
       'd.network.submit.reference': 'Referenz übermitteln',
       'd.network.submitting': 'Wird gesendet...',
-      'd.network.success': 'Anfrage gesendet. Du wirst benachrichtigt, sobald Early Access startet.',
-      'd.toast.networkCaptured': 'Anfrage gesendet.',
+      'd.network.success': 'Gespeichert (Vorschau). Intros & Referenzen gehen mit Early Access live.',
+      'd.toast.networkCaptured': 'Gespeichert (Vorschau).',
+      'd.scout.hook.calm': 'Ruhige Comms. Konstantes VOD-Review.',
+      'd.scout.hook.teamfirst': 'Team-first und schnelle Anpassung.',
+      'd.scout.hook.shotcall': 'Shotcaller-nah und systemfokussiert.',
+      'd.scout.hook.macro': 'Starke Macro-Reads unter Druck.',
+      'd.scout.hook.mapaware': 'Map-aware Pathing mit klaren Timings.',
+      'd.scout.hook.anchor': 'Stabiler Anchor mit sauberem Tempo.',
+      'd.scout.hook.vod': 'Hohe Vorbereitung, klare Low-Ego-Comms.',
+      'd.scout.hook.stable': 'Konstante Wirkung ueber lange Sets.',
+      'd.scout.hook.utility': 'Utility-first und rollenflexibel.',
+      'd.scout.hook.tempo': 'Hoher Spielrhythmus bei klarer Kommunikation.',
+      'd.scout.hook.lateclutch': 'Souveraen in späten Clutch-Momenten.',
+      'd.scout.hook.pathing': 'Effizientes Pathing mit sauberem Infofluss.',
+      'd.scout.hook.entry': 'Sichere Entry-Timings im Teamkontext.',
+      'd.scout.hook.structured': 'Strukturiertes Training, verlaessliche Execution.',
+      'd.scout.hook.system': 'Systemorientiertes Team mit klaren Comms.',
+      'd.scout.hook.discipline': 'Disziplinierte Vorbereitung und Zuverlaessigkeit.',
+      'd.scout.hook.clutch': 'Starke Closeout-Disziplin in engen Spielen.',
       'd.auth.open.register': 'Registrieren',
       'd.auth.open.login': 'Login',
       'd.auth.entry.online': 'Shinobi · Online',
@@ -2818,6 +3353,9 @@
     syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
     updateExploreModeSemantics();
+    syncQuickStartControls();
+    applyWaitlistSuccessCopy();
+    applyWaitlistPanelCtaState();
 
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
@@ -2988,6 +3526,9 @@
   }
 
   function formatAvailability(availability) {
+    if (availability === 'Any') {
+      return t('d.filter.any');
+    }
     if (availability === 'Weeknights') {
       return t('d.availability.weeknights');
     }
@@ -3055,6 +3596,72 @@
       return t('d.role.strategist');
     }
     return role;
+  }
+
+  function hashString(value) {
+    const input = String(value || '');
+    let hash = 0;
+    for (let index = 0; index < input.length; index += 1) {
+      hash = ((hash << 5) - hash) + input.charCodeAt(index);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  function resolveHookKey(entity) {
+    const raw = entity && typeof entity.hook === 'string' ? entity.hook.trim() : '';
+    if (raw) {
+      if (raw.startsWith('d.')) {
+        return raw;
+      }
+      return `d.scout.hook.${raw}`;
+    }
+    const source = entity && (entity.handle || entity.name || entity.slug) ? (entity.handle || entity.name || entity.slug) : 'gamein';
+    const index = hashString(source) % SCOUT_HOOK_KEYS.length;
+    return `d.scout.hook.${SCOUT_HOOK_KEYS[index]}`;
+  }
+
+  function getScoutHookText(entity) {
+    const key = resolveHookKey(entity);
+    return t(key);
+  }
+
+  function formatTeamNeed(gameId, need) {
+    const safeNeed = need && typeof need === 'object' ? need : {};
+    const role = formatRole(safeNeed.role || '-');
+    const rank = safeNeed.rankMin || '-';
+    return `${getGameLabel(gameId)}: ${role} (${rank}+)`;
+  }
+
+  function getTeamPrimaryNeed(team) {
+    if (!team || !Array.isArray(team.games)) {
+      return null;
+    }
+    const scopedGames = team.games.filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game);
+    for (const gameEntry of scopedGames) {
+      if (Array.isArray(gameEntry.needs) && gameEntry.needs.length > 0) {
+        return {
+          game: gameEntry.game,
+          need: gameEntry.needs[0]
+        };
+      }
+    }
+    return null;
+  }
+
+  function getCoarseTeamAvailability(team) {
+    const explicit = String(team && team.availability ? team.availability : '').trim();
+    if (explicit === 'Weeknights' || explicit === 'Weekend' || explicit === 'Any') {
+      return explicit;
+    }
+    const schedule = String(team && team.schedule ? team.schedule : '').toLowerCase();
+    if (/(sat|sun|weekend)/.test(schedule)) {
+      return 'Weekend';
+    }
+    if (/(mon|tue|wed|thu|fri)/.test(schedule)) {
+      return 'Weeknights';
+    }
+    return 'Any';
   }
 
   function formatSchedule(schedule) {
@@ -3809,6 +4416,10 @@
     const game = getPrimaryGame(player);
     const inCompare = state.compare.includes(player.handle);
     const conduct = formatConductSummary('player', player.handle, entitiesState);
+    const proofMeta = getProofMeta(game.proof);
+    const availabilityLabel = formatAvailability(player.availability || 'Any');
+    const hookText = getScoutHookText(player);
+    const availabilityDetail = player.availabilityDetail ? String(player.availabilityDetail).trim() : '';
 
     return [
       '<article class="result-card">',
@@ -3819,10 +4430,17 @@
       '</div>',
       renderProofBadge(game.proof, { compact: true }),
       '</div>',
+      `<p class="scout-hook">${escapeHtml(hookText)}</p>`,
       '<div class="result-card__rank">',
       `<strong>${escapeHtml(formatRole(game.role) || '-')}</strong>`,
       `<span>${escapeHtml(game.rank || '-')} · ${escapeHtml(t('d.card.peak'))} ${escapeHtml(game.peak || '-')}</span>`,
       '</div>',
+      '<div class="scout-chips">',
+      `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.proof'))}</strong><span>${escapeHtml(proofMeta.label)}</span></span>`,
+      `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.role'))}</strong><span>${escapeHtml(formatRole(game.role) || '-')}</span></span>`,
+      `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.availability'))}</strong><span>${escapeHtml(availabilityLabel || '-')}</span></span>`,
+      '</div>',
+      availabilityDetail ? `<p class="availability-detail">${escapeHtml(availabilityDetail)}</p>` : '',
       '<div class="result-card__meta">',
       `<span class="meta-chip">${escapeHtml(t('d.card.region'))}: ${escapeHtml(player.region)}</span>`,
       `<span class="meta-chip">${escapeHtml(t('d.card.country'))}: ${escapeHtml(formatCountry(player.country))}</span>`,
@@ -3843,8 +4461,14 @@
     const conduct = formatConductSummary('team', team.slug, entitiesState);
     const needs = team.games
       .filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game)
-      .flatMap((entry) => entry.needs.map((need) => `${getGameLabel(entry.game)}: ${formatRole(need.role)} (${need.rankMin}+)`));
+      .flatMap((entry) => entry.needs.map((need) => formatTeamNeed(entry.game, need)));
     const topNeed = needs[0] || '-';
+    const primaryNeed = getTeamPrimaryNeed(team);
+    const roleNeeded = primaryNeed && primaryNeed.need ? formatRole(primaryNeed.need.role) : '-';
+    const proofMeta = getProofMeta(team.verified);
+    const coarseAvailability = formatAvailability(getCoarseTeamAvailability(team));
+    const availabilityDetail = team.availabilityDetail ? String(team.availabilityDetail).trim() : '';
+    const hookText = getScoutHookText(team);
 
     return [
       '<article class="result-card">',
@@ -3855,10 +4479,17 @@
       '</div>',
       renderProofBadge(team.verified, { compact: true }),
       '</div>',
+      `<p class="scout-hook">${escapeHtml(hookText)}</p>`,
       '<div class="result-card__rank">',
       `<strong>${escapeHtml(topNeed)}</strong>`,
       `<span>${escapeHtml(t('d.card.availability'))}: ${escapeHtml(formatSchedule(team.schedule))}</span>`,
       '</div>',
+      '<div class="scout-chips">',
+      `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.proof'))}</strong><span>${escapeHtml(proofMeta.label)}</span></span>`,
+      `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.roleNeeded'))}</strong><span>${escapeHtml(roleNeeded)}</span></span>`,
+      `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.availability'))}</strong><span>${escapeHtml(coarseAvailability || '-')}</span></span>`,
+      '</div>',
+      availabilityDetail ? `<p class="availability-detail">${escapeHtml(availabilityDetail)}</p>` : '',
       '<div class="result-card__meta">',
       '<div class="team-needs">',
       needs.map((need) => `<span class="need-chip">${escapeHtml(need)}</span>`).join(''),
@@ -3903,6 +4534,7 @@
     const compareSlotA = document.getElementById('compareSlotA');
     const compareSlotB = document.getElementById('compareSlotB');
     const compareNow = document.getElementById('compareNow');
+    const compareHeadToHead = document.getElementById('compareHeadToHead');
     const exploreLayout = compareDrawer ? compareDrawer.closest('.explore-layout') : null;
 
     if (!compareEmpty || !compareContent || !inviteSelected) {
@@ -3913,6 +4545,9 @@
     const hasCompare = selected.length > 0;
     if (compareDrawer) {
       compareDrawer.classList.toggle('is-active', hasCompare);
+    }
+    if (compareHeadToHead) {
+      compareHeadToHead.classList.toggle('hidden', !hasCompare);
     }
     if (exploreLayout) {
       exploreLayout.classList.toggle('compare-active', hasCompare);
@@ -4954,6 +5589,45 @@
     });
   }
 
+  function syncGameChipActiveState() {
+    document.querySelectorAll('#gameChips .chip').forEach((chip) => {
+      const gameId = chip.dataset.game || GAME_IDS.ANY;
+      chip.classList.toggle('active', gameId === state.game);
+    });
+  }
+
+  function syncQuickStartControls() {
+    document.querySelectorAll('[data-quick-game]').forEach((button) => {
+      const gameId = button.dataset.quickGame || '';
+      button.classList.toggle('active', gameId === state.game);
+    });
+    const quickPlayers = document.getElementById('quickStartModePlayers');
+    const quickTeams = document.getElementById('quickStartModeTeams');
+    if (quickPlayers) {
+      quickPlayers.classList.toggle('active', state.mode === 'players');
+      quickPlayers.setAttribute('aria-pressed', String(state.mode === 'players'));
+    }
+    if (quickTeams) {
+      quickTeams.classList.toggle('active', state.mode === 'teams');
+      quickTeams.setAttribute('aria-pressed', String(state.mode === 'teams'));
+    }
+  }
+
+  function applyExploreGame(gameId, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    state.game = normalizeGameId(gameId, GAME_IDS.ANY);
+    syncGameChipActiveState();
+    syncQuickStartControls();
+    syncExploreRoleFilterOptions();
+    syncExploreRankFilterOptions();
+    persistExploreFilters();
+    if (opts.track !== false) {
+      applyFiltersTracking();
+    }
+    renderResults();
+    renderCompareDrawer();
+  }
+
   function setMode(mode) {
     state.mode = mode;
     const playersTab = document.getElementById('modePlayers');
@@ -4973,6 +5647,7 @@
     }
 
     updateExploreModeSemantics();
+    syncQuickStartControls();
     persistExploreFilters();
     applyCustomI18n();
     renderResults();
@@ -5121,7 +5796,43 @@
     }
   }
 
-  function openWaitlistAfterAuth(email) {
+  function externalTranslate(key, fallback) {
+    if (typeof window.uspecmeTranslate === 'function') {
+      return window.uspecmeTranslate(key);
+    }
+    return fallback || key;
+  }
+
+  function applyWaitlistPanelCtaState() {
+    const buttons = document.querySelectorAll('[data-waitlist-cta]');
+    if (!buttons.length) {
+      return;
+    }
+    const waitlistState = loadUnifiedState('waitlist', {}, () => null);
+    const joined = waitlistState && typeof waitlistState === 'object' && waitlistState.status === 'JOINED';
+    buttons.forEach((button) => {
+      if (joined) {
+        button.textContent = externalTranslate('wait.panel.ctaJoined', "You're on the waitlist ✓");
+        button.dataset.waitlistState = 'joined';
+        button.disabled = true;
+        return;
+      }
+      button.textContent = externalTranslate('wait.panel.cta', 'Open Waitlist');
+      button.dataset.waitlistState = 'open';
+      button.disabled = false;
+    });
+  }
+
+  function applyWaitlistSuccessCopy() {
+    const success = document.getElementById('waitlistSuccess');
+    if (!success) {
+      return;
+    }
+    success.dataset.d18n = 'd.waitlist.success.tight';
+    success.textContent = t('d.waitlist.success.tight');
+  }
+
+  function openWaitlistModal(email) {
     const modal = document.getElementById('waitlistModal');
     const form = document.getElementById('waitlistForm');
     const success = document.getElementById('waitlistSuccess');
@@ -5142,15 +5853,123 @@
       if (submit) {
         submit.disabled = false;
         submit.dataset.submitted = 'false';
-        if (typeof window.uspecmeTranslate === 'function') {
-          submit.textContent = window.uspecmeTranslate('modal.submit');
-        }
+        submit.textContent = externalTranslate('modal.submit', submit.textContent);
       }
     }
 
     if (success) {
       success.classList.add('hidden');
     }
+    applyWaitlistSuccessCopy();
+  }
+
+  function initWaitlistFormOverride() {
+    const form = document.getElementById('waitlistForm');
+    if (!form || !form.parentNode) {
+      return;
+    }
+    const freshForm = form.cloneNode(true);
+    freshForm.dataset.usmWaitlistOverride = '1';
+    form.parentNode.replaceChild(freshForm, form);
+
+    freshForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!freshForm.reportValidity()) {
+        return;
+      }
+
+      const emailInput = freshForm.querySelector('input[name="email"]');
+      const roleSelect = freshForm.querySelector('select[name="role"]');
+      const gameSelect = freshForm.querySelector('select[name="game"]');
+      const submit = freshForm.querySelector('button[type="submit"]');
+      const success = document.getElementById('waitlistSuccess');
+
+      const email = emailInput ? emailInput.value.trim() : '';
+      const role = roleSelect ? roleSelect.value : '';
+      const game = gameSelect ? gameSelect.value : '';
+      if (!email.includes('@') || !role || !game) {
+        showToast('d.waitlist.validation.error', 'error');
+        return;
+      }
+
+      setButtonLoading(submit, true, t('d.waitlist.submitting'));
+      persistUiSubmitMeta('waitlist', {
+        status: 'pending',
+        startedAt: new Date().toISOString()
+      });
+
+      try {
+        const requestId = makeUnifiedId('waitlist');
+        const nowIso = new Date().toISOString();
+        await callMockApi('waitlist_submit', {
+          email,
+          role,
+          game
+        });
+
+        updateUnifiedState('waitlist', () => ({
+          status: 'JOINED',
+          email,
+          role,
+          game,
+          requestId,
+          joinedAt: nowIso
+        }), {});
+
+        persistUiSubmitMeta('waitlist', {
+          status: 'success',
+          requestId,
+          completedAt: nowIso
+        });
+
+        if (success) {
+          success.classList.remove('hidden');
+        }
+        if (submit) {
+          submit.disabled = true;
+          submit.dataset.submitted = 'true';
+          submit.textContent = externalTranslate('modal.submitted', 'Submitted');
+        }
+        applyWaitlistPanelCtaState();
+        applyWaitlistSuccessCopy();
+        showToast('d.waitlist.success.tight', 'success');
+        document.dispatchEvent(new CustomEvent('usm:waitlist:success', {
+          detail: {
+            email,
+            role,
+            game,
+            requestId,
+            status: 'JOINED'
+          }
+        }));
+      } catch (_err) {
+        if (success) {
+          success.classList.add('hidden');
+        }
+        if (submit) {
+          submit.dataset.submitted = 'false';
+          submit.textContent = externalTranslate('modal.submit', 'Join Waitlist');
+        }
+        persistUiSubmitMeta('waitlist', {
+          status: 'error',
+          completedAt: new Date().toISOString()
+        });
+        showToast('d.toast.error.generic', 'error');
+      } finally {
+        if (submit && submit.dataset.submitted === 'true') {
+          setButtonLoading(submit, false);
+          submit.disabled = true;
+        } else {
+          setButtonLoading(submit, false);
+        }
+      }
+    });
+
+    applyWaitlistSuccessCopy();
+  }
+
+  function openWaitlistAfterAuth(email) {
+    openWaitlistModal(email);
   }
 
   function openAuthModal(mode) {
@@ -5488,15 +6307,7 @@
 
     document.querySelectorAll('#gameChips .chip').forEach((chip) => {
       chip.addEventListener('click', () => {
-        document.querySelectorAll('#gameChips .chip').forEach((c) => c.classList.remove('active'));
-        chip.classList.add('active');
-        state.game = chip.dataset.game || GAME_IDS.ANY;
-        syncExploreRoleFilterOptions();
-        syncExploreRankFilterOptions();
-        persistExploreFilters();
-        applyFiltersTracking();
-        renderResults();
-        renderCompareDrawer();
+        applyExploreGame(chip.dataset.game || GAME_IDS.ANY);
       });
     });
 
@@ -6154,36 +6965,95 @@
   }
 
   function initHeroCTAs() {
+    const explorePrimary = document.getElementById('ctaExplorePrimary');
+    const earlyAccessSecondary = document.getElementById('ctaEarlyAccessSecondary');
     const player = document.getElementById('ctaPlayer');
     const team = document.getElementById('ctaTeam');
+    const scrollToExplore = () => {
+      const explore = document.getElementById('explore');
+      if (explore) {
+        explore.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+
+    if (explorePrimary) {
+      explorePrimary.addEventListener('click', () => {
+        track('click_cta_player', { source: 'hero_primary' });
+        setMode('players');
+        scrollToExplore();
+      });
+    }
+
+    if (earlyAccessSecondary) {
+      earlyAccessSecondary.addEventListener('click', () => {
+        openWaitlistModal();
+      });
+    }
 
     if (player) {
       player.addEventListener('click', () => {
         track('click_cta_player', {});
-        const modePlayers = document.getElementById('modePlayers');
-        if (modePlayers) {
-          modePlayers.click();
-        }
-        const explore = document.getElementById('explore');
-        if (explore) {
-          explore.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        setMode('players');
+        scrollToExplore();
       });
     }
 
     if (team) {
       team.addEventListener('click', () => {
         track('click_cta_team', {});
-        const modeTeams = document.getElementById('modeTeams');
-        if (modeTeams) {
-          modeTeams.click();
-        }
-        const explore = document.getElementById('explore');
-        if (explore) {
-          explore.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        setMode('teams');
+        scrollToExplore();
       });
     }
+  }
+
+  function initQuickStart() {
+    const quickStart = document.getElementById('quickStart');
+    if (!quickStart) {
+      return;
+    }
+
+    const runButton = document.getElementById('quickStartRun');
+    const modePlayers = document.getElementById('quickStartModePlayers');
+    const modeTeams = document.getElementById('quickStartModeTeams');
+    const scrollToExplore = () => {
+      const explore = document.getElementById('explore');
+      if (explore) {
+        explore.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+
+    document.querySelectorAll('[data-quick-game]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const gameId = button.dataset.quickGame || GAME_IDS.OVERWATCH;
+        applyExploreGame(gameId, { track: false });
+      });
+    });
+
+    if (modePlayers) {
+      modePlayers.addEventListener('click', () => {
+        setMode('players');
+      });
+    }
+    if (modeTeams) {
+      modeTeams.addEventListener('click', () => {
+        setMode('teams');
+      });
+    }
+
+    if (runButton) {
+      runButton.addEventListener('click', () => {
+        if (state.game === GAME_IDS.ANY) {
+          applyExploreGame(GAME_IDS.OVERWATCH, { track: false });
+        }
+        applyFiltersTracking();
+        renderResults();
+        renderCompareDrawer();
+        scrollToExplore();
+      });
+    }
+
+    syncQuickStartControls();
   }
 
   function initWaitlistTracking() {
@@ -6248,6 +7118,8 @@
     initNavigationState();
     renderResults();
     renderCompareDrawer();
+    applyWaitlistSuccessCopy();
+    applyWaitlistPanelCtaState();
     renderRequestsPage(getHashParam('request'));
     renderMessagesPage();
     renderNotificationsPage();
@@ -6261,9 +7133,11 @@
     initNavigationState();
     initTheme();
     initHeroCTAs();
+    initQuickStart();
     seedEntityStoreIfNeeded();
     syncConductDerivedStateOnLoad();
     initExplore();
+    initWaitlistFormOverride();
     initInviteModal();
     initRatingModal();
     initConnectModal();
@@ -6278,6 +7152,8 @@
     bindGlobalEsc();
 
     applyCustomI18n();
+    applyWaitlistSuccessCopy();
+    applyWaitlistPanelCtaState();
     syncMetrics();
     trackPageView();
   });
