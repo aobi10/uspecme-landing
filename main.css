@@ -413,6 +413,10 @@ body.is-authenticated .preview-tag {
 .list-row .micro-row {
   color: rgb(var(--muted));
 }
+.micro-row-proof .proof-badge {
+  margin-left: 4px;
+  vertical-align: middle;
+}
 .thread-item {
   cursor: pointer;
 }
@@ -960,20 +964,28 @@ body.is-authenticated .preview-lock {
   padding: 4px 8px;
   font-size: 12px;
 }
+.proof-badge--verified,
 .proof-badge.rank {
   border-color: rgb(var(--mint) / 0.45);
   background: rgb(var(--mint) / 0.14);
   color: rgb(var(--text));
 }
+.proof-badge--connected-pending,
 .proof-badge.connected {
   border-color: rgb(var(--border));
   background: rgb(var(--surface-2));
   color: rgb(var(--text-2));
 }
+.proof-badge--self-declared,
 .proof-badge.self {
   border-color: rgb(var(--warning) / 0.4);
   background: rgb(var(--warning) / 0.18);
   color: rgb(var(--text));
+}
+.proof-badge--compact {
+  padding: 2px 7px;
+  font-size: 11px;
+  line-height: 1.3;
 }
 .result-meta {
   display: flex;

@@ -1874,7 +1874,8 @@
       'd.schedule.monWedFri': 'Mon/Wed/Fri',
       'd.schedule.tueThu': 'Tue/Thu',
       'd.proof.rankVerified': 'Rank Verified',
-      'd.proof.accountConnected': 'Account Connected',
+      'd.proof.connectedPending': 'Connected Pending',
+      'd.proof.accountConnected': 'Connected Pending',
       'd.proof.selfDeclared': 'Self Declared',
       'd.compare.title': 'Compare (max 2)',
       'd.compare.clear': 'Clear',
@@ -2320,7 +2321,8 @@
       'd.schedule.monWedFri': 'Mo/Mi/Fr',
       'd.schedule.tueThu': 'Di/Do',
       'd.proof.rankVerified': 'Rank verifiziert',
-      'd.proof.accountConnected': 'Account verbunden',
+      'd.proof.connectedPending': 'Verbindung ausstehend',
+      'd.proof.accountConnected': 'Verbindung ausstehend',
       'd.proof.selfDeclared': 'Selbst angegeben',
       'd.compare.title': 'Vergleich (max 2)',
       'd.compare.clear': 'Leeren',
@@ -2884,14 +2886,64 @@
     }
   }
 
-  function mapProof(proofStatus) {
+  function getProofMeta(proofStatus) {
     if (proofStatus === PROOF_STATUS.RANK_VERIFIED) {
-      return { cls: 'rank', label: t('d.proof.rankVerified'), tooltip: t('d.proof.tooltip.rank') };
+      return {
+        variant: 'verified',
+        label: t('d.proof.rankVerified'),
+        tooltip: t('d.proof.tooltip.rank')
+      };
     }
     if (proofStatus === PROOF_STATUS.ACCOUNT_CONNECTED) {
-      return { cls: 'connected', label: t('d.proof.accountConnected'), tooltip: t('d.proof.tooltip.connected') };
+      return {
+        variant: 'connected-pending',
+        label: t('d.proof.connectedPending'),
+        tooltip: t('d.proof.tooltip.connected')
+      };
     }
-    return { cls: 'self', label: t('d.proof.selfDeclared'), tooltip: t('d.proof.tooltip.self') };
+    return {
+      variant: 'self-declared',
+      label: t('d.proof.selfDeclared'),
+      tooltip: t('d.proof.tooltip.self')
+    };
+  }
+
+  function getLegacyProofClass(variant) {
+    if (variant === 'verified') return 'rank';
+    if (variant === 'connected-pending') return 'connected';
+    return 'self';
+  }
+
+  function mapProof(proofStatus) {
+    const meta = getProofMeta(proofStatus);
+    return {
+      cls: getLegacyProofClass(meta.variant),
+      variant: meta.variant,
+      label: meta.label,
+      tooltip: meta.tooltip
+    };
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderProofBadge(proofStatus, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const meta = getProofMeta(proofStatus);
+    const classes = ['proof-badge', `proof-badge--${meta.variant}`, getLegacyProofClass(meta.variant)];
+    if (opts.compact) {
+      classes.push('proof-badge--compact');
+    }
+    if (opts.className) {
+      classes.push(opts.className);
+    }
+    return `<span class="${classes.join(' ')}" title="${escapeHtml(meta.tooltip)}">${escapeHtml(meta.label)}</span>`;
   }
 
   function formatAvailability(availability) {
@@ -3182,12 +3234,19 @@
     setProfileField('setup.hz', `${t('d.setup.metric.hz')} ${normalized.setup.hz} Hz`);
     setProfileField('setup.fov', `${t('d.setup.metric.fov')} ${normalized.setup.fov}`);
 
-    const proof = mapProof(profile.proofStatus);
+    const proof = getProofMeta(profile.proofStatus);
     setProfileField('public.proof', proof.label);
     setProfileField('hero.proof', proof.label);
     document.querySelectorAll('[data-profile-proof]').forEach((badge) => {
-      badge.classList.remove('rank', 'connected', 'self');
-      badge.classList.add(proof.cls);
+      badge.classList.remove(
+        'rank',
+        'connected',
+        'self',
+        'proof-badge--verified',
+        'proof-badge--connected-pending',
+        'proof-badge--self-declared'
+      );
+      badge.classList.add(`proof-badge--${proof.variant}`, getLegacyProofClass(proof.variant));
       badge.setAttribute('title', proof.tooltip);
     });
 
@@ -3604,7 +3663,6 @@
 
   function renderPlayerCard(player, entitiesState) {
     const game = getPrimaryGame(player);
-    const proof = mapProof(game.proof);
     const inCompare = state.compare.includes(player.handle);
     const conduct = formatConductSummary('player', player.handle, entitiesState);
 
@@ -3618,7 +3676,7 @@
       `<strong>${formatRole(game.role) || '-'}</strong>`,
       `<span>${game.rank || '-'} · ${t('d.card.peak')} ${game.peak || '-'}</span>`,
       '</div>',
-      `<span class="proof-badge ${proof.cls}" title="${proof.tooltip}">${proof.label}</span>`,
+      renderProofBadge(game.proof),
       '<div class="result-meta">',
       `<span>${t('d.card.region')}: ${player.region}</span>`,
       `<span>${t('d.card.country')}: ${formatCountry(player.country)}</span>`,
@@ -3636,7 +3694,6 @@
   }
 
   function renderTeamCard(team, entitiesState) {
-    const proof = mapProof(team.verified);
     const conduct = formatConductSummary('team', team.slug, entitiesState);
     const needs = team.games
       .filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game)
@@ -3648,7 +3705,7 @@
       `<h3 class="result-handle">${team.name}</h3>`,
       `<span class="primary-chip">${team.region}</span>`,
       '</div>',
-      `<span class="proof-badge ${proof.cls}" title="${proof.tooltip}">${proof.label}</span>`,
+      renderProofBadge(team.verified),
       '<div class="team-needs">',
       needs.map((need) => `<span class="need-chip">${need}</span>`).join(''),
       '</div>',
@@ -3705,7 +3762,7 @@
     const rows = [
       { key: t('d.compare.row.role'), value: (p) => formatRole(getPrimaryGame(p).role) || '-' },
       { key: t('d.compare.row.rank'), value: (p) => getPrimaryGame(p).rank || '-' },
-      { key: t('d.compare.row.proof'), value: (p) => mapProof(getPrimaryGame(p).proof).label },
+      { key: t('d.compare.row.proof'), value: (p) => renderProofBadge(getPrimaryGame(p).proof, { compact: true }), isHtml: true },
       { key: t('d.compare.row.country'), value: (p) => formatCountry(p.country) },
       { key: t('d.compare.row.availability'), value: (p) => formatAvailability(p.availability) },
       { key: t('d.compare.row.languages'), value: (p) => p.language.join(', ') }
@@ -3717,7 +3774,7 @@
       selected.map((p) => `<th>${p.handle}</th>`).join(''),
       '</tr></thead><tbody>',
       rows
-        .map((row) => `<tr><td>${row.key}</td>${selected.map((p) => `<td>${row.value(p)}</td>`).join('')}</tr>`)
+        .map((row) => `<tr><td>${row.key}</td>${selected.map((p) => `<td>${row.isHtml ? row.value(p) : escapeHtml(row.value(p))}</td>`).join('')}</tr>`)
         .join(''),
       '</tbody></table>'
     ].join('');
@@ -3806,6 +3863,27 @@
     return { text: t('d.requests.rating.notStarted'), cls: 'pending', canOpen: true };
   }
 
+  function resolveRequestProofStatus(request) {
+    const normalizedRequest = normalizeTargetIdentity(cloneJson(request || {}));
+    if (!normalizedRequest) {
+      return PROOF_STATUS.SELF_DECLARED;
+    }
+
+    const normalizedGame = normalizeGameId(normalizedRequest.game, GAME_IDS.OVERWATCH);
+    if (normalizedRequest.targetType === 'team') {
+      const team = teams.find((entry) => slugifyStableId(entry.slug) === normalizedRequest.targetId);
+      return team && team.verified ? team.verified : PROOF_STATUS.SELF_DECLARED;
+    }
+
+    const player = players.find((entry) => slugifyStableId(entry.handle) === normalizedRequest.targetId);
+    if (!player || !Array.isArray(player.games) || !player.games.length) {
+      return PROOF_STATUS.SELF_DECLARED;
+    }
+
+    const gameEntry = player.games.find((entry) => entry.game === normalizedGame) || player.games[0];
+    return gameEntry && gameEntry.proof ? gameEntry.proof : PROOF_STATUS.SELF_DECLARED;
+  }
+
   function renderRequestsPage(highlightRequestId) {
     const list = document.getElementById('requestsList');
     const empty = document.getElementById('requestsEmpty');
@@ -3832,6 +3910,7 @@
       const tryout = normalizeTryoutState(request);
       const selfRating = getRatingBySide(entitiesState, request.id, 'self');
       const counterpartRating = getRatingBySide(entitiesState, request.id, 'counterpart');
+      const proofBadge = renderProofBadge(resolveRequestProofStatus(request), { compact: true });
 
       const canCancel = state.isAuthenticated && request.status === 'PENDING';
       const canConfirmCompleted = state.isAuthenticated && request.status !== 'CANCELLED' && !tryout.selfConfirmedAt;
@@ -3874,6 +3953,7 @@
         `<strong>${request.targetLabel} · ${getGameLabel(request.game)}</strong>`,
         `<span>${request.role} · ${request.slot}</span>`,
         `<span class="status-chip ${statusMeta.cls}">${t(statusMeta.key)}</span>`,
+        `<span class="micro-row micro-row-proof">${t('d.compare.row.proof')}: ${proofBadge}</span>`,
         `<span class="micro-row">${t('d.requests.tryout.label')}: <span class="status-chip ${tryoutMeta.cls}">${t(tryoutMeta.key)}</span></span>`,
         `<span class="micro-row">${t('d.requests.rating.label')}: <span class="status-chip ${ratingMeta.cls}">${ratingMeta.text}</span></span>`,
         '<div class="list-row-actions">',
