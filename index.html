@@ -61,7 +61,7 @@
           </div>
 
           <div class="network-cta-row hero-tertiary">
-            <button type="button" class="button ghost" data-open-network-modal data-network-mode="intro" data-d18n="d.network.open.intro">Request Intro</button>
+            <button type="button" class="button ghost" data-open-network-modal data-network-mode="intro" data-d18n="d.network.open.intro">Request Introduction</button>
             <button type="button" class="button ghost" data-open-network-modal data-network-mode="reference" data-d18n="d.network.open.reference">Add Reference</button>
           </div>
 
@@ -100,7 +100,7 @@
                 </div>
               </div>
               <div class="quick-run">
-                <button type="button" id="quickStartRun" class="button primary" data-d18n="d.quick.showMatches">Show matches</button>
+                <button type="button" id="quickStartRun" class="button primary" data-d18n="d.quickStart.openExplore">Open Explore</button>
               </div>
             </div>
           </div>
@@ -371,6 +371,7 @@
       </div>
       <div class="modal-body">
         <form id="inviteForm" class="form">
+          <p class="modal-help-text" data-d18n="d.modal.tryoutHelp">Send a concrete tryout request with role and time window.</p>
           <label>
             <span data-d18n="d.invite.game">Game</span>
             <select name="game" id="inviteGame" required>
@@ -394,7 +395,7 @@
               <option value="Sun 18:00" data-d18n="d.invite.slot.sun">Sun 18:00</option>
             </select>
           </label>
-          <p id="inviteSlotHint" class="invite-slot-hint" data-d18n="d.invite.slotHintUnknown">Slots are based on target availability.</p>
+          <p id="inviteSlotHint" class="invite-slot-hint" data-d18n="d.invite.slotsFromAvailability">Slots are suggested from the player's stated availability.</p>
 
           <label>
             <span data-d18n="d.invite.notes">Notes</span>
@@ -447,7 +448,7 @@
       </div>
       <div class="modal-body">
         <div class="modal-tabs" id="networkTabs" role="tablist" aria-label="Networking mode">
-          <button type="button" class="active" data-network-mode="intro" aria-selected="true" data-d18n="d.network.tab.intro">Request Intro</button>
+          <button type="button" class="active" data-network-mode="intro" aria-selected="true" data-d18n="d.network.tab.intro">Request Introduction</button>
           <button type="button" data-network-mode="reference" aria-selected="false" data-d18n="d.network.tab.reference">Add Reference</button>
         </div>
 
@@ -464,7 +465,8 @@
             <span data-d18n="d.network.intro.message.label">Message</span>
             <textarea name="message" rows="3" data-d18n-placeholder="d.network.intro.message.placeholder" placeholder="Share context for the introduction."></textarea>
           </label>
-          <button type="submit" class="button primary wide" data-d18n="d.network.submit.intro">Send intro request</button>
+          <p class="modal-help-text network-intro-help" data-d18n="d.modal.introductionHelp">Request a warm introduction to a team or contact.</p>
+          <button type="submit" class="button primary wide" data-d18n="d.network.submit.intro">Send introduction request</button>
         </form>
 
         <form id="networkReferenceForm" class="form hidden" data-network-form="reference">

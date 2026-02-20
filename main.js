@@ -2693,7 +2693,10 @@
       'd.quick.stepMode': '2. Pick directory',
       'd.quick.players': 'Players',
       'd.quick.teams': 'Teams',
-      'd.quick.showMatches': 'Show matches',
+      'd.quick.showMatches': 'Open Explore',
+      'd.quickStart.openExplore': 'Open Explore',
+      'd.quickStart.explorePlayers': 'Explore players',
+      'd.quickStart.exploreTeams': 'Explore teams',
       'd.explore.browse.players': 'Browse player profiles',
       'd.explore.browse.teams': 'Browse team profiles',
       'd.filter.search': 'Search',
@@ -2803,8 +2806,9 @@
       'd.invite.game': 'Game',
       'd.invite.role': 'Role needed / offered',
       'd.invite.slot': 'Suggested slot',
+      'd.invite.slotsFromAvailability': "Slots are suggested from the player's stated availability.",
       'd.invite.slotHint': 'Slots based on availability of {name}: {availability}',
-      'd.invite.slotHintUnknown': 'Slots are based on broad availability defaults.',
+      'd.invite.slotHintUnknown': "Slots are suggested from the player's stated availability.",
       'd.invite.slotHintMixed': 'Mixed availability detected. Showing balanced slot options.',
       'd.invite.slotSource': 'Slots based on availability of {name}: {detail}',
       'd.invite.slotPreset.weeknights.1': 'Mon 19:30',
@@ -2829,6 +2833,11 @@
       'd.avatar.style.symbol': 'Symbol',
       'd.avatar.style.brand': 'Brand',
       'd.modal.close': 'Close',
+      'd.modal.tryoutHelp': 'Send a concrete tryout request with role and time window.',
+      'd.modal.introductionHelp': 'Request a warm introduction to a team or contact.',
+      'd.cta.inviteTryout': 'Invite to Tryout',
+      'd.cta.applyTryout': 'Apply for Tryout',
+      'd.cta.requestIntroduction': 'Request Introduction',
       'd.card.chip.proof': 'Proof',
       'd.card.chip.role': 'Role',
       'd.card.chip.roleNeeded': 'Role needed',
@@ -2837,11 +2846,11 @@
       'd.card.region': 'Region',
       'd.card.country': 'Country',
       'd.card.availability': 'Availability',
-      'd.card.invite': 'Invite',
+      'd.card.invite': 'Invite to Tryout',
       'd.card.compare': 'Compare',
       'd.card.remove': 'Remove',
       'd.card.open': 'Open profile',
-      'd.card.apply': 'Apply / Request tryout',
+      'd.card.apply': 'Apply for Tryout',
       'd.compare.row.role': 'Role',
       'd.compare.row.rank': 'Rank',
       'd.compare.row.proof': 'Proof',
@@ -2887,6 +2896,7 @@
       'd.profile.backToCompare': 'Back to Compare',
       'd.profile.close': 'Close',
       'd.profile.return.compare': 'Return to Compare',
+      'd.profile.returnToCompare': 'Return to Compare',
       'd.profile.context.fromCompare': 'Opened from compare',
       'd.profile.context.fromExplore': 'Opened from explore',
       'd.profile.editPrimary': 'Edit profile',
@@ -2913,10 +2923,10 @@
       'd.references.two.name': 'Mila "Astra" Hoffmann',
       'd.references.two.meta': 'Team Manager · FaZe Academy',
       'd.references.two.text': 'Strong teammate with consistent attendance and clear match communication.',
-      'd.network.open.intro': 'Request Intro',
+      'd.network.open.intro': 'Request Introduction',
       'd.network.open.reference': 'Add Reference',
       'd.network.title': 'Professional Networking',
-      'd.network.tab.intro': 'Request Intro',
+      'd.network.tab.intro': 'Request Introduction',
       'd.network.tab.reference': 'Add Reference',
       'd.network.intro.org.label': 'Team / Organization',
       'd.network.intro.org.placeholder': 'e.g. Team Liquid Academy',
@@ -2930,7 +2940,7 @@
       'd.network.reference.relationship.placeholder': 'e.g. Worked together for one season',
       'd.network.reference.text.label': 'Reference text',
       'd.network.reference.text.placeholder': 'Write a short reference.',
-      'd.network.submit.intro': 'Send intro request',
+      'd.network.submit.intro': 'Send introduction request',
       'd.network.submit.reference': 'Submit reference',
       'd.network.submitting': 'Sending...',
       'd.network.success': 'Saved (Preview). Intros & references go live in Early Access.',
@@ -2955,6 +2965,7 @@
       'd.auth.open.register': 'Register',
       'd.auth.open.login': 'Login',
       'd.auth.entry.online': 'Shinobi · Online',
+      'd.auth.entry.previewMode': 'Preview mode',
       'd.auth.status.online': 'Online',
       'd.auth.entry.logoutHint': 'Open account menu',
       'd.auth.loggedOut': 'Logged out.',
@@ -3254,7 +3265,10 @@
       'd.quick.stepMode': '2. Bereich wählen',
       'd.quick.players': 'Spieler',
       'd.quick.teams': 'Teams',
-      'd.quick.showMatches': 'Matches anzeigen',
+      'd.quick.showMatches': 'Explore öffnen',
+      'd.quickStart.openExplore': 'Explore öffnen',
+      'd.quickStart.explorePlayers': 'Spieler entdecken',
+      'd.quickStart.exploreTeams': 'Teams entdecken',
       'd.explore.browse.players': 'Spielerprofile durchsuchen',
       'd.explore.browse.teams': 'Teamprofile durchsuchen',
       'd.filter.search': 'Suche',
@@ -3364,8 +3378,9 @@
       'd.invite.game': 'Spiel',
       'd.invite.role': 'Gesuchte / angebotene Rolle',
       'd.invite.slot': 'Vorgeschlagener Slot',
+      'd.invite.slotsFromAvailability': 'Slots basieren auf der angegebenen Verfügbarkeit des Spielers.',
       'd.invite.slotHint': 'Slots basieren auf Verfügbarkeit von {name}: {availability}',
-      'd.invite.slotHintUnknown': 'Slots basieren auf allgemeinen Verfügbarkeitswerten.',
+      'd.invite.slotHintUnknown': 'Slots basieren auf der angegebenen Verfügbarkeit des Spielers.',
       'd.invite.slotHintMixed': 'Gemischte Verfügbarkeiten erkannt. Es werden ausgewogene Slots vorgeschlagen.',
       'd.invite.slotSource': 'Slots basieren auf Verfügbarkeit von {name}: {detail}',
       'd.invite.slotPreset.weeknights.1': 'Mo 19:30',
@@ -3390,6 +3405,11 @@
       'd.avatar.style.symbol': 'Symbol',
       'd.avatar.style.brand': 'Brand',
       'd.modal.close': 'Schließen',
+      'd.modal.tryoutHelp': 'Sende eine konkrete Tryout-Anfrage mit Rolle und Zeitfenster.',
+      'd.modal.introductionHelp': 'Bitte um eine Einführung/Kontaktvermittlung zu Team oder Ansprechpartner.',
+      'd.cta.inviteTryout': 'Zum Tryout einladen',
+      'd.cta.applyTryout': 'Für Tryout bewerben',
+      'd.cta.requestIntroduction': 'Vermittlung anfragen',
       'd.card.chip.proof': 'Proof',
       'd.card.chip.role': 'Rolle',
       'd.card.chip.roleNeeded': 'Benoetigte Rolle',
@@ -3398,11 +3418,11 @@
       'd.card.region': 'Region',
       'd.card.country': 'Herkunftsland',
       'd.card.availability': 'Verfügbarkeit',
-      'd.card.invite': 'Einladen',
+      'd.card.invite': 'Zum Tryout einladen',
       'd.card.compare': 'Vergleichen',
       'd.card.remove': 'Entfernen',
       'd.card.open': 'Profil öffnen',
-      'd.card.apply': 'Bewerben / Tryout anfragen',
+      'd.card.apply': 'Für Tryout bewerben',
       'd.compare.row.role': 'Rolle',
       'd.compare.row.rank': 'Rank',
       'd.compare.row.proof': 'Proof',
@@ -3448,6 +3468,7 @@
       'd.profile.backToCompare': 'Zurück zum Vergleich',
       'd.profile.close': 'Schließen',
       'd.profile.return.compare': 'Zur Vergleichsansicht',
+      'd.profile.returnToCompare': 'Zur Vergleichsansicht',
       'd.profile.context.fromCompare': 'Aus Vergleich geöffnet',
       'd.profile.context.fromExplore': 'Aus Explore geöffnet',
       'd.profile.editPrimary': 'Profil bearbeiten',
@@ -3474,24 +3495,24 @@
       'd.references.two.name': 'Mila "Astra" Hoffmann',
       'd.references.two.meta': 'Team Managerin · FaZe Academy',
       'd.references.two.text': 'Starker Teammate mit konstanter Verfügbarkeit und klarer Match-Kommunikation.',
-      'd.network.open.intro': 'Intro anfragen',
+      'd.network.open.intro': 'Vermittlung anfragen',
       'd.network.open.reference': 'Referenz hinzufügen',
       'd.network.title': 'Professionelles Networking',
-      'd.network.tab.intro': 'Intro anfragen',
+      'd.network.tab.intro': 'Vermittlung anfragen',
       'd.network.tab.reference': 'Referenz hinzufügen',
       'd.network.intro.org.label': 'Team / Organisation',
       'd.network.intro.org.placeholder': 'z. B. Team Liquid Academy',
       'd.network.intro.role.label': 'Gesuchte Rolle',
       'd.network.intro.role.placeholder': 'z. B. Flex DPS für Abend-Scrims',
       'd.network.intro.message.label': 'Nachricht',
-      'd.network.intro.message.placeholder': 'Teile den Kontext für die Intro-Anfrage.',
+      'd.network.intro.message.placeholder': 'Teile den Kontext für die Vermittlungsanfrage.',
       'd.network.reference.role.label': 'Deine Rolle',
       'd.network.reference.role.placeholder': 'z. B. Coach, Teamleitung, Analyst',
       'd.network.reference.relationship.label': 'Beziehung',
       'd.network.reference.relationship.placeholder': 'z. B. Eine Season zusammen gespielt',
       'd.network.reference.text.label': 'Referenztext',
       'd.network.reference.text.placeholder': 'Schreibe eine kurze Referenz.',
-      'd.network.submit.intro': 'Intro-Anfrage senden',
+      'd.network.submit.intro': 'Vermittlungsanfrage senden',
       'd.network.submit.reference': 'Referenz übermitteln',
       'd.network.submitting': 'Wird gesendet...',
       'd.network.success': 'Gespeichert (Vorschau). Intros & Referenzen gehen mit Early Access live.',
@@ -3516,6 +3537,7 @@
       'd.auth.open.register': 'Registrieren',
       'd.auth.open.login': 'Login',
       'd.auth.entry.online': 'Shinobi · Online',
+      'd.auth.entry.previewMode': 'Preview-Modus',
       'd.auth.status.online': 'Online',
       'd.auth.entry.logoutHint': 'Account-Menü öffnen',
       'd.auth.loggedOut': 'Ausgeloggt.',
@@ -3667,10 +3689,10 @@
         return;
       }
 
-      button.dataset.d18n = 'd.auth.open.login';
-      button.textContent = t('d.auth.open.login');
+      button.dataset.d18n = 'd.auth.entry.previewMode';
+      button.textContent = t('d.auth.entry.previewMode');
       button.removeAttribute('title');
-      button.dataset.authState = 'guest';
+      button.dataset.authState = 'preview';
     });
   }
 
@@ -3766,6 +3788,7 @@
             return;
           }
           navigateToProfileSelf({
+            mode: 'self',
             editSection: 'public'
           });
           return;
@@ -4098,6 +4121,15 @@
     return parseCompareHandlesParam(params.get('compare') || '');
   }
 
+  function getProfileRouteModeFromURL() {
+    if (typeof window === 'undefined' || !window.location) {
+      return '';
+    }
+    const params = new URLSearchParams(window.location.search || '');
+    const mode = String(params.get('mode') || '').trim().toLowerCase();
+    return mode === 'self' ? 'self' : '';
+  }
+
   function getProfileReturnContext() {
     const source = getProfileRouteSourceFromURL() || normalizeNavSource(state.navContext.source);
     const compareHandles = getProfileRouteCompareHandlesFromURL();
@@ -4127,18 +4159,25 @@
     return 'index.html';
   }
 
-  function goBackOrFallback(fallbackUrl) {
+  function goBackOrFallback(fallbackUrl, context) {
     const fallback = String(fallbackUrl || 'index.html').trim() || 'index.html';
+    const ctx = context && typeof context === 'object' ? context : getProfileReturnContext();
     let hasSameOriginReferrer = false;
+    let refPath = '';
     try {
       if (document.referrer) {
         const ref = new URL(document.referrer);
         hasSameOriginReferrer = ref.origin === window.location.origin;
+        refPath = hasSameOriginReferrer ? ref.pathname : '';
       }
     } catch (_err) {
       hasSameOriginReferrer = false;
+      refPath = '';
     }
-    if (window.history && window.history.length > 1 && hasSameOriginReferrer) {
+    const profileLoopLikely = hasSameOriginReferrer
+      && /\/profile\.html$/i.test(refPath)
+      && (ctx.source === 'compare' || ctx.source === 'explore');
+    if (window.history && window.history.length > 1 && hasSameOriginReferrer && !profileLoopLikely) {
       window.history.back();
       return;
     }
@@ -4178,6 +4217,11 @@
       params.set('player', normalizedHandle);
     }
 
+    const mode = String(opts.mode || '').trim().toLowerCase();
+    if (!normalizedHandle && mode === 'self') {
+      params.set('mode', 'self');
+    }
+
     const normalizedGame = normalizeGameId(opts.sourceGame || '', '');
     if (isCanonicalProfileGame(normalizedGame)) {
       params.set('game', normalizedGame);
@@ -4205,7 +4249,11 @@
   }
 
   function navigateToProfileSelf(options) {
-    window.location.href = getProfileRouteUrl('', options);
+    const opts = options && typeof options === 'object' ? options : {};
+    window.location.href = getProfileRouteUrl('', {
+      ...opts,
+      mode: opts.mode || 'self'
+    });
   }
 
   function navigateToProfilePlayer(handle, options) {
@@ -4236,6 +4284,7 @@
     }
 
     const routeHandle = getProfileRoutePlayerHandleFromURL();
+    const routeMode = getProfileRouteModeFromURL();
     const routeSourceGame = getProfileRouteSourceGameFromURL();
     const routeSource = getProfileRouteSourceFromURL();
     const routeCompareHandles = getProfileRouteCompareHandlesFromURL();
@@ -4256,6 +4305,9 @@
       state.profileViewHandle = '';
       state.profileViewSourceGame = '';
       state.lastProfileOpenHandle = '';
+      if (routeMode === 'self') {
+        replaceProfileRoute('', { mode: 'self' });
+      }
       return;
     }
 
@@ -4267,7 +4319,7 @@
       state.profileViewHandle = '';
       state.profileViewSourceGame = '';
       state.lastProfileOpenHandle = '';
-      replaceProfileRoute('', {});
+      replaceProfileRoute('', { mode: 'self' });
       return;
     }
 
@@ -5249,9 +5301,9 @@
     if (compareReturnButton) {
       const visible = context.source === 'compare';
       compareReturnButton.classList.toggle('hidden', !visible);
-      compareReturnButton.dataset.d18n = 'd.profile.return.compare';
-      compareReturnButton.textContent = t('d.profile.return.compare');
-      compareReturnButton.setAttribute('aria-label', t('d.profile.return.compare'));
+      compareReturnButton.dataset.d18n = 'd.profile.returnToCompare';
+      compareReturnButton.textContent = t('d.profile.returnToCompare');
+      compareReturnButton.setAttribute('aria-label', t('d.profile.returnToCompare'));
     }
 
     if (editPrimaryButton) {
@@ -5277,16 +5329,18 @@
     if (backButton && !backButton.dataset.bound) {
       backButton.dataset.bound = '1';
       backButton.addEventListener('click', () => {
-        const target = resolveProfileBackTarget(getProfileReturnContext());
-        goBackOrFallback(target);
+        const context = getProfileReturnContext();
+        const target = resolveProfileBackTarget(context);
+        goBackOrFallback(target, context);
       });
     }
 
     if (closeButton && !closeButton.dataset.bound) {
       closeButton.dataset.bound = '1';
       closeButton.addEventListener('click', () => {
-        const target = resolveProfileBackTarget(getProfileReturnContext());
-        goBackOrFallback(target);
+        const context = getProfileReturnContext();
+        const target = resolveProfileBackTarget(context);
+        goBackOrFallback(target, context);
       });
     }
 
@@ -5691,7 +5745,7 @@
       state.profileViewPlayerId = '';
       state.profileViewHandle = '';
       state.profileViewSourceGame = '';
-      replaceProfileRoute('', {});
+      replaceProfileRoute('', { mode: 'self' });
       applyProfileStateToDOM();
     }
 
@@ -7289,6 +7343,26 @@
     });
   }
 
+  function getQuickStartRunLabelKey() {
+    if (state.mode === 'players') {
+      return 'd.quickStart.explorePlayers';
+    }
+    if (state.mode === 'teams') {
+      return 'd.quickStart.exploreTeams';
+    }
+    return 'd.quickStart.openExplore';
+  }
+
+  function syncQuickStartRunLabel() {
+    const runButton = document.getElementById('quickStartRun');
+    if (!runButton) {
+      return;
+    }
+    const key = getQuickStartRunLabelKey();
+    runButton.dataset.d18n = key;
+    runButton.textContent = t(key);
+  }
+
   function syncQuickStartControls() {
     document.querySelectorAll('[data-quick-game]').forEach((button) => {
       const gameId = button.dataset.quickGame || '';
@@ -7304,6 +7378,7 @@
       quickTeams.classList.toggle('active', state.mode === 'teams');
       quickTeams.setAttribute('aria-pressed', String(state.mode === 'teams'));
     }
+    syncQuickStartRunLabel();
   }
 
   function applyExploreGame(gameId, options) {
@@ -7458,8 +7533,152 @@
     };
   }
 
-  function getInviteSlotPresets(availability) {
-    const normalized = normalizeAvailability(availability);
+  function parseAvailabilityDetailHints(detail) {
+    const raw = String(detail || '').trim();
+    if (!raw) {
+      return null;
+    }
+    const lower = raw.toLowerCase();
+    const dayMatchers = [
+      { day: 1, pattern: /\b(mon|monday|mo|montag)\b/ },
+      { day: 2, pattern: /\b(tue|tues|tuesday|di|dienstag)\b/ },
+      { day: 3, pattern: /\b(wed|wednesday|mi|mittwoch)\b/ },
+      { day: 4, pattern: /\b(thu|thur|thurs|thursday|do|donnerstag)\b/ },
+      { day: 5, pattern: /\b(fri|friday|fr|freitag)\b/ },
+      { day: 6, pattern: /\b(sat|saturday|sa|samstag)\b/ },
+      { day: 7, pattern: /\b(sun|sunday|so|sonntag)\b/ }
+    ];
+
+    const days = [];
+    dayMatchers.forEach((matcher) => {
+      if (matcher.pattern.test(lower) && !days.includes(matcher.day)) {
+        days.push(matcher.day);
+      }
+    });
+
+    const hasWeekendMention = /\b(weekend|wochenende)\b/.test(lower) || days.some((day) => day >= 6);
+    const hasWeekdayMention = /\b(weeknight|weeknights|weekday|weekdays|werktag|werktags|wochentag|wochentags)\b/.test(lower)
+      || days.some((day) => day <= 5);
+
+    let bucket = 'Any';
+    if (hasWeekendMention && !hasWeekdayMention) {
+      bucket = 'Weekend';
+    } else if (hasWeekdayMention && !hasWeekendMention) {
+      bucket = 'Weeknights';
+    }
+
+    const timeMatch = lower.match(/(\d{1,2})(?:[:.](\d{2}))?\s*(?:uhr)?\s*[-–]\s*(\d{1,2})(?:[:.](\d{2}))?/i);
+    let preferredHour = null;
+    let preferredMinute = 0;
+    if (timeMatch) {
+      preferredHour = Number.parseInt(timeMatch[1], 10);
+      preferredMinute = Number.parseInt(timeMatch[2] || '0', 10);
+      if (/\bpm\b/.test(lower) && preferredHour < 12) {
+        preferredHour += 12;
+      }
+      if (!Number.isFinite(preferredHour)) {
+        preferredHour = null;
+      }
+      if (!Number.isFinite(preferredMinute)) {
+        preferredMinute = 0;
+      }
+    }
+
+    return {
+      bucket,
+      days,
+      preferredHour,
+      preferredMinute
+    };
+  }
+
+  function localizeSlotLabel(slot, lang) {
+    const dayNames = lang === 'de'
+      ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dayIndex = Math.min(7, Math.max(1, Number(slot.day) || 1)) - 1;
+    const hour = Math.min(23, Math.max(0, Number(slot.hour) || 0));
+    const minute = Math.min(59, Math.max(0, Number(slot.minute) || 0));
+    return `${dayNames[dayIndex]} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  }
+
+  function buildAvailabilityDrivenSlots(targetContext) {
+    const context = targetContext && typeof targetContext === 'object' ? targetContext : {};
+    const normalizedAvailability = normalizeAvailability(context.availability);
+    const hints = parseAvailabilityDetailHints(context.availabilityDetail);
+    const desiredBucket = hints && hints.bucket !== 'Any'
+      ? hints.bucket
+      : normalizedAvailability;
+    const presetGroup = desiredBucket === 'Weeknights'
+      ? 'weeknights'
+      : desiredBucket === 'Weekend'
+        ? 'weekend'
+        : 'any';
+
+    const templateMap = {
+      weeknights: {
+        days: [2, 4, 3],
+        hours: [20, 19, 21],
+        minutes: [0, 30, 0]
+      },
+      weekend: {
+        days: [6, 7, 6],
+        hours: [14, 18, 17],
+        minutes: [0, 0, 0]
+      },
+      any: {
+        days: [2, 4, 7],
+        hours: [20, 19, 18],
+        minutes: [0, 30, 0]
+      }
+    };
+
+    const template = templateMap[presetGroup];
+    const dayOrder = template.days.slice();
+    if (hints && Array.isArray(hints.days) && hints.days.length) {
+      const merged = Array.from(new Set(hints.days.concat(template.days)));
+      while (merged.length < 3) {
+        merged.push(template.days[merged.length % template.days.length]);
+      }
+      dayOrder.splice(0, dayOrder.length, merged[0], merged[1], merged[2]);
+    }
+
+    const hourOrder = template.hours.slice();
+    const minuteOrder = template.minutes.slice();
+    if (hints && Number.isFinite(hints.preferredHour)) {
+      const minHour = presetGroup === 'weekend' ? 10 : 17;
+      const maxHour = presetGroup === 'weekend' ? 22 : 23;
+      const primaryHour = Math.min(maxHour, Math.max(minHour, hints.preferredHour));
+      hourOrder.splice(0, hourOrder.length, primaryHour, Math.max(minHour, primaryHour - 1), Math.min(maxHour, primaryHour + 1));
+      const normalizedMinute = Number.isFinite(hints.preferredMinute)
+        ? (hints.preferredMinute >= 45 ? 45 : hints.preferredMinute >= 30 ? 30 : hints.preferredMinute >= 15 ? 15 : 0)
+        : minuteOrder[0];
+      minuteOrder.splice(0, minuteOrder.length, normalizedMinute, minuteOrder[1], minuteOrder[2]);
+    }
+
+    const lang = getLang();
+    return [0, 1, 2].map((index) => {
+      const slot = {
+        day: dayOrder[index],
+        hour: hourOrder[index],
+        minute: minuteOrder[index]
+      };
+      const label = localizeSlotLabel(slot, lang);
+      return {
+        key: `slot.${presetGroup}.${index + 1}`,
+        label,
+        value: label
+      };
+    });
+  }
+
+  function getInviteSlotPresets(targetContext) {
+    const context = targetContext && typeof targetContext === 'object' ? targetContext : {};
+    const smartPresets = buildAvailabilityDrivenSlots(context);
+    if (Array.isArray(smartPresets) && smartPresets.length === 3) {
+      return smartPresets;
+    }
+    const normalized = normalizeAvailability(context.availability);
     const presetGroup = normalized === 'Weeknights'
       ? 'weeknights'
       : normalized === 'Weekend'
@@ -7484,7 +7703,7 @@
     state.inviteTargetContext = targetContext;
 
     const previousValue = slotSelect.value;
-    const presets = getInviteSlotPresets(targetContext.availability);
+    const presets = getInviteSlotPresets(targetContext);
 
     slotSelect.innerHTML = '';
     presets.forEach((preset) => {
@@ -7504,7 +7723,7 @@
       return;
     }
 
-    let hintText = t('d.invite.slotHintUnknown');
+    let hintText = t('d.invite.slotsFromAvailability');
     if (targetContext.mixed) {
       hintText = t('d.invite.slotHintMixed');
     } else if (targetContext.name && targetContext.availabilityDetail) {
@@ -7949,7 +8168,7 @@
       state.profileViewPlayerId = '';
       state.profileViewHandle = '';
       state.profileViewSourceGame = '';
-      replaceProfileRoute('', {});
+      replaceProfileRoute('', { mode: 'self' });
       applyProfileStateToDOM();
       return;
     }

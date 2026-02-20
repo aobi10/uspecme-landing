@@ -218,6 +218,11 @@ button, input, select, textarea { font: inherit; }
   background: rgb(var(--mint));
   box-shadow: 0 0 0 4px rgb(var(--mint) / 0.18);
 }
+.auth-entry[data-auth-state="preview"] {
+  border-color: rgb(var(--border));
+  background: rgb(var(--surface-1));
+  color: rgb(var(--text-2));
+}
 .account-menu {
   position: fixed;
   z-index: 90;
@@ -1221,6 +1226,13 @@ body.is-authenticated .preview-lock {
 }
 .invite-slot-hint {
   margin: -4px 0 8px;
+  color: rgb(var(--muted));
+  font-size: 12px;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+.modal-help-text {
+  margin: -2px 0 8px;
   color: rgb(var(--muted));
   font-size: 12px;
   line-height: 1.42;
