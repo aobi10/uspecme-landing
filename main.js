@@ -98,6 +98,63 @@
     GAME_IDS.FORTNITE,
     GAME_IDS.RIVALS
   ];
+  const PLATFORM_IDS = {
+    PC: 'PC',
+    PLAYSTATION: 'PlayStation',
+    XBOX: 'Xbox',
+    SWITCH: 'Switch'
+  };
+  const ALLOWED_PLATFORM_IDS = [
+    PLATFORM_IDS.PC,
+    PLATFORM_IDS.PLAYSTATION,
+    PLATFORM_IDS.XBOX,
+    PLATFORM_IDS.SWITCH
+  ];
+  const AVATAR_STYLE_IDS = {
+    MONO: 'mono',
+    SYMBOL: 'symbol',
+    BRAND: 'brand'
+  };
+  const AVATAR_SHAPE_IDS = {
+    CIRCLE: 'circle',
+    SHIELD: 'shield',
+    HEX: 'hex',
+    DIAMOND: 'diamond'
+  };
+  const AVATAR_ACCENT_IDS = {
+    CYAN: 'cyan',
+    GOLD: 'gold',
+    SILVER: 'silver',
+    TEAL: 'teal',
+    VIOLET: 'violet'
+  };
+  const AVATAR_GLYPH_KEYS = ['bolt', 'rune', 'crosshair', 'pulse', 'core', 'wing'];
+  const AVATAR_GLYPH_LABELS = {
+    bolt: 'B',
+    rune: 'R',
+    crosshair: '+',
+    pulse: 'P',
+    core: 'O',
+    wing: 'W'
+  };
+  const ALLOWED_AVATAR_STYLES = [
+    AVATAR_STYLE_IDS.MONO,
+    AVATAR_STYLE_IDS.SYMBOL,
+    AVATAR_STYLE_IDS.BRAND
+  ];
+  const ALLOWED_AVATAR_SHAPES = [
+    AVATAR_SHAPE_IDS.CIRCLE,
+    AVATAR_SHAPE_IDS.SHIELD,
+    AVATAR_SHAPE_IDS.HEX,
+    AVATAR_SHAPE_IDS.DIAMOND
+  ];
+  const ALLOWED_AVATAR_ACCENTS = [
+    AVATAR_ACCENT_IDS.CYAN,
+    AVATAR_ACCENT_IDS.GOLD,
+    AVATAR_ACCENT_IDS.SILVER,
+    AVATAR_ACCENT_IDS.TEAL,
+    AVATAR_ACCENT_IDS.VIOLET
+  ];
 
   const ROLE_OPTIONS_BY_GAME = {
     [GAME_IDS.OVERWATCH]: ['Tank', 'DPS', 'Support'],
@@ -157,6 +214,10 @@
     authUser: null,
     authUsers: loadAuthUsers(),
     profile: null,
+    profileViewMode: 'self',
+    profileViewPlayerId: '',
+    profileViewHandle: '',
+    profileViewSourceGame: '',
     profileEditorSection: 'public',
     uiDemoMode: loadUnifiedState('ui.demoMode', false, () => false) === true,
     metrics: loadMetrics(),
@@ -1094,6 +1155,23 @@
     return String(gameId || '-');
   }
 
+  function getGameLogoMeta(gameId) {
+    const normalized = normalizeGameId(gameId, '');
+    if (!ALLOWED_GAME_IDS.includes(normalized)) {
+      return null;
+    }
+    const src = GAME_LOGO[normalized];
+    if (!src) {
+      return null;
+    }
+    const label = getGameLabel(normalized);
+    return {
+      src,
+      label,
+      alt: `${label} logo`
+    };
+  }
+
   function normalizeGameId(value, fallback) {
     const raw = String(value || '').trim().toLowerCase();
     if (raw === GAME_IDS.OVERWATCH) return GAME_IDS.OVERWATCH;
@@ -1103,6 +1181,197 @@
     if (raw === GAME_IDS.RIVALS) return GAME_IDS.RIVALS;
     if (raw === GAME_IDS.ANY || raw === 'any') return GAME_IDS.ANY;
     return fallback;
+  }
+
+  function normalizePlatform(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw === 'pc') return PLATFORM_IDS.PC;
+    if (raw === 'playstation' || raw === 'play station' || raw === 'ps' || raw === 'ps5' || raw === 'ps4') return PLATFORM_IDS.PLAYSTATION;
+    if (raw === 'xbox' || raw === 'x-box') return PLATFORM_IDS.XBOX;
+    if (raw === 'switch' || raw === 'nintendo switch') return PLATFORM_IDS.SWITCH;
+    return '';
+  }
+
+  function getPlatformLabel(platformValue) {
+    const normalized = normalizePlatform(platformValue);
+    if (normalized === PLATFORM_IDS.PC) return t('d.platform.pc');
+    if (normalized === PLATFORM_IDS.PLAYSTATION) return t('d.platform.playstation');
+    if (normalized === PLATFORM_IDS.XBOX) return t('d.platform.xbox');
+    if (normalized === PLATFORM_IDS.SWITCH) return t('d.platform.switch');
+    return '—';
+  }
+
+  function resolvePlatformForGame(entry, player) {
+    const entryPlatform = normalizePlatform(entry && entry.platform ? entry.platform : '');
+    if (entryPlatform) {
+      return entryPlatform;
+    }
+    const playerPlatform = normalizePlatform(player && player.platform ? player.platform : '');
+    if (playerPlatform) {
+      return playerPlatform;
+    }
+    return '';
+  }
+
+  function formatPlatformList(values) {
+    const list = Array.isArray(values) ? values : [];
+    const normalized = Array.from(
+      new Set(list.map((value) => normalizePlatform(value)).filter((value) => ALLOWED_PLATFORM_IDS.includes(value)))
+    );
+    if (!normalized.length) {
+      return '—';
+    }
+    return normalized.map((value) => getPlatformLabel(value)).join(' · ');
+  }
+
+  function hashStringDeterministic(input) {
+    return hashString(String(input || ''));
+  }
+
+  function normalizeAvatarStyle(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === AVATAR_STYLE_IDS.MONO) return AVATAR_STYLE_IDS.MONO;
+    if (normalized === AVATAR_STYLE_IDS.SYMBOL) return AVATAR_STYLE_IDS.SYMBOL;
+    if (normalized === AVATAR_STYLE_IDS.BRAND) return AVATAR_STYLE_IDS.BRAND;
+    return '';
+  }
+
+  function normalizeAvatarShape(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === AVATAR_SHAPE_IDS.CIRCLE) return AVATAR_SHAPE_IDS.CIRCLE;
+    if (normalized === AVATAR_SHAPE_IDS.SHIELD) return AVATAR_SHAPE_IDS.SHIELD;
+    if (normalized === AVATAR_SHAPE_IDS.HEX) return AVATAR_SHAPE_IDS.HEX;
+    if (normalized === AVATAR_SHAPE_IDS.DIAMOND) return AVATAR_SHAPE_IDS.DIAMOND;
+    return '';
+  }
+
+  function normalizeAvatarAccent(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === AVATAR_ACCENT_IDS.CYAN) return AVATAR_ACCENT_IDS.CYAN;
+    if (normalized === AVATAR_ACCENT_IDS.GOLD) return AVATAR_ACCENT_IDS.GOLD;
+    if (normalized === AVATAR_ACCENT_IDS.SILVER) return AVATAR_ACCENT_IDS.SILVER;
+    if (normalized === AVATAR_ACCENT_IDS.TEAL) return AVATAR_ACCENT_IDS.TEAL;
+    if (normalized === AVATAR_ACCENT_IDS.VIOLET) return AVATAR_ACCENT_IDS.VIOLET;
+    return '';
+  }
+
+  function getAvatarInitials(name, fallback) {
+    const safeFallback = String(fallback || 'PL').slice(0, 2).toUpperCase();
+    const raw = String(name || '').trim();
+    if (!raw) {
+      return safeFallback;
+    }
+    const parts = raw.split(/\s+/).filter(Boolean);
+    if (!parts.length) {
+      return safeFallback;
+    }
+    if (parts.length === 1) {
+      const value = parts[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase();
+      return value || safeFallback;
+    }
+    const initials = `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
+    return initials || safeFallback;
+  }
+
+  function deriveAvatarVisualSeed(entity) {
+    const source = entity && typeof entity === 'object'
+      ? (entity.handle || entity.displayName || entity.name || entity.slug || entity.id || 'gamein')
+      : String(entity || 'gamein');
+    const hash = hashStringDeterministic(source);
+    const styleBucket = hash % 10;
+    const style = styleBucket < 7
+      ? AVATAR_STYLE_IDS.MONO
+      : styleBucket < 9
+        ? AVATAR_STYLE_IDS.BRAND
+        : AVATAR_STYLE_IDS.SYMBOL;
+    const shape = ALLOWED_AVATAR_SHAPES[hash % ALLOWED_AVATAR_SHAPES.length];
+    const accent = ALLOWED_AVATAR_ACCENTS[hash % ALLOWED_AVATAR_ACCENTS.length];
+    const glyph = AVATAR_GLYPH_KEYS[hash % AVATAR_GLYPH_KEYS.length];
+    return { style, shape, accent, glyph };
+  }
+
+  function resolveAvatarConfig(entity, fallbackName, options) {
+    const safeEntity = entity && typeof entity === 'object' ? entity : {};
+    const opts = options && typeof options === 'object' ? options : {};
+    const seed = deriveAvatarVisualSeed({
+      handle: safeEntity.handle || safeEntity.displayName || safeEntity.name || safeEntity.slug || fallbackName || 'gamein'
+    });
+    const preferredStyle = normalizeAvatarStyle(opts.preferredStyle);
+    const style = normalizeAvatarStyle(safeEntity.avatarStyle) || preferredStyle || seed.style;
+    const shape = normalizeAvatarShape(safeEntity.avatarShape) || seed.shape;
+    const accent = normalizeAvatarAccent(safeEntity.avatarAccent) || seed.accent;
+    const glyphKeyRaw = String(safeEntity.avatarGlyph || '').trim().toLowerCase();
+    const glyphKey = AVATAR_GLYPH_KEYS.includes(glyphKeyRaw) ? glyphKeyRaw : seed.glyph;
+    const initials = getAvatarInitials(
+      safeEntity.avatarInitials || safeEntity.displayName || safeEntity.handle || safeEntity.name || fallbackName || 'PL',
+      'PL'
+    );
+    return {
+      style,
+      shape,
+      accent,
+      glyph: glyphKey,
+      initials
+    };
+  }
+
+  function renderAvatarBadgeHTML(config, options) {
+    const safeConfig = config && typeof config === 'object' ? config : resolveAvatarConfig({}, 'PL');
+    const opts = options && typeof options === 'object' ? options : {};
+    const size = opts.size === 'sm' || opts.size === 'lg' ? opts.size : 'md';
+    const classes = [
+      'avatar-badge',
+      `avatar-badge--${size}`,
+      `avatar-badge--${safeConfig.style}`,
+      `is-${safeConfig.shape}`,
+      `accent-${safeConfig.accent}`
+    ];
+    if (opts.className) {
+      classes.push(opts.className);
+    }
+    const glyphLabel = AVATAR_GLYPH_LABELS[safeConfig.glyph] || '+';
+    const content = safeConfig.style === AVATAR_STYLE_IDS.SYMBOL
+      ? `<span class="avatar-badge__glyph" aria-hidden="true">${escapeHtml(glyphLabel)}</span>`
+      : `<span class="avatar-badge__initials" aria-hidden="true">${escapeHtml(safeConfig.initials)}</span>`;
+    const mark = safeConfig.style === AVATAR_STYLE_IDS.BRAND
+      ? '<span class="avatar-badge__brand-mark" aria-hidden="true"></span>'
+      : '';
+    const ariaLabel = opts.ariaLabel || t('d.avatar.defaultAlt');
+    return `<span class="${classes.join(' ')}" role="img" aria-label="${escapeHtml(ariaLabel)}">${mark}${content}</span>`;
+  }
+
+  function getRankVisualShortCode(tier) {
+    const normalized = String(tier || '').trim().toLowerCase();
+    if (!normalized) return '—';
+    if (normalized === 'one above all') return 'OAA';
+    if (normalized === 'grandmaster') return 'GM';
+    if (normalized === 'master') return 'M';
+    if (normalized === 'diamond') return 'D';
+    if (normalized === 'platinum') return 'P';
+    if (normalized === 'gold') return 'G';
+    if (normalized === 'silver') return 'S';
+    if (normalized === 'bronze') return 'B';
+    if (normalized === 'emerald') return 'E';
+    if (normalized === 'challenger') return 'CH';
+    if (normalized === 'champion') return 'C';
+    if (normalized === 'elite') return 'EL';
+    if (normalized === 'unreal') return 'UR';
+    if (normalized === 'celestial') return 'CL';
+    if (normalized === 'eternity') return 'ET';
+    if (normalized === 'iron') return 'IR';
+    return String(tier || '-').slice(0, 2).toUpperCase();
+  }
+
+  function renderRankVisual(entry, gameKey) {
+    const normalizedGame = getProfileGameKeyFromExploreGame(gameKey);
+    const rankText = entry && typeof entry === 'object'
+      ? String(entry.rank || entry.tier || '')
+      : String(entry || '');
+    const tier = normalizedGame ? extractTierFromExploreRank(normalizedGame, rankText) : '';
+    const shortCode = getRankVisualShortCode(tier || rankText);
+    const tone = tier ? String(tier).toLowerCase().replace(/\s+/g, '-') : 'unknown';
+    const title = tier || rankText || '-';
+    return `<span class="rank-visual rank-visual--${escapeHtml(tone)}" title="${escapeHtml(title)}">${escapeHtml(shortCode)}</span>`;
   }
 
   function normalizeProviderKey(provider) {
@@ -1344,15 +1613,20 @@
         displayName: 'Shinobi',
         role: 'Flex DPS',
         country: 'DE',
+        avatarStyle: AVATAR_STYLE_IDS.BRAND,
+        avatarShape: AVATAR_SHAPE_IDS.CIRCLE,
+        avatarAccent: AVATAR_ACCENT_IDS.CYAN,
+        avatarGlyph: 'crosshair',
+        avatarInitials: 'SN',
         headline: 'Flex DPS focused on team systems, comms discipline and measurable improvement.',
         about: 'Known for calm mid-round communication, role flexibility across metas and consistent VOD review habits.',
         proofStatus: PROOF_STATUS.SELF_DECLARED,
         mainGame: 'overwatch',
         games: {
-          overwatch: { handle: 'Shinobi#4728', tier: 'Master', division: '3' },
-          lol: { handle: 'Shn0bi', tier: 'Diamond', division: 'II' },
-          rivals: { handle: 'ShinobiX', tier: 'Grandmaster' },
-          fortnite: { handle: 'ShinobiFN', tier: 'Champion', division: 'II' }
+          overwatch: { handle: 'Shinobi#4728', tier: 'Master', division: '3', platform: PLATFORM_IDS.PC },
+          lol: { handle: 'Shn0bi', tier: 'Diamond', division: 'II', platform: PLATFORM_IDS.PC },
+          rivals: { handle: 'ShinobiX', tier: 'Grandmaster', platform: PLATFORM_IDS.PC },
+          fortnite: { handle: 'ShinobiFN', tier: 'Champion', division: 'II', platform: PLATFORM_IDS.PLAYSTATION }
         }
       },
       experience: [
@@ -1401,7 +1675,8 @@
 
     const normalized = {
       handle: sanitizeTextValue(source.handle, fallbackValue.handle, 64),
-      tier
+      tier,
+      platform: normalizePlatform(source.platform) || normalizePlatform(fallbackValue.platform) || ''
     };
 
     if (allowsDivision) {
@@ -1427,6 +1702,19 @@
     normalized.publicProfile.country = PROFILE_COUNTRY_CODES.includes(String(sourcePublic.country || '').toUpperCase())
       ? String(sourcePublic.country).toUpperCase()
       : defaults.publicProfile.country;
+    normalized.publicProfile.avatarStyle = normalizeAvatarStyle(sourcePublic.avatarStyle)
+      || normalizeAvatarStyle(defaults.publicProfile.avatarStyle)
+      || AVATAR_STYLE_IDS.BRAND;
+    normalized.publicProfile.avatarShape = normalizeAvatarShape(sourcePublic.avatarShape)
+      || normalizeAvatarShape(defaults.publicProfile.avatarShape)
+      || AVATAR_SHAPE_IDS.CIRCLE;
+    normalized.publicProfile.avatarAccent = normalizeAvatarAccent(sourcePublic.avatarAccent)
+      || normalizeAvatarAccent(defaults.publicProfile.avatarAccent)
+      || AVATAR_ACCENT_IDS.CYAN;
+    normalized.publicProfile.avatarGlyph = AVATAR_GLYPH_KEYS.includes(String(sourcePublic.avatarGlyph || '').trim().toLowerCase())
+      ? String(sourcePublic.avatarGlyph || '').trim().toLowerCase()
+      : defaults.publicProfile.avatarGlyph;
+    normalized.publicProfile.avatarInitials = sanitizeTextValue(sourcePublic.avatarInitials, defaults.publicProfile.avatarInitials, 4);
     normalized.publicProfile.headline = sanitizeTextValue(sourcePublic.headline, defaults.publicProfile.headline, 170);
     normalized.publicProfile.about = sanitizeTextValue(sourcePublic.about, defaults.publicProfile.about, 280);
     normalized.publicProfile.proofStatus = normalizeProofStatus(sourcePublic.proofStatus, defaults.publicProfile.proofStatus);
@@ -1893,6 +2181,49 @@
     }
   ];
 
+  const PLAYER_PLATFORM_OVERRIDES = {
+    ValkyrieEU: PLATFORM_IDS.PC,
+    ArcScout: PLATFORM_IDS.PC,
+    Shinobi: PLATFORM_IDS.PLAYSTATION,
+    AegisTank: PLATFORM_IDS.PC,
+    PulseDPS: PLATFORM_IDS.PC,
+    OrbitSupport: PLATFORM_IDS.PC,
+    FrostAnchor: PLATFORM_IDS.PC,
+    ZenithTracer: PLATFORM_IDS.PC,
+    TopLaneTide: PLATFORM_IDS.PC,
+    JungleMint: PLATFORM_IDS.PC,
+    MidNova: PLATFORM_IDS.PC,
+    BotEcho: PLATFORM_IDS.PC,
+    RiftShield: PLATFORM_IDS.PC,
+    TacticBloom: PLATFORM_IDS.PC,
+    CrownIGL: PLATFORM_IDS.PLAYSTATION,
+    StormFragger: PLATFORM_IDS.XBOX,
+    PixelSupport: PLATFORM_IDS.PC,
+    ZoneCaller: PLATFORM_IDS.SWITCH,
+    ClutchSpark: PLATFORM_IDS.PLAYSTATION,
+    VanguardRay: PLATFORM_IDS.PC,
+    DuelistHex: PLATFORM_IDS.PC,
+    StrategistIvy: PLATFORM_IDS.PC,
+    ScoutMako: PLATFORM_IDS.PC,
+    CelestialV: PLATFORM_IDS.XBOX,
+    RuneDuel: PLATFORM_IDS.PC
+  };
+
+  players.forEach((player) => {
+    const fallbackPlatform = normalizePlatform(PLAYER_PLATFORM_OVERRIDES[player.handle]);
+    const topLevelPlatform = normalizePlatform(player.platform) || fallbackPlatform || '';
+    if (topLevelPlatform) {
+      player.platform = topLevelPlatform;
+    }
+    if (!Array.isArray(player.games)) {
+      return;
+    }
+    player.games.forEach((entry) => {
+      const normalizedPlatform = normalizePlatform(entry && entry.platform);
+      entry.platform = normalizedPlatform || topLevelPlatform || '';
+    });
+  });
+
   const teams = [
     {
       slug: 'vienna-ascend',
@@ -2116,6 +2447,53 @@
     }
   ];
 
+  const TEAM_PLATFORM_OVERRIDES = {
+    'vienna-ascend': [PLATFORM_IDS.PC],
+    'cloud-quarter': [PLATFORM_IDS.PC, PLATFORM_IDS.PLAYSTATION],
+    'northforge-ow': [PLATFORM_IDS.PC],
+    'payload-union': [PLATFORM_IDS.PLAYSTATION, PLATFORM_IDS.XBOX],
+    'river-wardens': [PLATFORM_IDS.PC],
+    'midlane-district': [PLATFORM_IDS.PC],
+    'storm-harbor': [PLATFORM_IDS.PLAYSTATION, PLATFORM_IDS.XBOX],
+    'last-circle-labs': [PLATFORM_IDS.PC, PLATFORM_IDS.SWITCH],
+    'neon-vanguard': [PLATFORM_IDS.PC, PLATFORM_IDS.PLAYSTATION],
+    'quantum-sigil': [PLATFORM_IDS.PC, PLATFORM_IDS.XBOX],
+    'crossfire-labs': [PLATFORM_IDS.PC, PLATFORM_IDS.PLAYSTATION],
+    'astral-path': [PLATFORM_IDS.PC]
+  };
+
+  teams.forEach((team) => {
+    const configured = Array.isArray(team.platforms) ? team.platforms : TEAM_PLATFORM_OVERRIDES[team.slug];
+    const normalized = Array.isArray(configured)
+      ? configured.map((value) => normalizePlatform(value)).filter((value) => ALLOWED_PLATFORM_IDS.includes(value))
+      : [];
+    if (normalized.length) {
+      team.platforms = Array.from(new Set(normalized));
+    }
+  });
+
+  players.forEach((player) => {
+    const avatar = resolveAvatarConfig(player, player.handle);
+    player.avatarStyle = normalizeAvatarStyle(player.avatarStyle) || avatar.style;
+    player.avatarShape = normalizeAvatarShape(player.avatarShape) || avatar.shape;
+    player.avatarAccent = normalizeAvatarAccent(player.avatarAccent) || avatar.accent;
+    player.avatarGlyph = AVATAR_GLYPH_KEYS.includes(String(player.avatarGlyph || '').trim().toLowerCase())
+      ? String(player.avatarGlyph || '').trim().toLowerCase()
+      : avatar.glyph;
+    player.avatarInitials = sanitizeTextValue(player.avatarInitials, avatar.initials, 4);
+  });
+
+  teams.forEach((team) => {
+    const avatar = resolveAvatarConfig(team, team.name);
+    team.avatarStyle = normalizeAvatarStyle(team.avatarStyle) || avatar.style;
+    team.avatarShape = normalizeAvatarShape(team.avatarShape) || avatar.shape;
+    team.avatarAccent = normalizeAvatarAccent(team.avatarAccent) || avatar.accent;
+    team.avatarGlyph = AVATAR_GLYPH_KEYS.includes(String(team.avatarGlyph || '').trim().toLowerCase())
+      ? String(team.avatarGlyph || '').trim().toLowerCase()
+      : avatar.glyph;
+    team.avatarInitials = sanitizeTextValue(team.avatarInitials, avatar.initials, 4);
+  });
+
   const ASSET_BASE = getAssetBase();
   const GAME_LOGO = {
     [GAME_IDS.OVERWATCH]: `${ASSET_BASE}/logos/misc/overwatch_logo_2026.png`,
@@ -2316,8 +2694,15 @@
       'd.filter.proof': 'Proof',
       'd.filter.any': 'Any',
       'd.filter.gameHint': 'Select a game to filter roles/ranks',
+      'd.common.ingameName': 'In-game name',
+      'd.common.platform': 'Platform',
+      'd.common.platformFocus': 'Platform focus',
+      'd.platform.pc': 'PC',
+      'd.platform.playstation': 'PlayStation',
+      'd.platform.xbox': 'Xbox',
+      'd.platform.switch': 'Switch',
       'd.game.overwatch': 'Overwatch',
-      'd.game.lol': 'LoL',
+      'd.game.lol': 'League of Legends',
       'd.game.fortnite': 'Fortnite',
       'd.game.rivals': 'Marvel Rivals',
       'd.role.tank': 'Tank',
@@ -2410,11 +2795,16 @@
       'd.connect.lead': 'Choose a provider to confirm ownership and improve trust signals.',
       'd.connect.connecting': 'Connecting...',
       'd.connect.success': 'Connection recorded. Rank verification arrives in Early Access.',
+      'd.avatar.defaultAlt': 'Profile identity badge',
+      'd.avatar.style.mono': 'Monogram',
+      'd.avatar.style.symbol': 'Symbol',
+      'd.avatar.style.brand': 'Brand',
       'd.modal.close': 'Close',
       'd.card.chip.proof': 'Proof',
       'd.card.chip.role': 'Role',
       'd.card.chip.roleNeeded': 'Role needed',
       'd.card.chip.availability': 'Availability',
+      'd.card.chip.platform': 'Platform',
       'd.card.region': 'Region',
       'd.card.country': 'Country',
       'd.card.availability': 'Availability',
@@ -2430,7 +2820,7 @@
       'd.compare.row.availability': 'Availability',
       'd.compare.row.languages': 'Languages',
       'd.compare.header.field': 'Field',
-      'd.search.placeholder.players': 'Search handle',
+      'd.search.placeholder.players': 'Search in-game name',
       'd.search.placeholder.teams': 'Search team name',
       'd.card.peak': 'Peak',
       'd.invite.slot.tue': 'Tue 20:00',
@@ -2443,6 +2833,27 @@
       'd.profile.about': 'Known for calm mid-round communication, role flexibility across metas and consistent VOD review habits.',
       'd.profile.about.short': 'Proof-first gaming identity with references, career history and tryout context.',
       'd.profile.country.label': 'Country',
+      'd.profile.primaryMeta': 'Primary: {game} · {role} · {rank}',
+      'd.profile.mainGame': 'Main game',
+      'd.profile.mainRole': 'Main role',
+      'd.profile.mainRank': 'Current rank',
+      'd.profile.mainGameDetails': 'Main Game Details',
+      'd.profile.secondaryGames': 'Secondary Games',
+      'd.profile.previousFocus': 'Secondary / Previous Focus',
+      'd.profile.handle': 'In-game name',
+      'd.profile.ingameName': 'In-game name',
+      'd.profile.role': 'Role',
+      'd.profile.rank': 'Rank',
+      'd.profile.peak': 'Peak',
+      'd.profile.proof': 'Proof',
+      'd.profile.platform': 'Platform',
+      'd.profile.availability': 'Availability',
+      'd.profile.alsoPlays': 'Also plays',
+      'd.profile.noSecondaryGames': 'No secondary games added yet.',
+      'd.profile.viewingPlayer': 'Viewing profile: {player}',
+      'd.profile.backToSelf': 'Back to your profile',
+      'd.profile.externalReadonlyHint': 'Read-only player preview. Switch back to edit your own profile.',
+      'd.profile.viewingFromContext': 'Opened from {game}',
       'd.experience.title': 'Experience',
       'd.experience.one.role': 'Flex DPS',
       'd.experience.one.org': 'FaZe Academy · Active Roster',
@@ -2553,7 +2964,7 @@
       'd.editor.public.game.lol': 'League of Legends',
       'd.editor.public.game.rivals': 'Marvel Rivals',
       'd.editor.public.game.fortnite': 'Fortnite',
-      'd.editor.handle': 'Handle',
+      'd.editor.handle': 'In-game name',
       'd.editor.tier': 'Tier',
       'd.editor.division': 'Division',
       'd.editor.proof.self': 'Self Declared',
@@ -2811,8 +3222,15 @@
       'd.filter.proof': 'Proof',
       'd.filter.any': 'Alle',
       'd.filter.gameHint': 'Wähle ein Spiel, um Rollen/Ranks zu filtern',
+      'd.common.ingameName': 'Ingame-Name',
+      'd.common.platform': 'Plattform',
+      'd.common.platformFocus': 'Plattform-Fokus',
+      'd.platform.pc': 'PC',
+      'd.platform.playstation': 'PlayStation',
+      'd.platform.xbox': 'Xbox',
+      'd.platform.switch': 'Switch',
       'd.game.overwatch': 'Overwatch',
-      'd.game.lol': 'LoL',
+      'd.game.lol': 'League of Legends',
       'd.game.fortnite': 'Fortnite',
       'd.game.rivals': 'Marvel Rivals',
       'd.role.tank': 'Tank',
@@ -2905,11 +3323,16 @@
       'd.connect.lead': 'Wähle einen Provider, um Ownership zu bestätigen und Trust-Signale zu verbessern.',
       'd.connect.connecting': 'Verbinde...',
       'd.connect.success': 'Verknuepfung gespeichert. Rank-Verifizierung kommt mit Early Access.',
+      'd.avatar.defaultAlt': 'Profil-Identitätsbadge',
+      'd.avatar.style.mono': 'Monogramm',
+      'd.avatar.style.symbol': 'Symbol',
+      'd.avatar.style.brand': 'Brand',
       'd.modal.close': 'Schließen',
       'd.card.chip.proof': 'Proof',
       'd.card.chip.role': 'Rolle',
       'd.card.chip.roleNeeded': 'Benoetigte Rolle',
       'd.card.chip.availability': 'Verfuegbarkeit',
+      'd.card.chip.platform': 'Plattform',
       'd.card.region': 'Region',
       'd.card.country': 'Herkunftsland',
       'd.card.availability': 'Verfügbarkeit',
@@ -2925,7 +3348,7 @@
       'd.compare.row.availability': 'Verfügbarkeit',
       'd.compare.row.languages': 'Sprachen',
       'd.compare.header.field': 'Feld',
-      'd.search.placeholder.players': 'Handle suchen',
+      'd.search.placeholder.players': 'Ingame-Namen suchen',
       'd.search.placeholder.teams': 'Teamnamen suchen',
       'd.card.peak': 'Peak',
       'd.invite.slot.tue': 'Di 20:00',
@@ -2938,6 +3361,27 @@
       'd.profile.about': 'Bekannt für ruhige Mid-Round-Kommunikation, Rollenflexibilität über Meta-Wechsel hinweg und konstante VOD-Reviews.',
       'd.profile.about.short': 'Proof-first Gaming-Identität mit Referenzen, Karriereverlauf und Tryout-Kontext.',
       'd.profile.country.label': 'Herkunftsland',
+      'd.profile.primaryMeta': 'Hauptfokus: {game} · {role} · {rank}',
+      'd.profile.mainGame': 'Hauptspiel',
+      'd.profile.mainRole': 'Hauptrolle',
+      'd.profile.mainRank': 'Aktueller Rank',
+      'd.profile.mainGameDetails': 'Hauptspiel-Details',
+      'd.profile.secondaryGames': 'Weitere Spiele',
+      'd.profile.previousFocus': 'Secondary / bisheriger Fokus',
+      'd.profile.handle': 'Ingame-Name',
+      'd.profile.ingameName': 'Ingame-Name',
+      'd.profile.role': 'Rolle',
+      'd.profile.rank': 'Rank',
+      'd.profile.peak': 'Peak',
+      'd.profile.proof': 'Proof',
+      'd.profile.platform': 'Plattform',
+      'd.profile.availability': 'Verfügbarkeit',
+      'd.profile.alsoPlays': 'Spielt außerdem',
+      'd.profile.noSecondaryGames': 'Noch keine Secondary Games hinterlegt.',
+      'd.profile.viewingPlayer': 'Profilansicht: {player}',
+      'd.profile.backToSelf': 'Zurück zu deinem Profil',
+      'd.profile.externalReadonlyHint': 'Read-only Spieleransicht. Wechsle zurück, um dein Profil zu bearbeiten.',
+      'd.profile.viewingFromContext': 'Geöffnet aus {game}',
       'd.experience.title': 'Erfahrung',
       'd.experience.one.role': 'Flex DPS',
       'd.experience.one.org': 'FaZe Academy · Aktives Roster',
@@ -3048,7 +3492,7 @@
       'd.editor.public.game.lol': 'League of Legends',
       'd.editor.public.game.rivals': 'Marvel Rivals',
       'd.editor.public.game.fortnite': 'Fortnite',
-      'd.editor.handle': 'Handle',
+      'd.editor.handle': 'Ingame-Name',
       'd.editor.tier': 'Tier',
       'd.editor.division': 'Division',
       'd.editor.proof.self': 'Selbst angegeben',
@@ -3552,6 +3996,22 @@
     return normalized || '-';
   }
 
+  function countryCodeToFlagEmoji(countryCode) {
+    const normalized = String(countryCode || '').trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(normalized)) {
+      return '';
+    }
+    return Array.from(normalized)
+      .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
+      .join('');
+  }
+
+  function formatCountryWithFlag(countryCode) {
+    const label = formatCountry(countryCode);
+    const flag = countryCodeToFlagEmoji(countryCode);
+    return flag ? `${flag} ${label}` : label;
+  }
+
   function formatRole(role) {
     if (role === 'Flex DPS') {
       return t('d.role.flexDps');
@@ -3910,9 +4370,378 @@
     });
   }
 
-  function setProfileField(field, value) {
-    document.querySelectorAll(`[data-profile-field="${field}"]`).forEach((node) => {
-      node.textContent = value;
+  function isCanonicalProfileGame(gameId) {
+    return ALLOWED_GAME_IDS.includes(normalizeGameId(gameId, ''));
+  }
+
+  function getPlayerViewId(player) {
+    if (!player || typeof player !== 'object') {
+      return '';
+    }
+    return slugifyStableId(player.id || player.handle || '');
+  }
+
+  function findPlayerByViewState() {
+    const playerId = slugifyStableId(state.profileViewPlayerId || '');
+    if (playerId) {
+      const byId = players.find((player) => getPlayerViewId(player) === playerId);
+      if (byId) {
+        return byId;
+      }
+    }
+
+    const handle = String(state.profileViewHandle || '').trim().toLowerCase();
+    if (!handle) {
+      return null;
+    }
+    return players.find((player) => String(player.handle || '').trim().toLowerCase() === handle) || null;
+  }
+
+  function resolvePrimaryGameFromProfile(profilePublic) {
+    const safeProfile = profilePublic && typeof profilePublic === 'object' ? profilePublic : {};
+    const preferred = normalizeGameId(safeProfile.mainGame, '');
+    if (isCanonicalProfileGame(preferred)) {
+      return preferred;
+    }
+
+    const games = safeProfile.games && typeof safeProfile.games === 'object' ? safeProfile.games : {};
+    for (const gameId of ALLOWED_GAME_IDS) {
+      const entry = games[gameId];
+      if (!entry || typeof entry !== 'object') {
+        continue;
+      }
+      const hasHandle = String(entry.handle || '').trim().length > 0;
+      const hasRank = String(entry.tier || '').trim().length > 0;
+      if (hasHandle || hasRank) {
+        return gameId;
+      }
+    }
+    return GAME_IDS.OVERWATCH;
+  }
+
+  function resolvePrimaryGameFromPlayer(player) {
+    if (!player || typeof player !== 'object') {
+      return GAME_IDS.OVERWATCH;
+    }
+    const preferred = normalizeGameId(player.primaryGame, '');
+    if (isCanonicalProfileGame(preferred)) {
+      return preferred;
+    }
+
+    const games = Array.isArray(player.games) ? player.games : [];
+    for (const entry of games) {
+      const gameId = normalizeGameId(entry && entry.game, '');
+      if (!isCanonicalProfileGame(gameId)) {
+        continue;
+      }
+      const hasHandle = String(entry && entry.handle ? entry.handle : player.handle || '').trim().length > 0;
+      const hasRank = String(entry && entry.rank ? entry.rank : '').trim().length > 0;
+      if (hasHandle || hasRank) {
+        return gameId;
+      }
+    }
+
+    const firstCanonical = games
+      .map((entry) => normalizeGameId(entry && entry.game, ''))
+      .find((gameId) => isCanonicalProfileGame(gameId));
+    return firstCanonical || GAME_IDS.OVERWATCH;
+  }
+
+  function getProfileGameEntryFromPlayer(player, gameId) {
+    if (!player || !Array.isArray(player.games)) {
+      return null;
+    }
+    const normalizedGame = normalizeGameId(gameId, '');
+    if (!isCanonicalProfileGame(normalizedGame)) {
+      return null;
+    }
+    return player.games.find((entry) => normalizeGameId(entry && entry.game, '') === normalizedGame) || null;
+  }
+
+  function getProfileSourcePlayer(profilePublic) {
+    const safeProfile = profilePublic && typeof profilePublic === 'object' ? profilePublic : {};
+    const lookup = slugifyStableId(safeProfile.displayName || '');
+    if (!lookup) {
+      return null;
+    }
+    return players.find((player) => slugifyStableId(player.handle || '') === lookup) || null;
+  }
+
+  function formatProofLabel(proofStatus) {
+    return getProofMeta(proofStatus).label;
+  }
+
+  function buildSelfProfileViewModel(profileState) {
+    const normalized = normalizeProfileState(profileState);
+    const profilePublic = normalized.publicProfile;
+    const sourcePlayer = getProfileSourcePlayer(profilePublic);
+    const avatarConfig = resolveAvatarConfig({
+      avatarStyle: profilePublic.avatarStyle || (sourcePlayer && sourcePlayer.avatarStyle),
+      avatarShape: profilePublic.avatarShape || (sourcePlayer && sourcePlayer.avatarShape),
+      avatarAccent: profilePublic.avatarAccent || (sourcePlayer && sourcePlayer.avatarAccent),
+      avatarGlyph: profilePublic.avatarGlyph || (sourcePlayer && sourcePlayer.avatarGlyph),
+      avatarInitials: profilePublic.avatarInitials || profilePublic.displayName || (sourcePlayer && sourcePlayer.avatarInitials),
+      displayName: profilePublic.displayName,
+      handle: sourcePlayer && sourcePlayer.handle ? sourcePlayer.handle : profilePublic.displayName
+    }, profilePublic.displayName);
+    const primaryGame = resolvePrimaryGameFromProfile(profilePublic);
+    const primaryEntry = profilePublic.games[primaryGame] || profilePublic.games.overwatch;
+    const primaryPlayerEntry = getProfileGameEntryFromPlayer(sourcePlayer, primaryGame);
+    const primaryRole = sanitizeTextValue(
+      profilePublic.primaryRole,
+      primaryPlayerEntry && primaryPlayerEntry.role ? formatRole(primaryPlayerEntry.role) : profilePublic.role,
+      64
+    );
+    const primaryRank = sanitizeTextValue(
+      profilePublic.primaryRank,
+      formatRankDisplay(primaryGame, primaryEntry),
+      64
+    );
+    const primaryPeak = sanitizeTextValue(
+      primaryPlayerEntry && primaryPlayerEntry.peak ? primaryPlayerEntry.peak : '',
+      primaryRank,
+      64
+    );
+    const mainPlatform = resolvePlatformForGame(primaryEntry, primaryPlayerEntry || sourcePlayer || null);
+    const secondaryGames = getOrderedGameKeys(primaryGame)
+      .filter((gameId) => gameId !== primaryGame)
+      .map((gameId) => {
+        const entry = profilePublic.games[gameId];
+        if (!entry) {
+          return null;
+        }
+        const roleFromSource = getProfileGameEntryFromPlayer(sourcePlayer, gameId);
+        const platform = resolvePlatformForGame(entry, roleFromSource || sourcePlayer || null);
+        return {
+          game: gameId,
+          handle: sanitizeTextValue(entry.handle, '-', 64),
+          role: roleFromSource && roleFromSource.role ? formatRole(roleFromSource.role) : '-',
+          rank: formatRankDisplay(gameId, entry),
+          platform
+        };
+      })
+      .filter(Boolean);
+
+    return {
+      mode: 'self',
+      displayName: profilePublic.displayName,
+      country: profilePublic.country,
+      proofStatus: profilePublic.proofStatus,
+      headline: profilePublic.headline,
+      about: profilePublic.about,
+      mainGame: primaryGame,
+      mainRole: primaryRole || '-',
+      mainRank: primaryRank || '-',
+      mainPeak: primaryPeak || '-',
+      mainHandle: sanitizeTextValue(primaryEntry && primaryEntry.handle, '-', 64),
+      mainPlatform,
+      availability: sourcePlayer && sourcePlayer.availability ? sourcePlayer.availability : 'Any',
+      availabilityDetail: sourcePlayer && sourcePlayer.availabilityDetail ? String(sourcePlayer.availabilityDetail).trim() : '',
+      secondaryGames,
+      avatar: avatarConfig,
+      conductSubjectType: 'player',
+      conductSubjectId: state.authUser && state.authUser.handle ? state.authUser.handle : profilePublic.displayName
+    };
+  }
+
+  function buildPlayerProfileViewModel(player) {
+    const safePlayer = player && typeof player === 'object' ? player : {};
+    const avatarConfig = resolveAvatarConfig(safePlayer, safePlayer.handle || safePlayer.name || 'Player');
+    const mainGame = resolvePrimaryGameFromPlayer(safePlayer);
+    const mainEntry = getProfileGameEntryFromPlayer(safePlayer, mainGame) || {};
+    const proofStatus = normalizeProofStatus(mainEntry.proof, PROOF_STATUS.SELF_DECLARED);
+    const mainRole = sanitizeTextValue(safePlayer.primaryRole, mainEntry.role ? formatRole(mainEntry.role) : '-', 64);
+    const mainRank = sanitizeTextValue(safePlayer.primaryRank, mainEntry.rank || '-', 64);
+    const mainPeak = sanitizeTextValue(mainEntry.peak, mainRank, 64);
+    const mainHandle = sanitizeTextValue(mainEntry.handle, safePlayer.handle || '-', 64);
+    const mainPlatform = resolvePlatformForGame(mainEntry, safePlayer);
+
+    let secondaryGames = [];
+    if (Array.isArray(safePlayer.secondaryGames) && safePlayer.secondaryGames.length) {
+      secondaryGames = safePlayer.secondaryGames
+        .map((entry) => {
+          const game = normalizeGameId(entry && entry.game, '');
+          if (!isCanonicalProfileGame(game) || game === mainGame) {
+            return null;
+          }
+          return {
+            game,
+            handle: sanitizeTextValue(entry && entry.handle, '-', 64),
+            role: sanitizeTextValue(entry && entry.role, '-', 48),
+            rank: sanitizeTextValue(entry && entry.rank, '-', 48),
+            platform: resolvePlatformForGame(entry, safePlayer)
+          };
+        })
+        .filter(Boolean);
+    } else {
+      secondaryGames = (Array.isArray(safePlayer.games) ? safePlayer.games : [])
+        .map((entry) => {
+          const game = normalizeGameId(entry && entry.game, '');
+          if (!isCanonicalProfileGame(game) || game === mainGame) {
+            return null;
+          }
+          return {
+            game,
+            handle: sanitizeTextValue(entry && entry.handle, safePlayer.handle || '-', 64),
+            role: sanitizeTextValue(entry && entry.role ? formatRole(entry.role) : '-', '-', 48),
+            rank: sanitizeTextValue(entry && entry.rank, '-', 48),
+            platform: resolvePlatformForGame(entry, safePlayer)
+          };
+        })
+        .filter(Boolean);
+    }
+
+    secondaryGames.sort((left, right) => {
+      const order = getOrderedGameKeys(mainGame);
+      return order.indexOf(left.game) - order.indexOf(right.game);
+    });
+
+    const fallbackCopy = getScoutHookText(safePlayer);
+    return {
+      mode: 'player',
+      displayName: sanitizeTextValue(safePlayer.handle, 'Player', 64),
+      country: sanitizeTextValue(safePlayer.country, 'DE', 2).toUpperCase(),
+      proofStatus,
+      headline: sanitizeTextValue(safePlayer.headline, fallbackCopy, 170),
+      about: sanitizeTextValue(safePlayer.about, fallbackCopy, 280),
+      mainGame,
+      mainRole: mainRole || '-',
+      mainRank: mainRank || '-',
+      mainPeak: mainPeak || '-',
+      mainHandle,
+      mainPlatform,
+      availability: safePlayer.availability || 'Any',
+      availabilityDetail: safePlayer.availabilityDetail ? String(safePlayer.availabilityDetail).trim() : '',
+      secondaryGames,
+      avatar: avatarConfig,
+      conductSubjectType: 'player',
+      conductSubjectId: safePlayer.handle || safePlayer.id || 'player',
+      sourceGame: isCanonicalProfileGame(state.profileViewSourceGame) ? state.profileViewSourceGame : ''
+    };
+  }
+
+  function getCurrentProfileViewModel(normalizedProfileState) {
+    const safeProfile = normalizedProfileState || normalizeProfileState(state.profile);
+    if (state.profileViewMode === 'player') {
+      const player = findPlayerByViewState();
+      if (player) {
+        return buildPlayerProfileViewModel(player);
+      }
+      state.profileViewMode = 'self';
+      state.profileViewPlayerId = '';
+      state.profileViewHandle = '';
+      state.profileViewSourceGame = '';
+    }
+    return buildSelfProfileViewModel(safeProfile);
+  }
+
+  function renderProfileGameLogo(gameId, className) {
+    const logo = getGameLogoMeta(gameId);
+    if (!logo) {
+      return '';
+    }
+    const cls = className ? ` ${className}` : '';
+    return `<img class="profile-game-logo${cls}" src="${escapeHtml(logo.src)}" alt="${escapeHtml(logo.alt)}">`;
+  }
+
+  function formatPrimaryMeta(viewModel) {
+    const text = formatTemplate(t('d.profile.primaryMeta'), {
+      game: getGameLabel(viewModel.mainGame),
+      role: viewModel.mainRole || '-',
+      rank: viewModel.mainRank || '-'
+    });
+    const logo = renderProfileGameLogo(viewModel.mainGame, 'profile-game-logo-inline');
+    return `${logo}<span class="profile-primary-meta-text">${escapeHtml(text)}</span>`;
+  }
+
+  function renderMainGamePanel(viewModel) {
+    const proofBadge = renderProofBadge(viewModel.proofStatus, { compact: true });
+    const availabilityLabel = formatAvailability(viewModel.availability || 'Any');
+    const availabilityDetail = viewModel.availabilityDetail ? String(viewModel.availabilityDetail).trim() : '';
+    const mainGameLogo = renderProfileGameLogo(viewModel.mainGame, '');
+    const mainPlatform = getPlatformLabel(viewModel.mainPlatform || '');
+    const rankVisual = renderRankVisual({ rank: viewModel.mainRank }, viewModel.mainGame);
+
+    return [
+      `<h4 class="profile-main-panel-title">${escapeHtml(t('d.profile.mainGameDetails'))}</h4>`,
+      '<div class="profile-main-row">',
+      `<span class="profile-main-label">${escapeHtml(t('d.profile.mainGame'))}</span>`,
+      `<span class="profile-main-value profile-main-game-value">${mainGameLogo}<span>${escapeHtml(getGameLabel(viewModel.mainGame))}</span></span>`,
+      '</div>',
+      '<div class="profile-main-row">',
+      `<span class="profile-main-label">${escapeHtml(t('d.profile.ingameName'))}</span>`,
+      `<span class="profile-main-value">${escapeHtml(viewModel.mainHandle || '-')}</span>`,
+      '</div>',
+      '<div class="profile-main-row">',
+      `<span class="profile-main-label">${escapeHtml(t('d.profile.role'))}</span>`,
+      `<span class="profile-main-value">${escapeHtml(viewModel.mainRole || '-')}</span>`,
+      '</div>',
+      '<div class="profile-main-row">',
+      `<span class="profile-main-label">${escapeHtml(t('d.profile.rank'))}</span>`,
+      `<span class="profile-main-value profile-main-rank-value">${rankVisual}<span>${escapeHtml(viewModel.mainRank || '-')}</span></span>`,
+      '</div>',
+      '<div class="profile-main-row">',
+      `<span class="profile-main-label">${escapeHtml(t('d.profile.peak'))}</span>`,
+      `<span class="profile-main-value">${escapeHtml(viewModel.mainPeak || '-')}</span>`,
+      '</div>',
+      '<div class="profile-main-row">',
+      `<span class="profile-main-label">${escapeHtml(t('d.profile.proof'))}</span>`,
+      `<span class="profile-main-value">${proofBadge}</span>`,
+      '</div>',
+      '<div class="profile-main-row profile-main-platform">',
+      `<span class="profile-main-label">${escapeHtml(t('d.profile.platform'))}</span>`,
+      `<span class="profile-main-value">${escapeHtml(mainPlatform)}</span>`,
+      '</div>',
+      '<div class="profile-main-row">',
+      `<span class="profile-main-label">${escapeHtml(t('d.profile.availability'))}</span>`,
+      `<span class="profile-main-value">${escapeHtml(availabilityLabel)}</span>`,
+      '</div>',
+      availabilityDetail
+        ? `<p class="profile-main-subvalue">${escapeHtml(availabilityDetail)}</p>`
+        : ''
+    ].join('');
+  }
+
+  function renderSecondaryGames(viewModel) {
+    const rows = Array.isArray(viewModel.secondaryGames) ? viewModel.secondaryGames : [];
+    if (!rows.length) {
+      return [
+        `<h4 class="profile-secondary-title">${escapeHtml(t('d.profile.secondaryGames'))}</h4>`,
+        `<p class="profile-secondary-empty">${escapeHtml(t('d.profile.noSecondaryGames'))}</p>`
+      ].join('');
+    }
+
+    return [
+      `<h4 class="profile-secondary-title">${escapeHtml(t('d.profile.secondaryGames'))}</h4>`,
+      `<p class="profile-secondary-lead">${escapeHtml(t('d.profile.previousFocus'))}</p>`,
+      '<div class="secondary-games-list">',
+      rows.map((entry) => [
+        '<article class="secondary-game-item">',
+        `<p class="secondary-game-title">${renderProfileGameLogo(entry.game, 'secondary-game-logo')}<span>${escapeHtml(getGameLabel(entry.game))}</span></p>`,
+        '<p class="secondary-game-meta">',
+        `${escapeHtml(t('d.profile.ingameName'))}: ${escapeHtml(entry.handle || '-')} · `,
+        `${escapeHtml(t('d.profile.role'))}: ${escapeHtml(entry.role || '-')} · `,
+        `${escapeHtml(t('d.profile.rank'))}: ${escapeHtml(entry.rank || '-')}`,
+        entry.platform ? ` · ${escapeHtml(t('d.profile.platform'))}: ${escapeHtml(getPlatformLabel(entry.platform))}` : '',
+        '</p>',
+        '</article>'
+      ].join('')).join(''),
+      '</div>'
+    ].join('');
+  }
+
+  function setProfileProofBadge(scope, proofMeta) {
+    document.querySelectorAll(`[data-profile-proof="${scope}"]`).forEach((badge) => {
+      badge.classList.remove(
+        'rank',
+        'connected',
+        'self',
+        'proof-badge--verified',
+        'proof-badge--connected-pending',
+        'proof-badge--self-declared'
+      );
+      badge.classList.add(`proof-badge--${proofMeta.variant}`, getLegacyProofClass(proofMeta.variant));
+      badge.setAttribute('title', proofMeta.tooltip);
     });
   }
 
@@ -3920,32 +4749,110 @@
     const normalized = normalizeProfileState(state.profile);
     state.profile = normalized;
     const entitiesState = loadEntitiesState();
-
     const profile = normalized.publicProfile;
-    setProfileField('public.displayName', profile.displayName);
-    setProfileField('public.role', profile.role);
-    setProfileField('public.country', formatCountry(profile.country));
-    setProfileField('public.headline', profile.headline);
-    setProfileField('public.about', profile.about);
+
+    const viewModel = getCurrentProfileViewModel(normalized);
+    const isExternalView = viewModel.mode === 'player';
+
+    setProfileField('public.displayName', viewModel.displayName);
+    setProfileField('public.country', formatCountryWithFlag(viewModel.country));
+    const avatarWrap = document.getElementById('publicAvatarWrap');
+    const avatarImage = document.getElementById('publicAvatarImage');
+    const avatarFallback = document.getElementById('publicAvatarFallback');
+    const avatarBadgeLayer = document.getElementById('publicAvatarBadgeLayer');
+    if (avatarWrap) {
+      avatarWrap.classList.toggle('profile-avatar--badge-only', isExternalView);
+    }
+    if (avatarImage) {
+      avatarImage.setAttribute('aria-hidden', isExternalView ? 'true' : 'false');
+    }
+    if (avatarFallback) {
+      avatarFallback.textContent = viewModel.avatar && viewModel.avatar.initials
+        ? viewModel.avatar.initials
+        : getAvatarInitials(viewModel.displayName, 'PL');
+    }
+    if (avatarBadgeLayer) {
+      if (isExternalView) {
+        avatarBadgeLayer.classList.remove('hidden');
+        avatarBadgeLayer.innerHTML = renderAvatarBadgeHTML(
+          viewModel.avatar || resolveAvatarConfig({}, viewModel.displayName),
+          {
+            size: 'lg',
+            className: 'profile-avatar-badge',
+            ariaLabel: `${t('d.avatar.defaultAlt')} ${viewModel.displayName || ''}`.trim()
+          }
+        );
+      } else {
+        avatarBadgeLayer.classList.add('hidden');
+        avatarBadgeLayer.innerHTML = '';
+      }
+    }
+    const primaryMetaNode = document.getElementById('publicPrimaryMeta');
+    if (primaryMetaNode) {
+      primaryMetaNode.innerHTML = formatPrimaryMeta(viewModel);
+    } else {
+      setProfileField('public.primaryMeta', formatTemplate(t('d.profile.primaryMeta'), {
+        game: getGameLabel(viewModel.mainGame),
+        role: viewModel.mainRole || '-',
+        rank: viewModel.mainRank || '-'
+      }));
+    }
+    const dedupeExternalBio = isExternalView
+      && normalizeIdentity(viewModel.headline) === normalizeIdentity(viewModel.about);
+    setProfileField('public.headline', viewModel.headline);
+    setProfileField('public.about', dedupeExternalBio ? '' : viewModel.about);
+    document.querySelectorAll('[data-profile-field="public.about"]').forEach((node) => {
+      node.classList.toggle('hidden', dedupeExternalBio);
+    });
+
     setProfileField('hero.displayName', profile.displayName);
     setProfileField('hero.role', profile.role);
     setProfileField('hero.country', formatCountry(profile.country));
-
-    setProfileField('public.game.overwatch', formatGameLine('overwatch', profile.games.overwatch.handle));
-    setProfileField('public.game.lol', formatGameLine('lol', profile.games.lol.handle));
-    setProfileField('public.game.rivals', formatGameLine('rivals', profile.games.rivals.handle));
-    setProfileField('public.game.fortnite', formatGameLine('fortnite', profile.games.fortnite.handle));
     setProfileField('hero.game.overwatch', formatGameLine('overwatch', profile.games.overwatch.handle));
     setProfileField('hero.game.lol', formatGameLine('lol', profile.games.lol.handle));
     setProfileField('hero.game.rivals', formatGameLine('rivals', profile.games.rivals.handle));
     setProfileField('hero.game.fortnite', formatGameLine('fortnite', profile.games.fortnite.handle));
-
-    setProfileField('public.rank.overwatch', formatRankDisplay('overwatch', profile.games.overwatch));
-    setProfileField('public.rank.lol', formatRankDisplay('lol', profile.games.lol));
-    setProfileField('public.rank.rivals', formatRankDisplay('rivals', profile.games.rivals));
-    setProfileField('public.rank.fortnite', formatRankDisplay('fortnite', profile.games.fortnite));
-    applyGameRowOrder('public', profile.mainGame);
     applyGameRowOrder('hero', profile.mainGame);
+
+    const mainPanel = document.getElementById('publicMainGamePanel');
+    if (mainPanel) {
+      mainPanel.innerHTML = renderMainGamePanel(viewModel);
+    }
+
+    const secondaryPanel = document.getElementById('publicSecondaryGames');
+    if (secondaryPanel) {
+      secondaryPanel.innerHTML = renderSecondaryGames(viewModel);
+    }
+
+    const viewing = document.getElementById('publicExternalViewing');
+    if (viewing) {
+      if (isExternalView) {
+        viewing.classList.remove('hidden');
+        const baseText = formatTemplate(t('d.profile.viewingPlayer'), { player: viewModel.displayName });
+        if (viewModel.sourceGame) {
+          viewing.textContent = `${baseText} · ${formatTemplate(t('d.profile.viewingFromContext'), { game: getGameLabel(viewModel.sourceGame) })}`;
+        } else {
+          viewing.textContent = baseText;
+        }
+      } else {
+        viewing.classList.add('hidden');
+      }
+    }
+
+    const readonlyHint = document.getElementById('publicExternalReadonlyHint');
+    if (readonlyHint) {
+      readonlyHint.classList.toggle('hidden', !isExternalView);
+    }
+
+    const backButton = document.getElementById('publicBackToSelf');
+    if (backButton) {
+      backButton.classList.toggle('hidden', !isExternalView);
+    }
+
+    const ownerSections = document.getElementById('publicOwnerSections');
+    if (ownerSections) {
+      ownerSections.classList.toggle('hidden', isExternalView);
+    }
 
     setProfileField('career.current', normalized.career.currentTeamText);
     setProfileField('career.former', normalized.career.formerTeamText);
@@ -3964,28 +4871,33 @@
     setProfileField('setup.hz', `${t('d.setup.metric.hz')} ${normalized.setup.hz} Hz`);
     setProfileField('setup.fov', `${t('d.setup.metric.fov')} ${normalized.setup.fov}`);
 
-    const proof = getProofMeta(profile.proofStatus);
-    setProfileField('public.proof', proof.label);
-    setProfileField('hero.proof', proof.label);
-    document.querySelectorAll('[data-profile-proof]').forEach((badge) => {
-      badge.classList.remove(
-        'rank',
-        'connected',
-        'self',
-        'proof-badge--verified',
-        'proof-badge--connected-pending',
-        'proof-badge--self-declared'
-      );
-      badge.classList.add(`proof-badge--${proof.variant}`, getLegacyProofClass(proof.variant));
-      badge.setAttribute('title', proof.tooltip);
-    });
+    const publicProof = getProofMeta(viewModel.proofStatus);
+    setProfileField('public.proof', publicProof.label);
+    setProfileProofBadge('public', publicProof);
 
-    const profileSubject = state.authUser && state.authUser.handle
+    const heroProof = getProofMeta(profile.proofStatus);
+    setProfileField('hero.proof', heroProof.label);
+    setProfileProofBadge('hero', heroProof);
+
+    const conductSummary = formatConductSummary(
+      viewModel.conductSubjectType || 'player',
+      viewModel.conductSubjectId || profile.displayName,
+      entitiesState
+    );
+    setProfileField('public.conductSummary', conductSummary);
+
+    const heroSubject = state.authUser && state.authUser.handle
       ? state.authUser.handle
       : profile.displayName;
-    const conductSummary = formatConductSummary('player', profileSubject, entitiesState);
-    setProfileField('public.conductSummary', conductSummary);
-    setProfileField('hero.conductSummary', conductSummary);
+    const heroConductSummary = formatConductSummary('player', heroSubject, entitiesState);
+    setProfileField('hero.conductSummary', heroConductSummary);
+    renderProfileEditorControls();
+  }
+
+  function setProfileField(field, value) {
+    document.querySelectorAll(`[data-profile-field="${field}"]`).forEach((node) => {
+      node.textContent = value;
+    });
   }
 
   function getProfileEditorInputs() {
@@ -4000,16 +4912,20 @@
       owHandle: document.getElementById('editorOwHandle'),
       owTier: document.getElementById('editorOwTier'),
       owDivision: document.getElementById('editorOwDivision'),
+      owPlatform: document.getElementById('editorOwPlatform'),
       owDivisionWrap: document.getElementById('editorOwDivisionWrap'),
       lolHandle: document.getElementById('editorLolHandle'),
       lolTier: document.getElementById('editorLolTier'),
       lolDivision: document.getElementById('editorLolDivision'),
+      lolPlatform: document.getElementById('editorLolPlatform'),
       lolDivisionWrap: document.getElementById('editorLolDivisionWrap'),
       rivalsHandle: document.getElementById('editorRivalsHandle'),
       rivalsTier: document.getElementById('editorRivalsTier'),
+      rivalsPlatform: document.getElementById('editorRivalsPlatform'),
       fortniteHandle: document.getElementById('editorFortniteHandle'),
       fortniteTier: document.getElementById('editorFortniteTier'),
       fortniteDivision: document.getElementById('editorFortniteDivision'),
+      fortnitePlatform: document.getElementById('editorFortnitePlatform'),
       fortniteDivisionWrap: document.getElementById('editorFortniteDivisionWrap'),
       exp1Role: document.getElementById('editorExperience1Role'),
       exp1Org: document.getElementById('editorExperience1Org'),
@@ -4091,6 +5007,18 @@
     setSelectOptions(inputs.country, PROFILE_COUNTRY_CODES, (value) => formatCountry(value));
   }
 
+  function populateProfilePlatformOptions() {
+    const inputs = getProfileEditorInputs();
+    if (!inputs.owPlatform || !inputs.lolPlatform || !inputs.rivalsPlatform || !inputs.fortnitePlatform) {
+      return;
+    }
+    const options = ALLOWED_PLATFORM_IDS.slice();
+    setSelectOptions(inputs.owPlatform, options, (value) => getPlatformLabel(value));
+    setSelectOptions(inputs.lolPlatform, options, (value) => getPlatformLabel(value));
+    setSelectOptions(inputs.rivalsPlatform, options, (value) => getPlatformLabel(value));
+    setSelectOptions(inputs.fortnitePlatform, options, (value) => getPlatformLabel(value));
+  }
+
   function fillProfileEditorForm() {
     const inputs = getProfileEditorInputs();
     if (!inputs.displayName) {
@@ -4118,18 +5046,28 @@
     }
 
     populateProfileRankOptions();
+    populateProfilePlatformOptions();
 
     inputs.owHandle.value = data.games.overwatch.handle;
     inputs.owTier.value = data.games.overwatch.tier;
     inputs.owDivision.value = data.games.overwatch.division;
+    inputs.owPlatform.value = normalizePlatform(data.games.overwatch.platform) || PLATFORM_IDS.PC;
     inputs.lolHandle.value = data.games.lol.handle;
     inputs.lolTier.value = data.games.lol.tier;
     inputs.lolDivision.value = data.games.lol.division;
+    inputs.lolPlatform.value = normalizePlatform(data.games.lol.platform) || PLATFORM_IDS.PC;
     inputs.rivalsHandle.value = data.games.rivals.handle;
     inputs.rivalsTier.value = data.games.rivals.tier;
+    inputs.rivalsPlatform.value = normalizePlatform(data.games.rivals.platform) || PLATFORM_IDS.PC;
     inputs.fortniteHandle.value = data.games.fortnite.handle;
     inputs.fortniteTier.value = data.games.fortnite.tier;
     inputs.fortniteDivision.value = data.games.fortnite.division;
+    inputs.fortnitePlatform.value = normalizePlatform(data.games.fortnite.platform) || PLATFORM_IDS.PC;
+
+    if (typeof inputs.owPlatform._uspecRebuildMenu === 'function') inputs.owPlatform._uspecRebuildMenu();
+    if (typeof inputs.lolPlatform._uspecRebuildMenu === 'function') inputs.lolPlatform._uspecRebuildMenu();
+    if (typeof inputs.rivalsPlatform._uspecRebuildMenu === 'function') inputs.rivalsPlatform._uspecRebuildMenu();
+    if (typeof inputs.fortnitePlatform._uspecRebuildMenu === 'function') inputs.fortnitePlatform._uspecRebuildMenu();
 
     updateDivisionControlVisibility('overwatch', inputs.owTier.value, inputs.owDivision, inputs.owDivisionWrap);
     updateDivisionControlVisibility('lol', inputs.lolTier.value, inputs.lolDivision, inputs.lolDivisionWrap);
@@ -4189,6 +5127,14 @@
       return;
     }
 
+    if (state.profileViewMode !== 'self') {
+      state.profileViewMode = 'self';
+      state.profileViewPlayerId = '';
+      state.profileViewHandle = '';
+      state.profileViewSourceGame = '';
+      applyProfileStateToDOM();
+    }
+
     const modal = getProfileEditorModal();
     if (!modal) {
       return;
@@ -4215,6 +5161,7 @@
     const saveButton = document.querySelector('button[form="profileEditorForm"][type="submit"]');
     setButtonLoading(saveButton, true, t('d.editor.saving'));
     persistUiSubmitMeta('profileEditor', { status: 'pending', section: state.profileEditorSection });
+    const currentProfile = normalizeProfileState(state.profile);
 
     const draft = {
       version: PROFILE_VERSION,
@@ -4230,21 +5177,29 @@
           overwatch: {
             handle: inputs.owHandle.value,
             tier: inputs.owTier.value,
-            division: inputs.owDivision.value
+            division: inputs.owDivision.value,
+            platform: normalizePlatform(inputs.owPlatform ? inputs.owPlatform.value : currentProfile.publicProfile.games.overwatch.platform)
+              || PLATFORM_IDS.PC
           },
           lol: {
             handle: inputs.lolHandle.value,
             tier: inputs.lolTier.value,
-            division: inputs.lolDivision.value
+            division: inputs.lolDivision.value,
+            platform: normalizePlatform(inputs.lolPlatform ? inputs.lolPlatform.value : currentProfile.publicProfile.games.lol.platform)
+              || PLATFORM_IDS.PC
           },
           rivals: {
             handle: inputs.rivalsHandle.value,
-            tier: inputs.rivalsTier.value
+            tier: inputs.rivalsTier.value,
+            platform: normalizePlatform(inputs.rivalsPlatform ? inputs.rivalsPlatform.value : currentProfile.publicProfile.games.rivals.platform)
+              || PLATFORM_IDS.PC
           },
           fortnite: {
             handle: inputs.fortniteHandle.value,
             tier: inputs.fortniteTier.value,
-            division: inputs.fortniteDivision.value
+            division: inputs.fortniteDivision.value,
+            platform: normalizePlatform(inputs.fortnitePlatform ? inputs.fortnitePlatform.value : currentProfile.publicProfile.games.fortnite.platform)
+              || PLATFORM_IDS.PC
           }
         }
       },
@@ -4301,10 +5256,11 @@
     });
     populateProfileRankOptions();
     populateProfileCountryOptions();
+    populateProfilePlatformOptions();
   }
 
   function renderProfileEditorControls() {
-    const visible = state.isAuthenticated;
+    const visible = state.isAuthenticated && state.profileViewMode === 'self';
     document.querySelectorAll('[data-open-profile-editor]').forEach((button) => {
       button.hidden = !visible;
       button.tabIndex = visible ? 0 : -1;
@@ -4420,38 +5376,58 @@
     const availabilityLabel = formatAvailability(player.availability || 'Any');
     const hookText = getScoutHookText(player);
     const availabilityDetail = player.availabilityDetail ? String(player.availabilityDetail).trim() : '';
+    const gameLogo = getGameLogoMeta(game.game);
+    const platformLabel = getPlatformLabel(resolvePlatformForGame(game, player));
+    const countryName = formatCountry(player.country);
+    const countryFlag = countryCodeToFlagEmoji(player.country);
+    const countryText = countryFlag ? `${countryFlag} ${countryName}` : countryName;
+    const avatarConfig = resolveAvatarConfig(player, player.handle);
+    const avatarBadge = renderAvatarBadgeHTML(avatarConfig, {
+      size: 'md',
+      className: 'result-card__avatar',
+      ariaLabel: `${t('d.avatar.defaultAlt')} ${player.handle}`.trim()
+    });
+    const rankVisual = renderRankVisual(game, game.game);
 
     return [
       '<article class="result-card">',
       '<div class="result-card__header">',
-      '<div class="result-card__title">',
+      '<div class="result-card__identity">',
+      avatarBadge,
+      '<div class="result-card__title-wrap">',
       `<h3 class="result-handle">${escapeHtml(player.handle)}</h3>`,
-      `<span class="primary-chip">${escapeHtml(getGameLabel(game.game))}</span>`,
+      '<div class="explore-card-game-row">',
+      gameLogo
+        ? `<img class="explore-card-game-logo" src="${escapeHtml(gameLogo.src)}" alt="${escapeHtml(gameLogo.alt)}">`
+        : '',
+      `<span class="explore-card-game-label">${escapeHtml(getGameLabel(game.game))}</span>`,
+      '</div>',
+      '</div>',
       '</div>',
       renderProofBadge(game.proof, { compact: true }),
       '</div>',
       `<p class="scout-hook">${escapeHtml(hookText)}</p>`,
       '<div class="result-card__rank">',
-      `<strong>${escapeHtml(formatRole(game.role) || '-')}</strong>`,
-      `<span>${escapeHtml(game.rank || '-')} · ${escapeHtml(t('d.card.peak'))} ${escapeHtml(game.peak || '-')}</span>`,
+      `<span class="result-card__rank-main">${rankVisual}<strong>${escapeHtml(game.rank || '-')}</strong></span>`,
+      `<span>${escapeHtml(t('d.card.peak'))} ${escapeHtml(game.peak || '-')}</span>`,
       '</div>',
       '<div class="scout-chips">',
       `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.proof'))}</strong><span>${escapeHtml(proofMeta.label)}</span></span>`,
       `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.role'))}</strong><span>${escapeHtml(formatRole(game.role) || '-')}</span></span>`,
       `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.availability'))}</strong><span>${escapeHtml(availabilityLabel || '-')}</span></span>`,
+      `<span class="scout-chip scout-chip--platform"><strong>${escapeHtml(t('d.card.chip.platform'))}</strong><span>${escapeHtml(platformLabel)}</span></span>`,
       '</div>',
       availabilityDetail ? `<p class="availability-detail">${escapeHtml(availabilityDetail)}</p>` : '',
       '<div class="result-card__meta">',
       `<span class="meta-chip">${escapeHtml(t('d.card.region'))}: ${escapeHtml(player.region)}</span>`,
-      `<span class="meta-chip">${escapeHtml(t('d.card.country'))}: ${escapeHtml(formatCountry(player.country))}</span>`,
-      `<span class="meta-chip">${escapeHtml(t('d.card.availability'))}: ${escapeHtml(formatAvailability(player.availability))}</span>`,
+      `<span class="meta-chip">${escapeHtml(t('d.card.country'))}: ${escapeHtml(countryText)}</span>`,
       `<span class="meta-chip">${escapeHtml(player.language.join(', '))}</span>`,
       `<span class="conduct-line">${conduct}</span>`,
       '</div>',
       '<div class="result-card__actions">',
       `<button type="button" class="button primary small" data-action="invite-player" data-handle="${escapeHtml(player.handle)}" data-game="${escapeHtml(game.game)}">${escapeHtml(t('d.card.invite'))}</button>`,
       `<button type="button" class="button ghost small" data-action="compare-player" data-handle="${escapeHtml(player.handle)}">${escapeHtml(inCompare ? t('d.card.remove') : t('d.card.compare'))}</button>`,
-      `<button type="button" class="button ghost small" data-action="open-player" data-handle="${escapeHtml(player.handle)}">${escapeHtml(t('d.card.open'))}</button>`,
+      `<button type="button" class="button ghost small" data-action="open-player" data-handle="${escapeHtml(player.handle)}" data-player-id="${escapeHtml(getPlayerViewId(player))}" data-game="${escapeHtml(game.game)}">${escapeHtml(t('d.card.open'))}</button>`,
       '</div>',
       '</article>'
     ].join('');
@@ -4459,30 +5435,53 @@
 
   function renderTeamCard(team, entitiesState) {
     const conduct = formatConductSummary('team', team.slug, entitiesState);
-    const needs = team.games
+    const scopedNeeds = team.games
       .filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game)
       .flatMap((entry) => entry.needs.map((need) => formatTeamNeed(entry.game, need)));
-    const topNeed = needs[0] || '-';
     const primaryNeed = getTeamPrimaryNeed(team);
+    const primaryGame = primaryNeed && primaryNeed.game
+      ? primaryNeed.game
+      : ((Array.isArray(team.games) && team.games[0] && team.games[0].game) ? team.games[0].game : GAME_IDS.OVERWATCH);
+    const topNeed = primaryNeed && primaryNeed.need
+      ? `${formatRole(primaryNeed.need.role)} · ${primaryNeed.need.rankMin}+`
+      : '-';
     const roleNeeded = primaryNeed && primaryNeed.need ? formatRole(primaryNeed.need.role) : '-';
     const proofMeta = getProofMeta(team.verified);
     const coarseAvailability = formatAvailability(getCoarseTeamAvailability(team));
     const availabilityDetail = team.availabilityDetail ? String(team.availabilityDetail).trim() : '';
     const hookText = getScoutHookText(team);
+    const gameLogo = getGameLogoMeta(primaryGame);
+    const platformFocus = formatPlatformList(team.platforms);
+    const hasPlatformFocus = platformFocus !== '—';
+    const avatarConfig = resolveAvatarConfig(team, team.name, { preferredStyle: AVATAR_STYLE_IDS.BRAND });
+    const avatarBadge = renderAvatarBadgeHTML(avatarConfig, {
+      size: 'md',
+      className: 'result-card__avatar',
+      ariaLabel: `${t('d.avatar.defaultAlt')} ${team.name}`.trim()
+    });
+    const rankVisual = renderRankVisual({ rank: primaryNeed && primaryNeed.need ? primaryNeed.need.rankMin : '' }, primaryGame);
 
     return [
       '<article class="result-card">',
       '<div class="result-card__header">',
-      '<div class="result-card__title">',
+      '<div class="result-card__identity">',
+      avatarBadge,
+      '<div class="result-card__title-wrap">',
       `<h3 class="result-handle">${escapeHtml(team.name)}</h3>`,
-      `<span class="primary-chip">${escapeHtml(team.region)}</span>`,
+      '<div class="explore-card-game-row">',
+      gameLogo
+        ? `<img class="explore-card-game-logo" src="${escapeHtml(gameLogo.src)}" alt="${escapeHtml(gameLogo.alt)}">`
+        : '',
+      `<span class="explore-card-game-label">${escapeHtml(getGameLabel(primaryGame))}</span>`,
+      '</div>',
+      '</div>',
       '</div>',
       renderProofBadge(team.verified, { compact: true }),
       '</div>',
       `<p class="scout-hook">${escapeHtml(hookText)}</p>`,
       '<div class="result-card__rank">',
-      `<strong>${escapeHtml(topNeed)}</strong>`,
-      `<span>${escapeHtml(t('d.card.availability'))}: ${escapeHtml(formatSchedule(team.schedule))}</span>`,
+      `<span class="result-card__rank-main">${rankVisual}<strong>${escapeHtml(topNeed)}</strong></span>`,
+      `<span>${escapeHtml(formatSchedule(team.schedule))}</span>`,
       '</div>',
       '<div class="scout-chips">',
       `<span class="scout-chip"><strong>${escapeHtml(t('d.card.chip.proof'))}</strong><span>${escapeHtml(proofMeta.label)}</span></span>`,
@@ -4491,13 +5490,13 @@
       '</div>',
       availabilityDetail ? `<p class="availability-detail">${escapeHtml(availabilityDetail)}</p>` : '',
       '<div class="result-card__meta">',
-      '<div class="team-needs">',
-      needs.map((need) => `<span class="need-chip">${escapeHtml(need)}</span>`).join(''),
-      '</div>',
+      `<span class="meta-chip">${escapeHtml(t('d.card.region'))}: ${escapeHtml(team.region)}</span>`,
+      scopedNeeds.length > 1 ? `<span class="meta-chip">${escapeHtml(scopedNeeds[1])}</span>` : '',
+      hasPlatformFocus ? `<span class="meta-chip">${escapeHtml(t('d.common.platformFocus'))}: ${escapeHtml(platformFocus)}</span>` : '',
       `<span class="conduct-line">${conduct}</span>`,
       '</div>',
       '<div class="result-card__actions">',
-      `<button type="button" class="button primary small" data-action="invite-team" data-team="${escapeHtml(team.slug)}" data-game="${escapeHtml(team.games[0].game)}">${escapeHtml(t('d.card.apply'))}</button>`,
+      `<button type="button" class="button primary small" data-action="invite-team" data-team="${escapeHtml(team.slug)}" data-game="${escapeHtml(primaryGame)}">${escapeHtml(t('d.card.apply'))}</button>`,
       '</div>',
       '</article>'
     ].join('');
@@ -4555,14 +5554,46 @@
     const setSlot = (node, player) => {
       if (!node) return;
       if (player) {
-        node.textContent = player.handle;
+        const primaryGame = getPrimaryGame(player);
+        const gameLogo = getGameLogoMeta(primaryGame.game);
+        const avatarBadge = renderAvatarBadgeHTML(resolveAvatarConfig(player, player.handle), {
+          size: 'sm',
+          className: 'compare-slot-avatar'
+        });
+        const rankVisual = renderRankVisual(primaryGame, primaryGame.game);
+        const platform = getPlatformLabel(resolvePlatformForGame(primaryGame, player));
+        node.innerHTML = [
+          '<span class="compare-slot-content">',
+          avatarBadge,
+          '<span class="compare-slot-copy">',
+          `<span class="compare-slot-name">${escapeHtml(player.handle)}</span>`,
+          '<span class="compare-slot-meta">',
+          gameLogo ? `<img class="compare-slot-game" src="${escapeHtml(gameLogo.src)}" alt="${escapeHtml(gameLogo.alt)}">` : '',
+          rankVisual,
+          `<span>${escapeHtml(platform)}</span>`,
+          '</span>',
+          '</span>',
+          '</span>'
+        ].join('');
         node.classList.add('is-filled');
+        node.dataset.action = 'open-player-compare';
+        node.dataset.handle = player.handle;
+        node.dataset.playerId = getPlayerViewId(player);
+        node.dataset.game = primaryGame.game;
+        node.setAttribute('aria-label', `${player.handle} ${getGameLabel(primaryGame.game)} ${platform}`);
+        node.disabled = false;
         delete node.dataset.d18n;
         return;
       }
       node.textContent = t('d.compare.slot.empty');
       node.dataset.d18n = 'd.compare.slot.empty';
       node.classList.remove('is-filled');
+      delete node.dataset.action;
+      delete node.dataset.handle;
+      delete node.dataset.playerId;
+      delete node.dataset.game;
+      node.removeAttribute('aria-label');
+      node.disabled = true;
     };
 
     setSlot(compareSlotA, selected[0]);
@@ -4599,9 +5630,47 @@
     ];
 
     compareContent.innerHTML = [
+      '<div class="compare-profile-actions">',
+      selected.map((player) => [
+        `<button type="button" class="compare-profile-action" data-action="open-player-compare" data-handle="${escapeHtml(player.handle)}" data-player-id="${escapeHtml(getPlayerViewId(player))}" data-game="${escapeHtml(getPrimaryGame(player).game)}">`,
+        renderAvatarBadgeHTML(resolveAvatarConfig(player, player.handle), {
+          size: 'sm',
+          className: 'compare-slot-avatar',
+          ariaLabel: `${t('d.avatar.defaultAlt')} ${player.handle}`
+        }),
+        `<span>${escapeHtml(t('d.card.open'))}: ${escapeHtml(player.handle)}</span>`,
+        '</button>'
+      ].join('')).join(''),
+      '</div>',
       '<table class="compare-table">',
       `<thead><tr><th>${t('d.compare.header.field')}</th>`,
-      selected.map((p) => `<th>${p.handle}</th>`).join(''),
+      selected.map((player) => {
+        const primary = getPrimaryGame(player);
+        const logo = getGameLogoMeta(primary.game);
+        const rankVisual = renderRankVisual(primary, primary.game);
+        const platform = getPlatformLabel(resolvePlatformForGame(primary, player));
+        return [
+          '<th>',
+          `<button type="button" class="compare-player-open" data-action="open-player-compare" data-handle="${escapeHtml(player.handle)}" data-player-id="${escapeHtml(getPlayerViewId(player))}" data-game="${escapeHtml(primary.game)}">`,
+          '<span class="compare-player-open-content">',
+          renderAvatarBadgeHTML(resolveAvatarConfig(player, player.handle), {
+            size: 'sm',
+            className: 'compare-slot-avatar',
+            ariaLabel: `${t('d.avatar.defaultAlt')} ${player.handle}`
+          }),
+          '<span class="compare-player-open-copy">',
+          `<span>${escapeHtml(player.handle)}</span>`,
+          '<span class="compare-player-open-meta">',
+          logo ? `<img class="compare-slot-game" src="${escapeHtml(logo.src)}" alt="${escapeHtml(logo.alt)}">` : '',
+          rankVisual,
+          `<span>${escapeHtml(platform)}</span>`,
+          '</span>',
+          '</span>',
+          '</span>',
+          '</button>',
+          '</th>'
+        ].join('');
+      }).join(''),
       '</tr></thead><tbody>',
       rows
         .map((row) => `<tr><td>${row.key}</td>${selected.map((p) => `<td>${row.isHtml ? row.value(p) : escapeHtml(row.value(p))}</td>`).join('')}</tr>`)
@@ -6052,6 +7121,46 @@
     document.body.style.overflow = '';
   }
 
+  function openPlayerProfileView(handle, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const fallbackHandle = String(handle || '').trim();
+    const normalizedHandle = fallbackHandle.toLowerCase();
+    const playerId = String(opts.playerId || '').trim();
+    const normalizedSourceGame = normalizeGameId(opts.sourceGame || '', '');
+    const sourceGame = isCanonicalProfileGame(normalizedSourceGame) ? normalizedSourceGame : '';
+    const shouldScroll = opts.scroll !== false;
+
+    if (!fallbackHandle && !playerId) {
+      return;
+    }
+
+    const player = players.find((entry) => {
+      if (playerId && getPlayerViewId(entry) === slugifyStableId(playerId)) {
+        return true;
+      }
+      return normalizedHandle && String(entry.handle || '').trim().toLowerCase() === normalizedHandle;
+    });
+
+    const resolvedHandle = player ? player.handle : fallbackHandle;
+    if (!resolvedHandle) {
+      return;
+    }
+
+    track('view_player_profile', { handle: resolvedHandle });
+    state.profileViewMode = 'player';
+    state.profileViewPlayerId = player ? getPlayerViewId(player) : slugifyStableId(playerId || resolvedHandle);
+    state.profileViewHandle = resolvedHandle;
+    state.profileViewSourceGame = sourceGame;
+    applyProfileStateToDOM();
+
+    if (shouldScroll) {
+      const profileSection = document.getElementById('profile');
+      if (profileSection) {
+        profileSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+
   function bindCardActions() {
     document.querySelectorAll('[data-action="invite-player"]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -6077,9 +7186,13 @@
 
     document.querySelectorAll('[data-action="open-player"]').forEach((button) => {
       button.addEventListener('click', () => {
-        const handle = button.dataset.handle;
-        track('view_player_profile', { handle });
-        showToast(`${handle}`);
+        const sourceGameFromButton = button.dataset.game || '';
+        const sourceGame = isCanonicalProfileGame(state.game) ? state.game : sourceGameFromButton;
+        openPlayerProfileView(button.dataset.handle || '', {
+          playerId: button.dataset.playerId || '',
+          sourceGame,
+          scroll: true
+        });
       });
     });
 
@@ -6363,6 +7476,21 @@
           type: 'multi',
           compareHandles: state.compare.slice(),
           game: state.game === GAME_IDS.ANY ? GAME_IDS.OVERWATCH : state.game
+        });
+      });
+    }
+
+    const compareDrawer = document.getElementById('compareDrawer');
+    if (compareDrawer) {
+      compareDrawer.addEventListener('click', (event) => {
+        const openButton = event.target.closest('[data-action="open-player-compare"]');
+        if (!openButton) {
+          return;
+        }
+        openPlayerProfileView(openButton.dataset.handle || '', {
+          playerId: openButton.dataset.playerId || '',
+          sourceGame: openButton.dataset.game || state.game,
+          scroll: true
         });
       });
     }
@@ -6926,6 +8054,17 @@
     if (inputs.fortniteTier && inputs.fortniteDivision && inputs.fortniteDivisionWrap) {
       inputs.fortniteTier.addEventListener('change', () => {
         updateDivisionControlVisibility('fortnite', inputs.fortniteTier.value, inputs.fortniteDivision, inputs.fortniteDivisionWrap);
+      });
+    }
+
+    const backToSelf = document.getElementById('publicBackToSelf');
+    if (backToSelf) {
+      backToSelf.addEventListener('click', () => {
+        state.profileViewMode = 'self';
+        state.profileViewPlayerId = '';
+        state.profileViewHandle = '';
+        state.profileViewSourceGame = '';
+        applyProfileStateToDOM();
       });
     }
   }

@@ -86,7 +86,7 @@
                 <span data-d18n="d.quick.stepGame">1. Pick game</span>
                 <div id="quickStartGames" class="chip-row quick-chip-row">
                   <button type="button" class="chip" data-quick-game="overwatch" data-d18n="d.game.overwatch">Overwatch</button>
-                  <button type="button" class="chip" data-quick-game="lol" data-d18n="d.game.lol">LoL</button>
+                  <button type="button" class="chip" data-quick-game="lol" data-d18n="d.game.lol">League of Legends</button>
                   <button type="button" class="chip" data-quick-game="fortnite" data-d18n="d.game.fortnite">Fortnite</button>
                   <button type="button" class="chip" data-quick-game="rivals" data-d18n="d.game.rivals">Marvel Rivals</button>
                 </div>
@@ -192,13 +192,13 @@
         <div class="explore-controls">
           <label class="search-wrap">
             <span class="sr-only" data-d18n="d.filter.search">Search</span>
-            <input id="searchInput" type="search" placeholder="Search handle or team" autocomplete="off">
+            <input id="searchInput" type="search" placeholder="Search in-game name or team" autocomplete="off">
           </label>
 
           <div class="chip-row" id="gameChips" aria-label="Games">
             <button type="button" class="chip active" data-game="any" data-d18n="d.filter.any">Any</button>
             <button type="button" class="chip" data-game="overwatch" data-d18n="d.game.overwatch">Overwatch</button>
-            <button type="button" class="chip" data-game="lol" data-d18n="d.game.lol">LoL</button>
+            <button type="button" class="chip" data-game="lol" data-d18n="d.game.lol">League of Legends</button>
             <button type="button" class="chip" data-game="fortnite" data-d18n="d.game.fortnite">Fortnite</button>
             <button type="button" class="chip" data-game="rivals" data-d18n="d.game.rivals">Marvel Rivals</button>
           </div>
@@ -288,8 +288,8 @@
 
             <div class="compare-bar">
               <div class="compare-bar__slots">
-                <span class="compare-bar__slot" id="compareSlotA" data-d18n="d.compare.slot.empty">Select player</span>
-                <span class="compare-bar__slot" id="compareSlotB" data-d18n="d.compare.slot.empty">Select player</span>
+                <button type="button" class="compare-bar__slot" id="compareSlotA" data-d18n="d.compare.slot.empty" disabled>Select player</button>
+                <button type="button" class="compare-bar__slot" id="compareSlotB" data-d18n="d.compare.slot.empty" disabled>Select player</button>
               </div>
               <div class="compare-bar__actions">
                 <button type="button" id="compareNow" class="button ghost small" data-d18n="d.compare.now">Compare now</button>
@@ -309,17 +309,23 @@
       <div class="container profile-showcase panel">
         <div class="section-title-row">
           <h2 data-i18n="profile.title">Public Profile</h2>
+          <div class="profile-view-controls">
+            <span id="publicExternalViewing" class="profile-viewing-banner hidden" data-d18n="d.profile.viewingPlayer">Viewing player profile</span>
+            <button type="button" id="publicBackToSelf" class="button ghost small profile-back-btn hidden" data-d18n="d.profile.backToSelf">Back to your profile</button>
+          </div>
         </div>
+        <p id="publicExternalReadonlyHint" class="profile-readonly-hint hidden" data-d18n="d.profile.externalReadonlyHint">Read-only profile preview. Switch back to edit your own profile.</p>
         <div class="profile-grid">
           <div class="profile-card-main">
             <div class="profile-top">
-              <div class="profile-avatar">
-                <img class="profile-avatar-image" src="assets/avatars/shinobi 1.jpeg" alt="Shinobi profile picture">
-                <span class="profile-avatar-fallback" aria-hidden="true">SN</span>
+              <div id="publicAvatarWrap" class="profile-avatar has-image">
+                <img id="publicAvatarImage" class="profile-avatar-image" src="assets/avatars/shinobi 1.jpeg" alt="Shinobi profile picture">
+                <div id="publicAvatarBadgeLayer" class="profile-avatar-badge-overlay" aria-hidden="true"></div>
+                <span id="publicAvatarFallback" class="profile-avatar-fallback" aria-hidden="true">SN</span>
               </div>
               <div>
                 <h3 class="profile-name" data-profile-field="public.displayName">Shinobi</h3>
-                <p class="profile-role" data-profile-field="public.role">Flex DPS</p>
+                <p id="publicPrimaryMeta" class="profile-primary-meta" data-profile-field="public.primaryMeta">Primary: Overwatch · Flex DPS · Master 3</p>
                 <p class="profile-country"><span data-d18n="d.profile.country.label">Country</span>: <span data-profile-field="public.country">Germany</span></p>
               </div>
               <div class="profile-top-actions">
@@ -336,42 +342,20 @@
             <p class="profile-headline" data-profile-field="public.headline">Flex DPS focused on team systems, comms discipline and measurable improvement.</p>
             <p class="profile-about" data-profile-field="public.about">Known for calm mid-round communication, role flexibility across metas and consistent VOD review habits.</p>
 
-            <div class="profile-games" data-profile-games="public">
-              <div class="profile-game-row" data-profile-game-row="overwatch">
-                <div>
-                  <img src="assets/logos/misc/overwatch_logo_2026.png" alt="Overwatch logo">
-                  <span data-profile-field="public.game.overwatch">Overwatch · Shinobi#4728</span>
-                </div>
-                <span data-profile-field="public.rank.overwatch">Master 3</span>
-              </div>
-              <div class="profile-game-row" data-profile-game-row="lol">
-                <div>
-                  <img src="assets/logos/misc/LoL.png" alt="League of Legends logo">
-                  <span data-profile-field="public.game.lol">League of Legends · Shn0bi</span>
-                </div>
-                <span data-profile-field="public.rank.lol">Diamond II</span>
-              </div>
-              <div class="profile-game-row" data-profile-game-row="rivals">
-                <div>
-                  <img src="assets/logos/misc/rivals.png" alt="Marvel Rivals logo">
-                  <span data-profile-field="public.game.rivals">Marvel Rivals · ShinobiX</span>
-                </div>
-                <span data-profile-field="public.rank.rivals">Grandmaster</span>
-              </div>
-              <div class="profile-game-row" data-profile-game-row="fortnite">
-                <div>
-                  <img src="assets/logos/misc/Fortnite.jpeg" alt="Fortnite logo">
-                  <span data-profile-field="public.game.fortnite">Fortnite · ShinobiFN</span>
-                </div>
-                <span data-profile-field="public.rank.fortnite">Champion II</span>
-              </div>
-            </div>
+            <section id="publicMainGamePanel" class="profile-main-game-panel" aria-live="polite">
+              <h4 class="profile-main-panel-title" data-d18n="d.profile.mainGameDetails">Main Game Details</h4>
+            </section>
+            <section id="publicSecondaryGames" class="profile-secondary-games" aria-live="polite">
+              <h4 class="profile-secondary-title" data-d18n="d.profile.secondaryGames">Secondary Games</h4>
+            </section>
 
             <div class="network-cta-row">
               <button type="button" class="button ghost" data-open-network-modal data-network-mode="intro" data-d18n="d.network.open.intro">Request Intro</button>
               <button type="button" class="button ghost" data-open-network-modal data-network-mode="reference" data-d18n="d.network.open.reference">Add Reference</button>
             </div>
+          </div>
 
+          <div id="publicOwnerSections" class="profile-owner-sections">
             <article class="experience-list">
               <div class="section-title-row section-title-row-small">
                 <h4 data-d18n="d.experience.title">Experience</h4>
@@ -403,62 +387,62 @@
                 <span class="experience-date" data-profile-field="experience.3.date">2022 - 2023</span>
               </div>
             </article>
-          </div>
 
-          <div class="profile-card-side">
-            <article>
-              <div class="section-title-row section-title-row-small">
-                <h4 data-i18n="profile.career.title">Career</h4>
-                <button type="button" class="edit-trigger" data-open-profile-editor data-edit-section="career" data-edit-tooltip hidden>
-                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path d="M3 17.25V21h3.75L19.81 7.94l-3.75-3.75L3 17.25zm17.71-10.04a1.003 1.003 0 000-1.42l-2.5-2.5a1.003 1.003 0 00-1.42 0L14.96 5.1l3.75 3.75 2-1.64z"/>
-                  </svg>
-                </button>
-              </div>
-              <p class="team-line"><img src="assets/logos/teams/Faze Clan.png" alt="FaZe logo"><span data-profile-field="career.current">FaZe · Current Member</span></p>
-              <p class="team-line"><img src="assets/logos/teams/Team Liquid.jpeg" alt="Team Liquid logo"><span data-profile-field="career.former">Team Liquid · Former Member</span></p>
-            </article>
+            <div class="profile-card-side">
+              <article>
+                <div class="section-title-row section-title-row-small">
+                  <h4 data-i18n="profile.career.title">Career</h4>
+                  <button type="button" class="edit-trigger" data-open-profile-editor data-edit-section="career" data-edit-tooltip hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M3 17.25V21h3.75L19.81 7.94l-3.75-3.75L3 17.25zm17.71-10.04a1.003 1.003 0 000-1.42l-2.5-2.5a1.003 1.003 0 00-1.42 0L14.96 5.1l3.75 3.75 2-1.64z"/>
+                    </svg>
+                  </button>
+                </div>
+                <p class="team-line"><img src="assets/logos/teams/Faze Clan.png" alt="FaZe logo"><span data-profile-field="career.current">FaZe · Current Member</span></p>
+                <p class="team-line"><img src="assets/logos/teams/Team Liquid.jpeg" alt="Team Liquid logo"><span data-profile-field="career.former">Team Liquid · Former Member</span></p>
+              </article>
 
-            <article>
-              <h4 data-d18n="d.references.title">References</h4>
-              <div class="references-grid" id="referencesPanel">
-                <article class="reference-card">
-                  <h5 data-d18n="d.references.one.name">Kai "Vector" Neumann</h5>
-                  <p class="reference-meta" data-d18n="d.references.one.meta">Head Coach · Vienna Ascend</p>
-                  <p data-d18n="d.references.one.text">Reliable in review cycles and adapts quickly to strategic feedback.</p>
-                </article>
-                <article class="reference-card">
-                  <h5 data-d18n="d.references.two.name">Mila "Astra" Hoffmann</h5>
-                  <p class="reference-meta" data-d18n="d.references.two.meta">Team Manager · FaZe Academy</p>
-                  <p data-d18n="d.references.two.text">Strong teammate with consistent attendance and clear match communication.</p>
-                </article>
-              </div>
-            </article>
+              <article>
+                <h4 data-d18n="d.references.title">References</h4>
+                <div class="references-grid" id="referencesPanel">
+                  <article class="reference-card">
+                    <h5 data-d18n="d.references.one.name">Kai "Vector" Neumann</h5>
+                    <p class="reference-meta" data-d18n="d.references.one.meta">Head Coach · Vienna Ascend</p>
+                    <p data-d18n="d.references.one.text">Reliable in review cycles and adapts quickly to strategic feedback.</p>
+                  </article>
+                  <article class="reference-card">
+                    <h5 data-d18n="d.references.two.name">Mila "Astra" Hoffmann</h5>
+                    <p class="reference-meta" data-d18n="d.references.two.meta">Team Manager · FaZe Academy</p>
+                    <p data-d18n="d.references.two.text">Strong teammate with consistent attendance and clear match communication.</p>
+                  </article>
+                </div>
+              </article>
 
-            <article>
-              <div class="section-title-row section-title-row-small">
-                <h4 data-i18n="profile.setup.title">Pro Setup</h4>
-                <button type="button" class="edit-trigger" data-open-profile-editor data-edit-section="setup" data-edit-tooltip hidden>
-                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path d="M3 17.25V21h3.75L19.81 7.94l-3.75-3.75L3 17.25zm17.71-10.04a1.003 1.003 0 000-1.42l-2.5-2.5a1.003 1.003 0 00-1.42 0L14.96 5.1l3.75 3.75 2-1.64z"/>
-                  </svg>
-                </button>
-              </div>
-              <div class="setup-grid">
-                <span class="setup-item"><img src="assets/logos/misc/logitech.jpeg" alt="Logitech logo"><span data-i18n="profile.setup.s1">Logitech G Pro X Superlight 2</span></span>
-                <span class="setup-item"><span data-i18n="profile.setup.s2">Artisan Zero XL</span></span>
-                <span class="setup-item"><span data-i18n="profile.setup.s3">Wooting 60HE</span></span>
-                <span class="setup-item"><img src="assets/logos/misc/benq.png" alt="BenQ logo"><span data-i18n="profile.setup.s4">BenQ Zowie 360Hz</span></span>
-                <span class="setup-item setup-item-wide"><img src="assets/logos/misc/nvidea.png" alt="NVIDIA logo"><span data-i18n="profile.setup.s5">NVIDIA RTX 4090</span></span>
-              </div>
-            </article>
+              <article>
+                <div class="section-title-row section-title-row-small">
+                  <h4 data-i18n="profile.setup.title">Pro Setup</h4>
+                  <button type="button" class="edit-trigger" data-open-profile-editor data-edit-section="setup" data-edit-tooltip hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M3 17.25V21h3.75L19.81 7.94l-3.75-3.75L3 17.25zm17.71-10.04a1.003 1.003 0 000-1.42l-2.5-2.5a1.003 1.003 0 00-1.42 0L14.96 5.1l3.75 3.75 2-1.64z"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="setup-grid">
+                  <span class="setup-item"><img src="assets/logos/misc/logitech.jpeg" alt="Logitech logo"><span data-i18n="profile.setup.s1">Logitech G Pro X Superlight 2</span></span>
+                  <span class="setup-item"><span data-i18n="profile.setup.s2">Artisan Zero XL</span></span>
+                  <span class="setup-item"><span data-i18n="profile.setup.s3">Wooting 60HE</span></span>
+                  <span class="setup-item"><img src="assets/logos/misc/benq.png" alt="BenQ logo"><span data-i18n="profile.setup.s4">BenQ Zowie 360Hz</span></span>
+                  <span class="setup-item setup-item-wide"><img src="assets/logos/misc/nvidea.png" alt="NVIDIA logo"><span data-i18n="profile.setup.s5">NVIDIA RTX 4090</span></span>
+                </div>
+              </article>
 
-            <article class="metric-grid">
-              <span data-profile-field="setup.dpi">DPI 800</span>
-              <span data-profile-field="setup.sens">Sens 4.00</span>
-              <span data-profile-field="setup.hz">Polling 1000 Hz</span>
-              <span data-profile-field="setup.fov">FOV 103</span>
-            </article>
+              <article class="metric-grid">
+                <span data-profile-field="setup.dpi">DPI 800</span>
+                <span data-profile-field="setup.sens">Sens 4.00</span>
+                <span data-profile-field="setup.hz">Polling 1000 Hz</span>
+                <span data-profile-field="setup.fov">FOV 103</span>
+              </article>
+            </div>
           </div>
         </div>
       </div>
@@ -509,7 +493,7 @@
             <span data-d18n="d.invite.game">Game</span>
             <select name="game" id="inviteGame" required>
               <option value="overwatch" data-d18n="d.game.overwatch">Overwatch</option>
-              <option value="lol" data-d18n="d.game.lol">LoL</option>
+              <option value="lol" data-d18n="d.game.lol">League of Legends</option>
               <option value="fortnite" data-d18n="d.game.fortnite">Fortnite</option>
               <option value="rivals" data-d18n="d.game.rivals">Marvel Rivals</option>
             </select>
@@ -785,7 +769,7 @@
               <div class="select-wrap">
                 <select id="editorMainGame" required>
                   <option value="overwatch" data-d18n="d.game.overwatch">Overwatch</option>
-                  <option value="lol" data-d18n="d.game.lol">LoL</option>
+                  <option value="lol" data-d18n="d.game.lol">League of Legends</option>
                   <option value="rivals" data-d18n="d.editor.public.game.rivals">Marvel Rivals</option>
                   <option value="fortnite" data-d18n="d.game.fortnite">Fortnite</option>
                 </select>
@@ -797,7 +781,7 @@
               <h4 data-d18n="d.editor.public.game.overwatch">Overwatch</h4>
               <div class="editor-grid">
                 <label>
-                  <span data-d18n="d.editor.handle">Handle</span>
+                  <span data-d18n="d.editor.handle">In-game name</span>
                   <input type="text" id="editorOwHandle" required>
                 </label>
                 <label>
@@ -805,6 +789,13 @@
                   <div class="select-wrap">
                     <select id="editorOwTier" required></select>
                     <button type="button" class="select-arrow" data-select-toggle="editorOwTier" aria-label="Toggle options"></button>
+                  </div>
+                </label>
+                <label>
+                  <span data-d18n="d.common.platform">Platform</span>
+                  <div class="select-wrap">
+                    <select id="editorOwPlatform" required></select>
+                    <button type="button" class="select-arrow" data-select-toggle="editorOwPlatform" aria-label="Toggle options"></button>
                   </div>
                 </label>
               </div>
@@ -821,7 +812,7 @@
               <h4 data-d18n="d.editor.public.game.lol">League of Legends</h4>
               <div class="editor-grid">
                 <label>
-                  <span data-d18n="d.editor.handle">Handle</span>
+                  <span data-d18n="d.editor.handle">In-game name</span>
                   <input type="text" id="editorLolHandle" required>
                 </label>
                 <label>
@@ -829,6 +820,13 @@
                   <div class="select-wrap">
                     <select id="editorLolTier" required></select>
                     <button type="button" class="select-arrow" data-select-toggle="editorLolTier" aria-label="Toggle options"></button>
+                  </div>
+                </label>
+                <label>
+                  <span data-d18n="d.common.platform">Platform</span>
+                  <div class="select-wrap">
+                    <select id="editorLolPlatform" required></select>
+                    <button type="button" class="select-arrow" data-select-toggle="editorLolPlatform" aria-label="Toggle options"></button>
                   </div>
                 </label>
               </div>
@@ -845,7 +843,7 @@
               <h4 data-d18n="d.editor.public.game.rivals">Marvel Rivals</h4>
               <div class="editor-grid">
                 <label>
-                  <span data-d18n="d.editor.handle">Handle</span>
+                  <span data-d18n="d.editor.handle">In-game name</span>
                   <input type="text" id="editorRivalsHandle" required>
                 </label>
                 <label>
@@ -855,6 +853,13 @@
                     <button type="button" class="select-arrow" data-select-toggle="editorRivalsTier" aria-label="Toggle options"></button>
                   </div>
                 </label>
+                <label>
+                  <span data-d18n="d.common.platform">Platform</span>
+                  <div class="select-wrap">
+                    <select id="editorRivalsPlatform" required></select>
+                    <button type="button" class="select-arrow" data-select-toggle="editorRivalsPlatform" aria-label="Toggle options"></button>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -862,7 +867,7 @@
               <h4 data-d18n="d.editor.public.game.fortnite">Fortnite</h4>
               <div class="editor-grid">
                 <label>
-                  <span data-d18n="d.editor.handle">Handle</span>
+                  <span data-d18n="d.editor.handle">In-game name</span>
                   <input type="text" id="editorFortniteHandle" required>
                 </label>
                 <label>
@@ -870,6 +875,13 @@
                   <div class="select-wrap">
                     <select id="editorFortniteTier" required></select>
                     <button type="button" class="select-arrow" data-select-toggle="editorFortniteTier" aria-label="Toggle options"></button>
+                  </div>
+                </label>
+                <label>
+                  <span data-d18n="d.common.platform">Platform</span>
+                  <div class="select-wrap">
+                    <select id="editorFortnitePlatform" required></select>
+                    <button type="button" class="select-arrow" data-select-toggle="editorFortnitePlatform" aria-label="Toggle options"></button>
                   </div>
                 </label>
               </div>
