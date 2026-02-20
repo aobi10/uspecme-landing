@@ -222,6 +222,14 @@
     uiDemoMode: loadUnifiedState('ui.demoMode', false, () => false) === true,
     metrics: loadMetrics(),
     selectedInviteContext: null,
+    inviteTargetContext: null,
+    navContext: {
+      source: '',
+      scrollY: 0,
+      compareScrollTarget: false
+    },
+    compareDockVisible: false,
+    lastProfileOpenHandle: '',
     activeThreadId: '',
     activeRatingRequestId: '',
     activeRatingAuthorSide: 'self'
@@ -1622,6 +1630,8 @@
         about: 'Known for calm mid-round communication, role flexibility across metas and consistent VOD review habits.',
         proofStatus: PROOF_STATUS.SELF_DECLARED,
         mainGame: 'overwatch',
+        availability: 'Any',
+        availabilityDetail: '',
         games: {
           overwatch: { handle: 'Shinobi#4728', tier: 'Master', division: '3', platform: PLATFORM_IDS.PC },
           lol: { handle: 'Shn0bi', tier: 'Diamond', division: 'II', platform: PLATFORM_IDS.PC },
@@ -1721,6 +1731,8 @@
     normalized.publicProfile.mainGame = ['overwatch', 'lol', 'rivals', 'fortnite'].includes(sourcePublic.mainGame)
       ? sourcePublic.mainGame
       : defaults.publicProfile.mainGame;
+    normalized.publicProfile.availability = normalizeAvailability(sourcePublic.availability);
+    normalized.publicProfile.availabilityDetail = sanitizeTextValue(sourcePublic.availabilityDetail, '', 80);
 
     const sourceGames = sourcePublic.games && typeof sourcePublic.games === 'object' ? sourcePublic.games : {};
     normalized.publicProfile.games.overwatch = normalizeProfileGame('overwatch', sourceGames.overwatch, defaults.publicProfile.games.overwatch);
@@ -2767,6 +2779,10 @@
       'd.compare.hide': 'Hide compare',
       'd.compare.headtohead': 'Head-to-Head: who fits your system?',
       'd.compare.slot.empty': 'Select player',
+      'd.compare.dock.title': 'Compare selection',
+      'd.compare.dock.selectedCount': '{count}/2 selected',
+      'd.compare.dock.open': 'Compare now',
+      'd.compare.dock.clear': 'Clear',
       'd.compare.empty': 'Select up to 2 players to compare role, rank, proof, country and availability.',
       'd.compare.invite': 'Invite selected',
       'd.empty': 'No results for current filters.',
@@ -2787,6 +2803,19 @@
       'd.invite.game': 'Game',
       'd.invite.role': 'Role needed / offered',
       'd.invite.slot': 'Suggested slot',
+      'd.invite.slotHint': 'Slots based on availability of {name}: {availability}',
+      'd.invite.slotHintUnknown': 'Slots are based on broad availability defaults.',
+      'd.invite.slotHintMixed': 'Mixed availability detected. Showing balanced slot options.',
+      'd.invite.slotSource': 'Slots based on availability of {name}: {detail}',
+      'd.invite.slotPreset.weeknights.1': 'Mon 19:30',
+      'd.invite.slotPreset.weeknights.2': 'Wed 20:00',
+      'd.invite.slotPreset.weeknights.3': 'Thu 21:00',
+      'd.invite.slotPreset.weekend.1': 'Sat 14:00',
+      'd.invite.slotPreset.weekend.2': 'Sat 18:00',
+      'd.invite.slotPreset.weekend.3': 'Sun 17:00',
+      'd.invite.slotPreset.any.1': 'Tue 20:00',
+      'd.invite.slotPreset.any.2': 'Thu 19:30',
+      'd.invite.slotPreset.any.3': 'Sun 18:00',
       'd.invite.notes': 'Notes',
       'd.invite.submit': 'Send tryout request',
       'd.invite.submitting': 'Sending...',
@@ -2848,12 +2877,25 @@
       'd.profile.proof': 'Proof',
       'd.profile.platform': 'Platform',
       'd.profile.availability': 'Availability',
+      'd.profile.availabilityDetail': 'Availability detail',
       'd.profile.alsoPlays': 'Also plays',
       'd.profile.noSecondaryGames': 'No secondary games added yet.',
       'd.profile.viewingPlayer': 'Viewing profile: {player}',
+      'd.profile.back': 'Back',
       'd.profile.backToSelf': 'Back to your profile',
-      'd.profile.externalReadonlyHint': 'Read-only player preview. Switch back to edit your own profile.',
+      'd.profile.backToExplore': 'Back to Explore',
+      'd.profile.backToCompare': 'Back to Compare',
+      'd.profile.close': 'Close',
+      'd.profile.return.compare': 'Return to Compare',
+      'd.profile.context.fromCompare': 'Opened from compare',
+      'd.profile.context.fromExplore': 'Opened from explore',
+      'd.profile.editPrimary': 'Edit profile',
+      'd.profile.externalReadonlyHint': 'Read-only view of this player profile.',
       'd.profile.viewingFromContext': 'Opened from {game}',
+      'd.profile.teaserTitle': 'Profile details',
+      'd.profile.teaserLead': 'Detailed profile, history, references and setup in one dedicated view.',
+      'd.profile.teaserOpen': 'Open profile',
+      'd.profile.openPage': 'Open profile page',
       'd.experience.title': 'Experience',
       'd.experience.one.role': 'Flex DPS',
       'd.experience.one.org': 'FaZe Academy · Active Roster',
@@ -2964,6 +3006,9 @@
       'd.editor.public.game.lol': 'League of Legends',
       'd.editor.public.game.rivals': 'Marvel Rivals',
       'd.editor.public.game.fortnite': 'Fortnite',
+      'd.editor.availability': 'Availability',
+      'd.editor.availabilityDetail': 'Availability detail',
+      'd.editor.availabilityDetailPlaceholder': 'Mon/Wed/Fri 19:00-22:00 CET',
       'd.editor.handle': 'In-game name',
       'd.editor.tier': 'Tier',
       'd.editor.division': 'Division',
@@ -3295,6 +3340,10 @@
       'd.compare.hide': 'Vergleich ausblenden',
       'd.compare.headtohead': 'Direktvergleich: Wer passt ins System?',
       'd.compare.slot.empty': 'Spieler wählen',
+      'd.compare.dock.title': 'Vergleichsauswahl',
+      'd.compare.dock.selectedCount': '{count}/2 gewählt',
+      'd.compare.dock.open': 'Jetzt vergleichen',
+      'd.compare.dock.clear': 'Leeren',
       'd.compare.empty': 'Wähle bis zu 2 Spieler für Rollen-, Rank-, Proof-, Herkunftsland- und Verfügbarkeitsvergleich.',
       'd.compare.invite': 'Ausgewählte einladen',
       'd.empty': 'Keine Ergebnisse für diese Filter.',
@@ -3315,6 +3364,19 @@
       'd.invite.game': 'Spiel',
       'd.invite.role': 'Gesuchte / angebotene Rolle',
       'd.invite.slot': 'Vorgeschlagener Slot',
+      'd.invite.slotHint': 'Slots basieren auf Verfügbarkeit von {name}: {availability}',
+      'd.invite.slotHintUnknown': 'Slots basieren auf allgemeinen Verfügbarkeitswerten.',
+      'd.invite.slotHintMixed': 'Gemischte Verfügbarkeiten erkannt. Es werden ausgewogene Slots vorgeschlagen.',
+      'd.invite.slotSource': 'Slots basieren auf Verfügbarkeit von {name}: {detail}',
+      'd.invite.slotPreset.weeknights.1': 'Mo 19:30',
+      'd.invite.slotPreset.weeknights.2': 'Mi 20:00',
+      'd.invite.slotPreset.weeknights.3': 'Do 21:00',
+      'd.invite.slotPreset.weekend.1': 'Sa 14:00',
+      'd.invite.slotPreset.weekend.2': 'Sa 18:00',
+      'd.invite.slotPreset.weekend.3': 'So 17:00',
+      'd.invite.slotPreset.any.1': 'Di 20:00',
+      'd.invite.slotPreset.any.2': 'Do 19:30',
+      'd.invite.slotPreset.any.3': 'So 18:00',
       'd.invite.notes': 'Notizen',
       'd.invite.submit': 'Tryout-Anfrage senden',
       'd.invite.submitting': 'Wird gesendet...',
@@ -3376,12 +3438,25 @@
       'd.profile.proof': 'Proof',
       'd.profile.platform': 'Plattform',
       'd.profile.availability': 'Verfügbarkeit',
+      'd.profile.availabilityDetail': 'Verfügbarkeitsdetails',
       'd.profile.alsoPlays': 'Spielt außerdem',
       'd.profile.noSecondaryGames': 'Noch keine Secondary Games hinterlegt.',
       'd.profile.viewingPlayer': 'Profilansicht: {player}',
+      'd.profile.back': 'Zurück',
       'd.profile.backToSelf': 'Zurück zu deinem Profil',
-      'd.profile.externalReadonlyHint': 'Read-only Spieleransicht. Wechsle zurück, um dein Profil zu bearbeiten.',
+      'd.profile.backToExplore': 'Zurück zu Explore',
+      'd.profile.backToCompare': 'Zurück zum Vergleich',
+      'd.profile.close': 'Schließen',
+      'd.profile.return.compare': 'Zur Vergleichsansicht',
+      'd.profile.context.fromCompare': 'Aus Vergleich geöffnet',
+      'd.profile.context.fromExplore': 'Aus Explore geöffnet',
+      'd.profile.editPrimary': 'Profil bearbeiten',
+      'd.profile.externalReadonlyHint': 'Schreibgeschützte Ansicht dieses Spielerprofils.',
       'd.profile.viewingFromContext': 'Geöffnet aus {game}',
+      'd.profile.teaserTitle': 'Profildetails',
+      'd.profile.teaserLead': 'Detailliertes Profil, Historie, Referenzen und Setup in einer eigenen Ansicht.',
+      'd.profile.teaserOpen': 'Profil öffnen',
+      'd.profile.openPage': 'Profilseite öffnen',
       'd.experience.title': 'Erfahrung',
       'd.experience.one.role': 'Flex DPS',
       'd.experience.one.org': 'FaZe Academy · Aktives Roster',
@@ -3492,6 +3567,9 @@
       'd.editor.public.game.lol': 'League of Legends',
       'd.editor.public.game.rivals': 'Marvel Rivals',
       'd.editor.public.game.fortnite': 'Fortnite',
+      'd.editor.availability': 'Verfügbarkeit',
+      'd.editor.availabilityDetail': 'Verfügbarkeitsdetails',
+      'd.editor.availabilityDetailPlaceholder': 'Mo/Mi/Fr 19:00-22:00 CET',
       'd.editor.handle': 'Ingame-Name',
       'd.editor.tier': 'Tier',
       'd.editor.division': 'Division',
@@ -3596,6 +3674,14 @@
     });
   }
 
+  function renderProfileNavVisibility() {
+    document.querySelectorAll('[data-auth-nav="profile"]').forEach((link) => {
+      const visible = state.isAuthenticated;
+      link.classList.toggle('hidden', !visible);
+      link.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    });
+  }
+
   function renderPreviewStateTags() {
     const key = state.isAuthenticated ? 'd.preview.tag.live' : 'd.preview.tag';
     document.querySelectorAll('.preview-tag').forEach((node) => {
@@ -3667,9 +3753,11 @@
 
         if (action === 'manage-profile') {
           closeAccountMenu();
-          const profile = document.getElementById('profile');
-          if (profile) {
-            profile.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (isProfilePage()) {
+            const profile = document.getElementById('profile');
+            if (profile) {
+              profile.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
             if (state.isAuthenticated) {
               window.setTimeout(() => {
                 openProfileEditorModal('public');
@@ -3677,7 +3765,9 @@
             }
             return;
           }
-          window.location.href = 'index.html#profile';
+          navigateToProfileSelf({
+            editSection: 'public'
+          });
           return;
         }
 
@@ -3754,6 +3844,8 @@
       renderAccountMenuContent();
     }
     renderProfileEditorControls();
+    renderProfileNavVisibility();
+    renderProfileHeaderActions();
     renderAuthEntry();
     renderPreviewStateTags();
   }
@@ -3818,6 +3910,7 @@
     applyAuthVisualState();
     applyProfileEditorI18n();
     applyProfileStateToDOM();
+    applyInviteSlotSuggestions(state.selectedInviteContext);
   }
 
   function showToast(messageKeyOrText, tone) {
@@ -3879,6 +3972,354 @@
     return page;
   }
 
+  function isProfilePage() {
+    return getCurrentPage() === 'profile';
+  }
+
+  function isStartPage() {
+    return getCurrentPage() === 'start';
+  }
+
+  function isSelfProfileView() {
+    return state.profileViewMode === 'self';
+  }
+
+  function normalizeNavSource(value) {
+    const source = String(value || '').trim().toLowerCase();
+    if (source === 'explore' || source === 'compare') {
+      return source;
+    }
+    return '';
+  }
+
+  function getCanonicalPlayerHandle(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (!normalized) {
+      return '';
+    }
+    const player = players.find((entry) => String(entry.handle || '').trim().toLowerCase() === normalized);
+    return player ? player.handle : '';
+  }
+
+  function parseCompareHandlesParam(value) {
+    const raw = String(value || '').trim();
+    if (!raw) {
+      return [];
+    }
+    const unique = [];
+    raw.split(',').forEach((token) => {
+      if (unique.length >= 2) {
+        return;
+      }
+      const canonical = getCanonicalPlayerHandle(token);
+      if (!canonical || unique.includes(canonical)) {
+        return;
+      }
+      unique.push(canonical);
+    });
+    return unique;
+  }
+
+  function serializeCompareHandles(handles) {
+    if (!Array.isArray(handles) || !handles.length) {
+      return '';
+    }
+    return parseCompareHandlesParam(handles.join(',')).join(',');
+  }
+
+  function setNavContext(source, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const normalizedSource = normalizeNavSource(source);
+    state.navContext = {
+      source: normalizedSource,
+      scrollY: Number.isFinite(opts.scrollY) ? opts.scrollY : window.scrollY || 0,
+      compareScrollTarget: normalizedSource === 'compare' || opts.compareScrollTarget === true
+    };
+  }
+
+  function clearNavContext() {
+    state.navContext = {
+      source: '',
+      scrollY: 0,
+      compareScrollTarget: false
+    };
+  }
+
+  function scrollToExploreResults() {
+    const target = document.getElementById('resultList') || document.getElementById('explore');
+    if (!target) {
+      return;
+    }
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function scrollToCompareSection() {
+    const target = document.getElementById('compareDrawer');
+    if (!target) {
+      return;
+    }
+    if (state.compare.length && !state.compareExpanded) {
+      state.compareExpanded = true;
+      renderCompareDrawer();
+    }
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function getProfileRoutePlayerHandleFromURL() {
+    if (typeof window === 'undefined' || !window.location) {
+      return '';
+    }
+    const params = new URLSearchParams(window.location.search || '');
+    return String(params.get('player') || '').trim();
+  }
+
+  function getProfileRouteSourceGameFromURL() {
+    if (typeof window === 'undefined' || !window.location) {
+      return '';
+    }
+    const params = new URLSearchParams(window.location.search || '');
+    const normalized = normalizeGameId(params.get('game') || '', '');
+    return isCanonicalProfileGame(normalized) ? normalized : '';
+  }
+
+  function getProfileRouteSourceFromURL() {
+    if (typeof window === 'undefined' || !window.location) {
+      return '';
+    }
+    const params = new URLSearchParams(window.location.search || '');
+    return normalizeNavSource(params.get('from') || '');
+  }
+
+  function getProfileRouteCompareHandlesFromURL() {
+    if (typeof window === 'undefined' || !window.location) {
+      return [];
+    }
+    const params = new URLSearchParams(window.location.search || '');
+    return parseCompareHandlesParam(params.get('compare') || '');
+  }
+
+  function getProfileReturnContext() {
+    const source = getProfileRouteSourceFromURL() || normalizeNavSource(state.navContext.source);
+    const compareHandles = getProfileRouteCompareHandlesFromURL();
+    const sourceGame = getProfileRouteSourceGameFromURL();
+    return {
+      source,
+      compareHandles,
+      sourceGame
+    };
+  }
+
+  function resolveProfileBackTarget(context) {
+    const ctx = context && typeof context === 'object' ? context : {};
+    const source = normalizeNavSource(ctx.source || '');
+    const compareSerialized = serializeCompareHandles(
+      Array.isArray(ctx.compareHandles) ? ctx.compareHandles : state.compare
+    );
+    if (source === 'compare') {
+      if (compareSerialized) {
+        return `index.html?back=compare&compare=${encodeURIComponent(compareSerialized)}`;
+      }
+      return 'index.html?back=compare';
+    }
+    if (source === 'explore') {
+      return 'index.html?back=explore';
+    }
+    return 'index.html';
+  }
+
+  function goBackOrFallback(fallbackUrl) {
+    const fallback = String(fallbackUrl || 'index.html').trim() || 'index.html';
+    let hasSameOriginReferrer = false;
+    try {
+      if (document.referrer) {
+        const ref = new URL(document.referrer);
+        hasSameOriginReferrer = ref.origin === window.location.origin;
+      }
+    } catch (_err) {
+      hasSameOriginReferrer = false;
+    }
+    if (window.history && window.history.length > 1 && hasSameOriginReferrer) {
+      window.history.back();
+      return;
+    }
+    window.location.href = fallback;
+  }
+
+  function getStartReturnSourceFromURL() {
+    if (typeof window === 'undefined' || !window.location) {
+      return '';
+    }
+    const params = new URLSearchParams(window.location.search || '');
+    return normalizeNavSource(params.get('back') || '');
+  }
+
+  function getStartReturnCompareHandlesFromURL() {
+    if (typeof window === 'undefined' || !window.location) {
+      return [];
+    }
+    const params = new URLSearchParams(window.location.search || '');
+    return parseCompareHandlesParam(params.get('compare') || '');
+  }
+
+  function getProfileRouteEditSectionFromURL() {
+    if (typeof window === 'undefined' || !window.location) {
+      return '';
+    }
+    const params = new URLSearchParams(window.location.search || '');
+    const section = String(params.get('edit') || '').trim().toLowerCase();
+    return ['public', 'experience', 'career', 'setup'].includes(section) ? section : '';
+  }
+
+  function getProfileRouteUrl(profileHandle, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const params = new URLSearchParams();
+    const normalizedHandle = String(profileHandle || '').trim();
+    if (normalizedHandle) {
+      params.set('player', normalizedHandle);
+    }
+
+    const normalizedGame = normalizeGameId(opts.sourceGame || '', '');
+    if (isCanonicalProfileGame(normalizedGame)) {
+      params.set('game', normalizedGame);
+    }
+
+    const editSection = String(opts.editSection || '').trim().toLowerCase();
+    if (['public', 'experience', 'career', 'setup'].includes(editSection)) {
+      params.set('edit', editSection);
+    }
+
+    const navSource = normalizeNavSource(opts.navSource || opts.from || '');
+    if (navSource) {
+      params.set('from', navSource);
+    }
+
+    const compareHandles = serializeCompareHandles(
+      Array.isArray(opts.compareHandles) ? opts.compareHandles : []
+    );
+    if (compareHandles) {
+      params.set('compare', compareHandles);
+    }
+
+    const query = params.toString();
+    return `profile.html${query ? `?${query}` : ''}`;
+  }
+
+  function navigateToProfileSelf(options) {
+    window.location.href = getProfileRouteUrl('', options);
+  }
+
+  function navigateToProfilePlayer(handle, options) {
+    const resolvedHandle = String(handle || '').trim();
+    if (!resolvedHandle) {
+      navigateToProfileSelf(options);
+      return;
+    }
+    window.location.href = getProfileRouteUrl(resolvedHandle, options);
+  }
+
+  function replaceProfileRoute(profileHandle, options) {
+    if (!isProfilePage() || !window.history || typeof window.history.replaceState !== 'function') {
+      return;
+    }
+    const next = getProfileRouteUrl(profileHandle, options);
+    window.history.replaceState({}, '', next);
+  }
+
+  function applyProfileRouteFromURL() {
+    if (!isProfilePage()) {
+      state.profileViewMode = 'self';
+      state.profileViewPlayerId = '';
+      state.profileViewHandle = '';
+      state.profileViewSourceGame = '';
+      clearNavContext();
+      return;
+    }
+
+    const routeHandle = getProfileRoutePlayerHandleFromURL();
+    const routeSourceGame = getProfileRouteSourceGameFromURL();
+    const routeSource = getProfileRouteSourceFromURL();
+    const routeCompareHandles = getProfileRouteCompareHandlesFromURL();
+    if (routeCompareHandles.length) {
+      state.compare = routeCompareHandles;
+    }
+    if (routeSource) {
+      setNavContext(routeSource, {
+        scrollY: window.scrollY || 0,
+        compareScrollTarget: routeSource === 'compare'
+      });
+    } else {
+      clearNavContext();
+    }
+    if (!routeHandle) {
+      state.profileViewMode = 'self';
+      state.profileViewPlayerId = '';
+      state.profileViewHandle = '';
+      state.profileViewSourceGame = '';
+      state.lastProfileOpenHandle = '';
+      return;
+    }
+
+    const normalizedHandle = routeHandle.toLowerCase();
+    const player = players.find((entry) => String(entry.handle || '').trim().toLowerCase() === normalizedHandle) || null;
+    if (!player) {
+      state.profileViewMode = 'self';
+      state.profileViewPlayerId = '';
+      state.profileViewHandle = '';
+      state.profileViewSourceGame = '';
+      state.lastProfileOpenHandle = '';
+      replaceProfileRoute('', {});
+      return;
+    }
+
+    state.profileViewMode = 'player';
+    state.profileViewPlayerId = getPlayerViewId(player);
+    state.profileViewHandle = player.handle;
+    state.profileViewSourceGame = routeSourceGame;
+    state.lastProfileOpenHandle = player.handle;
+  }
+
+  function applyStartReturnContextFromURL() {
+    if (!isStartPage()) {
+      return;
+    }
+    const source = getStartReturnSourceFromURL();
+    const compareHandles = getStartReturnCompareHandlesFromURL();
+    if (!source && !compareHandles.length) {
+      return;
+    }
+
+    if (compareHandles.length) {
+      state.compare = compareHandles;
+    }
+    if (source) {
+      setNavContext(source, {
+        scrollY: window.scrollY || 0,
+        compareScrollTarget: source === 'compare'
+      });
+    } else {
+      clearNavContext();
+    }
+
+    renderResults();
+    renderCompareDrawer();
+
+    window.setTimeout(() => {
+      if (source === 'compare') {
+        scrollToCompareSection();
+      } else {
+        scrollToExploreResults();
+      }
+    }, 60);
+
+    if (window.history && typeof window.history.replaceState === 'function') {
+      const params = new URLSearchParams(window.location.search || '');
+      params.delete('back');
+      params.delete('compare');
+      const nextQuery = params.toString();
+      window.history.replaceState({}, '', `index.html${nextQuery ? `?${nextQuery}` : ''}`);
+    }
+  }
+
   function initNavigationState() {
     const activePage = getCurrentPage();
     document.querySelectorAll('[data-nav]').forEach((node) => {
@@ -3899,7 +4340,8 @@
       network: 'view_network_page',
       requests: 'view_requests_page',
       messages: 'view_messages_page',
-      notifications: 'view_notifications_page'
+      notifications: 'view_notifications_page',
+      profile: 'view_profile_page'
     };
     const event = eventByPage[page] || 'view_landing';
     track(event, { page });
@@ -3969,17 +4411,29 @@
     return `<span class="${classes.join(' ')}" title="${escapeHtml(meta.tooltip)}">${escapeHtml(meta.label)}</span>`;
   }
 
+  function normalizeAvailability(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw === 'weeknights') {
+      return 'Weeknights';
+    }
+    if (raw === 'weekend') {
+      return 'Weekend';
+    }
+    return 'Any';
+  }
+
   function formatAvailability(availability) {
-    if (availability === 'Any') {
+    const normalized = normalizeAvailability(availability);
+    if (normalized === 'Any') {
       return t('d.filter.any');
     }
-    if (availability === 'Weeknights') {
+    if (normalized === 'Weeknights') {
       return t('d.availability.weeknights');
     }
-    if (availability === 'Weekend') {
+    if (normalized === 'Weekend') {
       return t('d.availability.weekend');
     }
-    return availability;
+    return normalized;
   }
 
   function getCountryI18nKey(countryCode) {
@@ -4503,6 +4957,12 @@
       64
     );
     const mainPlatform = resolvePlatformForGame(primaryEntry, primaryPlayerEntry || sourcePlayer || null);
+    const profileAvailability = normalizeAvailability(profilePublic.availability);
+    const sourceAvailability = normalizeAvailability(sourcePlayer && sourcePlayer.availability ? sourcePlayer.availability : '');
+    const profileAvailabilityDetail = sanitizeTextValue(profilePublic.availabilityDetail, '', 80);
+    const sourceAvailabilityDetail = sourcePlayer && sourcePlayer.availabilityDetail
+      ? sanitizeTextValue(sourcePlayer.availabilityDetail, '', 80)
+      : '';
     const secondaryGames = getOrderedGameKeys(primaryGame)
       .filter((gameId) => gameId !== primaryGame)
       .map((gameId) => {
@@ -4535,8 +4995,8 @@
       mainPeak: primaryPeak || '-',
       mainHandle: sanitizeTextValue(primaryEntry && primaryEntry.handle, '-', 64),
       mainPlatform,
-      availability: sourcePlayer && sourcePlayer.availability ? sourcePlayer.availability : 'Any',
-      availabilityDetail: sourcePlayer && sourcePlayer.availabilityDetail ? String(sourcePlayer.availabilityDetail).trim() : '',
+      availability: profileAvailability || sourceAvailability || 'Any',
+      availabilityDetail: profileAvailabilityDetail || sourceAvailabilityDetail || '',
       secondaryGames,
       avatar: avatarConfig,
       conductSubjectType: 'player',
@@ -4745,6 +5205,113 @@
     });
   }
 
+  function renderProfileContextChips(context) {
+    const chipsNode = document.getElementById('profileContextChips');
+    if (!chipsNode) {
+      return;
+    }
+    const ctx = context && typeof context === 'object' ? context : getProfileReturnContext();
+    const chips = [];
+    if (ctx.source === 'compare') {
+      chips.push(t('d.profile.context.fromCompare'));
+    } else if (ctx.source === 'explore') {
+      chips.push(t('d.profile.context.fromExplore'));
+    }
+    if (!chips.length) {
+      chipsNode.classList.add('hidden');
+      chipsNode.innerHTML = '';
+      return;
+    }
+    chipsNode.classList.remove('hidden');
+    chipsNode.innerHTML = chips
+      .map((label) => `<span class="profile-context-chip">${escapeHtml(label)}</span>`)
+      .join('');
+  }
+
+  function renderProfileHeaderActions() {
+    const backButton = document.getElementById('profileBackButton');
+    const closeButton = document.getElementById('profileCloseButton');
+    const compareReturnButton = document.getElementById('profileCompareReturnButton');
+    const editPrimaryButton = document.getElementById('profileEditPrimary');
+
+    if (backButton) {
+      backButton.dataset.d18n = 'd.profile.back';
+      backButton.textContent = t('d.profile.back');
+      backButton.setAttribute('aria-label', t('d.profile.back'));
+    }
+    if (closeButton) {
+      closeButton.dataset.d18n = 'd.profile.close';
+      closeButton.textContent = t('d.profile.close');
+      closeButton.setAttribute('aria-label', t('d.profile.close'));
+    }
+
+    const context = getProfileReturnContext();
+    if (compareReturnButton) {
+      const visible = context.source === 'compare';
+      compareReturnButton.classList.toggle('hidden', !visible);
+      compareReturnButton.dataset.d18n = 'd.profile.return.compare';
+      compareReturnButton.textContent = t('d.profile.return.compare');
+      compareReturnButton.setAttribute('aria-label', t('d.profile.return.compare'));
+    }
+
+    if (editPrimaryButton) {
+      const visible = state.isAuthenticated && isSelfProfileView();
+      editPrimaryButton.classList.toggle('hidden', !visible);
+      editPrimaryButton.dataset.d18n = 'd.profile.editPrimary';
+      editPrimaryButton.textContent = t('d.profile.editPrimary');
+      editPrimaryButton.setAttribute('aria-label', t('d.profile.editPrimary'));
+    }
+
+    renderProfileContextChips(context);
+  }
+
+  function initProfileHeaderActions() {
+    if (!isProfilePage()) {
+      return;
+    }
+    const backButton = document.getElementById('profileBackButton');
+    const closeButton = document.getElementById('profileCloseButton');
+    const compareReturnButton = document.getElementById('profileCompareReturnButton');
+    const editPrimaryButton = document.getElementById('profileEditPrimary');
+
+    if (backButton && !backButton.dataset.bound) {
+      backButton.dataset.bound = '1';
+      backButton.addEventListener('click', () => {
+        const target = resolveProfileBackTarget(getProfileReturnContext());
+        goBackOrFallback(target);
+      });
+    }
+
+    if (closeButton && !closeButton.dataset.bound) {
+      closeButton.dataset.bound = '1';
+      closeButton.addEventListener('click', () => {
+        const target = resolveProfileBackTarget(getProfileReturnContext());
+        goBackOrFallback(target);
+      });
+    }
+
+    if (compareReturnButton && !compareReturnButton.dataset.bound) {
+      compareReturnButton.dataset.bound = '1';
+      compareReturnButton.addEventListener('click', () => {
+        const context = getProfileReturnContext();
+        const target = resolveProfileBackTarget({
+          source: 'compare',
+          compareHandles: context.compareHandles
+        });
+        window.location.href = target;
+      });
+    }
+
+    if (editPrimaryButton && !editPrimaryButton.dataset.bound) {
+      editPrimaryButton.dataset.bound = '1';
+      editPrimaryButton.addEventListener('click', () => {
+        openProfileEditorModal('public');
+      });
+    }
+
+    renderProfileHeaderActions();
+  }
+
   function applyProfileStateToDOM() {
     const normalized = normalizeProfileState(state.profile);
     state.profile = normalized;
@@ -4824,29 +5391,9 @@
       secondaryPanel.innerHTML = renderSecondaryGames(viewModel);
     }
 
-    const viewing = document.getElementById('publicExternalViewing');
-    if (viewing) {
-      if (isExternalView) {
-        viewing.classList.remove('hidden');
-        const baseText = formatTemplate(t('d.profile.viewingPlayer'), { player: viewModel.displayName });
-        if (viewModel.sourceGame) {
-          viewing.textContent = `${baseText} · ${formatTemplate(t('d.profile.viewingFromContext'), { game: getGameLabel(viewModel.sourceGame) })}`;
-        } else {
-          viewing.textContent = baseText;
-        }
-      } else {
-        viewing.classList.add('hidden');
-      }
-    }
-
     const readonlyHint = document.getElementById('publicExternalReadonlyHint');
     if (readonlyHint) {
       readonlyHint.classList.toggle('hidden', !isExternalView);
-    }
-
-    const backButton = document.getElementById('publicBackToSelf');
-    if (backButton) {
-      backButton.classList.toggle('hidden', !isExternalView);
     }
 
     const ownerSections = document.getElementById('publicOwnerSections');
@@ -4892,6 +5439,7 @@
     const heroConductSummary = formatConductSummary('player', heroSubject, entitiesState);
     setProfileField('hero.conductSummary', heroConductSummary);
     renderProfileEditorControls();
+    renderProfileHeaderActions();
   }
 
   function setProfileField(field, value) {
@@ -4909,6 +5457,8 @@
       about: document.getElementById('editorAbout'),
       proofStatus: document.getElementById('editorProofStatus'),
       mainGame: document.getElementById('editorMainGame'),
+      profileAvailability: document.getElementById('profileAvailability'),
+      profileAvailabilityDetail: document.getElementById('profileAvailabilityDetail'),
       owHandle: document.getElementById('editorOwHandle'),
       owTier: document.getElementById('editorOwTier'),
       owDivision: document.getElementById('editorOwDivision'),
@@ -5044,6 +5594,15 @@
     if (inputs.mainGame) {
       inputs.mainGame.value = data.mainGame;
     }
+    if (inputs.profileAvailability) {
+      inputs.profileAvailability.value = normalizeAvailability(data.availability);
+      if (typeof inputs.profileAvailability._uspecRebuildMenu === 'function') {
+        inputs.profileAvailability._uspecRebuildMenu();
+      }
+    }
+    if (inputs.profileAvailabilityDetail) {
+      inputs.profileAvailabilityDetail.value = data.availabilityDetail || '';
+    }
 
     populateProfileRankOptions();
     populateProfilePlatformOptions();
@@ -5132,6 +5691,7 @@
       state.profileViewPlayerId = '';
       state.profileViewHandle = '';
       state.profileViewSourceGame = '';
+      replaceProfileRoute('', {});
       applyProfileStateToDOM();
     }
 
@@ -5173,6 +5733,8 @@
         about: inputs.about.value,
         proofStatus: inputs.proofStatus.value,
         mainGame: inputs.mainGame ? inputs.mainGame.value : 'overwatch',
+        availability: normalizeAvailability(inputs.profileAvailability ? inputs.profileAvailability.value : 'Any'),
+        availabilityDetail: inputs.profileAvailabilityDetail ? sanitizeTextValue(inputs.profileAvailabilityDetail.value, '', 80) : '',
         games: {
           overwatch: {
             handle: inputs.owHandle.value,
@@ -5525,6 +6087,67 @@
     bindCardActions();
   }
 
+  function clearCompareSelection() {
+    state.compare = [];
+    state.compareExpanded = false;
+    renderResults();
+    renderCompareDrawer();
+  }
+
+  function renderCompareDock() {
+    const dock = document.getElementById('compareDock');
+    const content = document.getElementById('compareDockContent');
+    const openButton = document.getElementById('compareDockOpen');
+    const clearButton = document.getElementById('compareDockClear');
+    if (!dock || !content || !openButton || !clearButton) {
+      return;
+    }
+
+    const selected = players.filter((player) => state.compare.includes(player.handle)).slice(0, 2);
+    const hasCompare = selected.length > 0;
+    state.compareDockVisible = hasCompare;
+    dock.classList.toggle('is-visible', hasCompare);
+    dock.setAttribute('aria-hidden', hasCompare ? 'false' : 'true');
+
+    openButton.disabled = !hasCompare;
+    clearButton.disabled = !hasCompare;
+
+    if (!hasCompare) {
+      content.innerHTML = `<strong>${escapeHtml(t('d.compare.dock.title'))}</strong>`;
+      return;
+    }
+
+    const countLabel = formatTemplate(t('d.compare.dock.selectedCount'), {
+      count: String(selected.length)
+    });
+    content.innerHTML = [
+      `<strong class="compare-dock__title">${escapeHtml(t('d.compare.dock.title'))}</strong>`,
+      `<span class="compare-dock__count">${escapeHtml(countLabel)}</span>`,
+      '<div class="compare-dock__players">',
+      selected.map((player) => {
+        const primaryGame = getPrimaryGame(player);
+        const gameLogo = getGameLogoMeta(primaryGame.game);
+        return [
+          '<span class="compare-dock__player">',
+          renderAvatarBadgeHTML(resolveAvatarConfig(player, player.handle), {
+            size: 'sm',
+            className: 'compare-slot-avatar',
+            ariaLabel: `${t('d.avatar.defaultAlt')} ${player.handle}`
+          }),
+          '<span class="compare-dock__player-copy">',
+          `<span>${escapeHtml(player.handle)}</span>`,
+          '<span class="compare-dock__player-meta">',
+          gameLogo ? `<img class="compare-slot-game" src="${escapeHtml(gameLogo.src)}" alt="${escapeHtml(gameLogo.alt)}">` : '',
+          `<span>${escapeHtml(getGameLabel(primaryGame.game))}</span>`,
+          '</span>',
+          '</span>',
+          '</span>'
+        ].join('');
+      }).join(''),
+      '</div>'
+    ].join('');
+  }
+
   function renderCompareDrawer() {
     const compareDrawer = document.getElementById('compareDrawer');
     const compareEmpty = document.getElementById('compareEmpty');
@@ -5542,6 +6165,7 @@
 
     const selected = players.filter((player) => state.compare.includes(player.handle));
     const hasCompare = selected.length > 0;
+    renderCompareDock();
     if (compareDrawer) {
       compareDrawer.classList.toggle('is-active', hasCompare);
     }
@@ -6743,6 +7367,162 @@
     persistMetrics();
   }
 
+  function findPlayerByHandle(handle) {
+    const normalized = String(handle || '').trim().toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+    return players.find((entry) => String(entry.handle || '').trim().toLowerCase() === normalized) || null;
+  }
+
+  function resolveInviteTargetContext(context) {
+    const safeContext = context && typeof context === 'object' ? context : {};
+    const contextGame = isCanonicalProfileGame(safeContext.game) ? normalizeGameId(safeContext.game, '') : '';
+
+    if (safeContext.type === 'player') {
+      const player = findPlayerByHandle(safeContext.handle);
+      const game = contextGame || (player ? getPrimaryGame(player).game : '');
+      return {
+        type: 'player',
+        handle: player ? player.handle : String(safeContext.handle || '').trim(),
+        name: player ? player.handle : String(safeContext.handle || '').trim(),
+        game,
+        availability: normalizeAvailability(player && player.availability ? player.availability : 'Any'),
+        availabilityDetail: player && player.availabilityDetail ? String(player.availabilityDetail).trim() : '',
+        mixed: false
+      };
+    }
+
+    if (safeContext.type === 'team') {
+      const teamSlug = String(safeContext.team || safeContext.teamSlug || '').trim();
+      const team = teams.find((entry) => entry.slug === teamSlug) || null;
+      const game = contextGame
+        || (team && Array.isArray(team.games) && team.games[0] ? normalizeGameId(team.games[0].game, '') : '');
+      return {
+        type: 'team',
+        name: team ? team.name : teamSlug || 'Team',
+        game,
+        availability: normalizeAvailability(team ? getCoarseTeamAvailability(team) : 'Any'),
+        availabilityDetail: team && team.availabilityDetail ? String(team.availabilityDetail).trim() : '',
+        mixed: false
+      };
+    }
+
+    if (safeContext.type === 'multi') {
+      const compareHandles = Array.isArray(safeContext.compareHandles)
+        ? safeContext.compareHandles.map((value) => String(value || '').trim()).filter(Boolean)
+        : [];
+      const comparePlayers = compareHandles
+        .map((handle) => findPlayerByHandle(handle))
+        .filter(Boolean);
+      const game = contextGame || (comparePlayers[0] ? getPrimaryGame(comparePlayers[0]).game : '');
+
+      if (comparePlayers.length === 1) {
+        return {
+          type: 'compare',
+          handle: comparePlayers[0].handle,
+          name: comparePlayers[0].handle,
+          game,
+          availability: normalizeAvailability(comparePlayers[0].availability),
+          availabilityDetail: comparePlayers[0].availabilityDetail ? String(comparePlayers[0].availabilityDetail).trim() : '',
+          mixed: false
+        };
+      }
+
+      if (comparePlayers.length > 1) {
+        const normalizedAvailabilities = comparePlayers.map((player) => normalizeAvailability(player.availability));
+        const uniqueAvailabilities = Array.from(new Set(normalizedAvailabilities));
+        const mixed = uniqueAvailabilities.length > 1;
+        const details = Array.from(new Set(comparePlayers
+          .map((player) => String(player.availabilityDetail || '').trim())
+          .filter(Boolean)));
+
+        return {
+          type: 'compare',
+          name: comparePlayers.map((player) => player.handle).join(', '),
+          game,
+          availability: mixed ? 'Any' : (uniqueAvailabilities[0] || 'Any'),
+          availabilityDetail: mixed ? '' : (details.length === 1 ? details[0] : ''),
+          mixed
+        };
+      }
+    }
+
+    return {
+      type: 'unknown',
+      name: '',
+      game: contextGame,
+      availability: 'Any',
+      availabilityDetail: '',
+      mixed: false
+    };
+  }
+
+  function getInviteSlotPresets(availability) {
+    const normalized = normalizeAvailability(availability);
+    const presetGroup = normalized === 'Weeknights'
+      ? 'weeknights'
+      : normalized === 'Weekend'
+        ? 'weekend'
+        : 'any';
+    return [1, 2, 3].map((index) => {
+      const key = `d.invite.slotPreset.${presetGroup}.${index}`;
+      const label = t(key);
+      return { key, label, value: label };
+    });
+  }
+
+  function applyInviteSlotSuggestions(context) {
+    const slotSelect = document.getElementById('inviteSlot');
+    const slotHint = document.getElementById('inviteSlotHint');
+    if (!slotSelect) {
+      return;
+    }
+
+    const targetContext = state.inviteTargetContext
+      || resolveInviteTargetContext(context || state.selectedInviteContext || {});
+    state.inviteTargetContext = targetContext;
+
+    const previousValue = slotSelect.value;
+    const presets = getInviteSlotPresets(targetContext.availability);
+
+    slotSelect.innerHTML = '';
+    presets.forEach((preset) => {
+      const option = document.createElement('option');
+      option.value = preset.value;
+      option.textContent = preset.label;
+      slotSelect.append(option);
+    });
+    const fallbackValue = presets[0] ? presets[0].value : '';
+    const matched = presets.some((preset) => preset.value === previousValue);
+    slotSelect.value = matched ? previousValue : fallbackValue;
+    if (typeof slotSelect._uspecRebuildMenu === 'function') {
+      slotSelect._uspecRebuildMenu();
+    }
+
+    if (!slotHint) {
+      return;
+    }
+
+    let hintText = t('d.invite.slotHintUnknown');
+    if (targetContext.mixed) {
+      hintText = t('d.invite.slotHintMixed');
+    } else if (targetContext.name && targetContext.availabilityDetail) {
+      hintText = formatTemplate(t('d.invite.slotSource'), {
+        name: targetContext.name,
+        detail: targetContext.availabilityDetail
+      });
+    } else if (targetContext.name) {
+      hintText = formatTemplate(t('d.invite.slotHint'), {
+        name: targetContext.name,
+        availability: formatAvailability(targetContext.availability)
+      });
+    }
+
+    slotHint.removeAttribute('data-d18n');
+    slotHint.textContent = hintText;
+  }
+
   function openInviteModal(context) {
     const modal = document.getElementById('inviteModal');
     if (!modal) {
@@ -6750,6 +7530,7 @@
     }
 
     state.selectedInviteContext = context;
+    state.inviteTargetContext = resolveInviteTargetContext(context);
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 
@@ -6766,6 +7547,7 @@
     if (success) {
       success.classList.add('hidden');
     }
+    applyInviteSlotSuggestions(context);
   }
 
   function closeInviteModal() {
@@ -7128,6 +7910,10 @@
     const playerId = String(opts.playerId || '').trim();
     const normalizedSourceGame = normalizeGameId(opts.sourceGame || '', '');
     const sourceGame = isCanonicalProfileGame(normalizedSourceGame) ? normalizedSourceGame : '';
+    const navSource = normalizeNavSource(opts.navSource || '');
+    const compareHandles = serializeCompareHandles(
+      Array.isArray(opts.compareHandles) ? opts.compareHandles : state.compare
+    );
     const shouldScroll = opts.scroll !== false;
 
     if (!fallbackHandle && !playerId) {
@@ -7147,10 +7933,43 @@
     }
 
     track('view_player_profile', { handle: resolvedHandle });
+    state.lastProfileOpenHandle = resolvedHandle;
+
+    if (!isProfilePage()) {
+      navigateToProfilePlayer(resolvedHandle, {
+        sourceGame,
+        navSource,
+        compareHandles: compareHandles ? compareHandles.split(',') : []
+      });
+      return;
+    }
+
+    if (!player) {
+      state.profileViewMode = 'self';
+      state.profileViewPlayerId = '';
+      state.profileViewHandle = '';
+      state.profileViewSourceGame = '';
+      replaceProfileRoute('', {});
+      applyProfileStateToDOM();
+      return;
+    }
+
+    if (navSource) {
+      setNavContext(navSource, {
+        scrollY: window.scrollY || 0,
+        compareScrollTarget: navSource === 'compare'
+      });
+    }
+
     state.profileViewMode = 'player';
-    state.profileViewPlayerId = player ? getPlayerViewId(player) : slugifyStableId(playerId || resolvedHandle);
+    state.profileViewPlayerId = getPlayerViewId(player);
     state.profileViewHandle = resolvedHandle;
     state.profileViewSourceGame = sourceGame;
+    replaceProfileRoute(resolvedHandle, {
+      sourceGame,
+      navSource,
+      compareHandles: compareHandles ? compareHandles.split(',') : []
+    });
     applyProfileStateToDOM();
 
     if (shouldScroll) {
@@ -7188,9 +8007,15 @@
       button.addEventListener('click', () => {
         const sourceGameFromButton = button.dataset.game || '';
         const sourceGame = isCanonicalProfileGame(state.game) ? state.game : sourceGameFromButton;
+        setNavContext('explore', {
+          scrollY: window.scrollY || 0,
+          compareScrollTarget: false
+        });
         openPlayerProfileView(button.dataset.handle || '', {
           playerId: button.dataset.playerId || '',
           sourceGame,
+          navSource: 'explore',
+          compareHandles: state.compare.slice(),
           scroll: true
         });
       });
@@ -7445,10 +8270,7 @@
     const clearCompare = document.getElementById('clearCompare');
     if (clearCompare) {
       clearCompare.addEventListener('click', () => {
-        state.compare = [];
-        state.compareExpanded = false;
-        renderResults();
-        renderCompareDrawer();
+        clearCompareSelection();
       });
     }
 
@@ -7487,17 +8309,41 @@
         if (!openButton) {
           return;
         }
+        setNavContext('compare', {
+          scrollY: window.scrollY || 0,
+          compareScrollTarget: true
+        });
         openPlayerProfileView(openButton.dataset.handle || '', {
           playerId: openButton.dataset.playerId || '',
           sourceGame: openButton.dataset.game || state.game,
+          navSource: 'compare',
+          compareHandles: state.compare.slice(),
           scroll: true
         });
+      });
+    }
+
+    const compareDockOpen = document.getElementById('compareDockOpen');
+    if (compareDockOpen) {
+      compareDockOpen.addEventListener('click', () => {
+        if (!state.compare.length) {
+          return;
+        }
+        scrollToCompareSection();
+      });
+    }
+
+    const compareDockClear = document.getElementById('compareDockClear');
+    if (compareDockClear) {
+      compareDockClear.addEventListener('click', () => {
+        clearCompareSelection();
       });
     }
 
     persistExploreFilters();
     renderResults();
     renderCompareDrawer();
+    applyStartReturnContextFromURL();
   }
 
   function initInviteModal() {
@@ -7678,7 +8524,7 @@
               body: formatTemplate(t('d.notifications.body.accountConnectedPending'), { provider }),
               requestId: `connect:${providerKey}`,
               threadId: '',
-              deepLink: 'index.html#profile'
+              deepLink: 'profile.html'
             }, nowIso);
             return entitiesState;
           });
@@ -8031,6 +8877,7 @@
     initFilterSelectToggles([
       inputs.proofStatus,
       inputs.mainGame,
+      inputs.profileAvailability,
       inputs.country,
       inputs.owTier,
       inputs.owDivision,
@@ -8057,16 +8904,6 @@
       });
     }
 
-    const backToSelf = document.getElementById('publicBackToSelf');
-    if (backToSelf) {
-      backToSelf.addEventListener('click', () => {
-        state.profileViewMode = 'self';
-        state.profileViewPlayerId = '';
-        state.profileViewHandle = '';
-        state.profileViewSourceGame = '';
-        applyProfileStateToDOM();
-      });
-    }
   }
 
   function initTheme() {
@@ -8195,6 +9032,22 @@
     syncQuickStartControls();
   }
 
+  function initProfileTeaser() {
+    const openButton = document.getElementById('openSelfProfileFromStart');
+    if (!openButton) {
+      return;
+    }
+
+    openButton.addEventListener('click', () => {
+      track('open_profile_page', { source: isStartPage() ? 'start_teaser' : getCurrentPage() });
+      if (!state.isAuthenticated) {
+        openAuthModal('login');
+        return;
+      }
+      navigateToProfileSelf();
+    });
+  }
+
   function initWaitlistTracking() {
     document.addEventListener('usm:waitlist:success', (event) => {
       const detail = (event && event.detail && typeof event.detail === 'object') ? event.detail : {};
@@ -8275,14 +9128,17 @@
     initQuickStart();
     seedEntityStoreIfNeeded();
     syncConductDerivedStateOnLoad();
+    applyProfileRouteFromURL();
     initExplore();
     initWaitlistFormOverride();
     initInviteModal();
     initRatingModal();
     initConnectModal();
     initAuthModal();
+    initProfileTeaser();
     initNetworkModal();
     initProfileEditor();
+    initProfileHeaderActions();
     initRequestsPage();
     initMessagesPage();
     initNotificationsPage();
@@ -8294,6 +9150,12 @@
     applyWaitlistSuccessCopy();
     applyWaitlistPanelCtaState();
     syncMetrics();
+    if (isProfilePage()) {
+      const routeEditSection = getProfileRouteEditSectionFromURL();
+      if (routeEditSection && state.isAuthenticated) {
+        openProfileEditorModal(routeEditSection);
+      }
+    }
     trackPageView();
   });
 })();

@@ -279,6 +279,47 @@ button, input, select, textarea { font: inherit; }
   padding: 4.2rem 0;
   border-top: 1px solid rgb(var(--border) / 0.65);
 }
+.profile-teaser {
+  padding-top: 3.4rem;
+  padding-bottom: 3.4rem;
+}
+.profile-teaser-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+}
+.profile-teaser-copy h2 {
+  margin: 0;
+  font-family: Sora, Inter, sans-serif;
+  font-size: clamp(1.2rem, 2.1vw, 1.65rem);
+}
+.profile-teaser-lead {
+  margin: 0.45rem 0 0;
+  color: rgb(var(--text-2));
+  line-height: 1.55;
+  max-width: 680px;
+}
+.profile-teaser-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+body[data-page="profile"] #landing,
+body[data-page="profile"] #explore,
+body[data-page="profile"] #profileTeaser,
+body[data-page="profile"] #waitlist {
+  display: none !important;
+}
+body[data-page="profile"] #profile.section {
+  border-top: 0;
+  padding-top: 2.3rem;
+}
+body[data-page="profile"] .profile-showcase {
+  margin-top: 0;
+}
 .subpage-main .section:first-of-type {
   border-top: 0;
 }
@@ -1178,6 +1219,13 @@ body.is-authenticated .preview-lock {
   font-size: 12px;
   line-height: 1.4;
 }
+.invite-slot-hint {
+  margin: -4px 0 8px;
+  color: rgb(var(--muted));
+  font-size: 12px;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
 .proof-badge {
   display: inline-flex;
   align-items: center;
@@ -1408,6 +1456,92 @@ body.is-authenticated .preview-lock {
 }
 .compare-drawer.is-active {
   display: grid;
+}
+.compare-dock {
+  position: fixed;
+  left: max(0.8rem, env(safe-area-inset-left));
+  right: max(0.8rem, env(safe-area-inset-right));
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  z-index: 36;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.compare-dock.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.compare-dock__inner {
+  margin: 0 auto;
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgb(var(--border));
+  border-radius: 14px;
+  background: rgb(var(--surface-1) / 0.96);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 0.24);
+  padding: 9px 10px;
+}
+.compare-dock__summary {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.compare-dock__title {
+  font-size: 12px;
+  color: rgb(var(--text-2));
+}
+.compare-dock__count {
+  font-size: 12px;
+  color: rgb(var(--muted));
+}
+.compare-dock__players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.compare-dock__player {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border: 1px solid rgb(var(--border));
+  border-radius: 999px;
+  background: rgb(var(--surface-2));
+  padding: 3px 7px 3px 4px;
+}
+.compare-dock__player-copy {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+.compare-dock__player-copy > span:first-child {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(var(--text));
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.compare-dock__player-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: rgb(var(--muted));
+  font-size: 11px;
+  line-height: 1.2;
+}
+.compare-dock__actions {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .compare-headtohead {
   margin: -2px 0 0;
@@ -1790,6 +1924,41 @@ body.is-authenticated .preview-lock {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+.profile-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.profile-header-actions .button {
+  min-width: 0;
+}
+.profile-close-btn {
+  white-space: nowrap;
+}
+.profile-edit-primary {
+  font-weight: 700;
+}
+.profile-context-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.profile-context-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgb(var(--border));
+  border-radius: 999px;
+  background: rgb(var(--surface-2));
+  color: rgb(var(--text-2));
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 9px;
+  line-height: 1.35;
+}
 .profile-viewing-banner {
   display: inline-flex;
   align-items: center;
@@ -1810,6 +1979,9 @@ body.is-authenticated .preview-lock {
 }
 .profile-back-btn {
   white-space: nowrap;
+}
+.profile-context-back {
+  margin-right: auto;
 }
 .profile-primary-meta {
   margin: 2px 0 0;
@@ -2458,6 +2630,9 @@ textarea {
     position: sticky;
     top: 90px;
   }
+  .compare-dock__inner {
+    width: min(840px, 100%);
+  }
 }
 
 @media (max-width: 980px) {
@@ -2475,12 +2650,32 @@ textarea {
   .quick-run .button {
     width: 100%;
   }
+  .profile-teaser-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .profile-teaser-actions {
+    width: 100%;
+  }
+  .profile-teaser-actions .button {
+    width: 100%;
+  }
   .filter-rail { position: static; }
   .compare-drawer {
     position: static;
     top: auto;
     bottom: auto;
     z-index: auto;
+  }
+  .compare-dock {
+    bottom: calc(env(safe-area-inset-bottom) + 66px);
+  }
+  .compare-dock__inner {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .compare-dock__actions {
+    justify-content: flex-start;
   }
   .compare-bar__actions .button {
     width: 100%;
@@ -2508,6 +2703,9 @@ textarea {
   .hero-actions .button { min-width: 0; }
   .references-grid { grid-template-columns: 1fr; }
   .profile-view-controls {
+    justify-content: flex-start;
+  }
+  .profile-header-actions {
     justify-content: flex-start;
   }
   .profile-owner-sections {
@@ -2546,8 +2744,25 @@ textarea {
   .compare-slot-name {
     white-space: normal;
   }
+  .compare-dock {
+    left: max(0.55rem, env(safe-area-inset-left));
+    right: max(0.55rem, env(safe-area-inset-right));
+    bottom: calc(env(safe-area-inset-bottom) + 64px);
+  }
+  .compare-dock__player {
+    width: 100%;
+  }
+  .compare-dock__actions {
+    width: 100%;
+  }
+  .compare-dock__actions .button {
+    flex: 1 1 auto;
+  }
   .compare-bar__actions {
     width: 100%;
+  }
+  .profile-teaser-lead {
+    max-width: none;
   }
   .result-card__header {
     align-items: flex-start;
@@ -2570,6 +2785,12 @@ textarea {
   }
   .profile-main-label {
     letter-spacing: 0.02em;
+  }
+  .profile-header-actions {
+    width: 100%;
+  }
+  .profile-header-actions .button {
+    flex: 1 1 auto;
   }
   .profile-avatar-badge-overlay .avatar-badge--lg {
     width: 24px;
