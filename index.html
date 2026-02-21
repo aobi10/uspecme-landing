@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>uSpecMe · GameIn</title>
   <meta name="description" content="uSpecMe GameIn comparison variant with a LinkedIn-style professional layer for gaming identities.">
-  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="main.css?v=d9.1.20260221">
 </head>
 <body class="variant-gamein" data-page="start" data-preview-state="preview">
   <a class="skip-link" href="#main" data-d18n="d.a11y.skip">Skip to content</a>
@@ -54,15 +54,10 @@
             <button type="button" class="button secondary" id="ctaEarlyAccessSecondary" data-d18n="d.hero.ctaEarlyAccess">Join Early Access</button>
           </div>
 
-          <div class="hero-tools-label" data-d18n="d.hero.toolsLabel">Proof tools</div>
+          <div class="hero-tools-label" data-d18n="d.hero.toolsLabel">Browse mode</div>
           <div class="hero-actions hero-actions-legacy">
             <button type="button" class="button primary" id="ctaPlayer" data-d18n="d.hero.ctaPlayer">I'm a Player</button>
             <button type="button" class="button secondary" id="ctaTeam" data-d18n="d.hero.ctaTeam">I'm a Team</button>
-          </div>
-
-          <div class="network-cta-row hero-tertiary">
-            <button type="button" class="button ghost" data-open-network-modal data-network-mode="intro" data-d18n="d.network.open.intro">Request Introduction</button>
-            <button type="button" class="button ghost" data-open-network-modal data-network-mode="reference" data-d18n="d.network.open.reference">Add Reference</button>
           </div>
 
           <div class="hero-kpis">
@@ -261,6 +256,21 @@
               </div>
             </label>
 
+            <label id="ageGroupFilterWrap">
+              <span data-d18n="d.filter.ageGroup">Age group</span>
+              <div class="select-wrap">
+                <select id="ageGroupFilter">
+                  <option value="Any" data-d18n="d.filter.any">Any</option>
+                  <option value="U16" data-d18n="d.age.group.u16">U16</option>
+                  <option value="16-17" data-d18n="d.age.group.16_17">16-17</option>
+                  <option value="18-20" data-d18n="d.age.group.18_20">18-20</option>
+                  <option value="21-24" data-d18n="d.age.group.21_24">21-24</option>
+                  <option value="25+" data-d18n="d.age.group.25_plus">25+</option>
+                </select>
+                <button type="button" class="select-arrow" data-select-toggle="ageGroupFilter" aria-label="Toggle options"></button>
+              </div>
+            </label>
+
             <label>
               <span data-d18n="d.filter.proof">Proof</span>
               <div class="select-wrap">
@@ -405,7 +415,7 @@
           <button type="submit" class="button primary wide" data-d18n="d.invite.submit">Send tryout request</button>
         </form>
 
-        <div id="inviteSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.invite.success">Saved (Preview). Sending unlocks in Early Access.</div>
+        <div id="inviteSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.invite.success">Request saved. Sending is enabled with Early Access.</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="button ghost" data-close-invite data-d18n="d.modal.close">Close</button>
@@ -431,7 +441,7 @@
           <button type="button" data-provider="Xbox">Xbox</button>
         </div>
 
-        <div id="connectSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.connect.success">Connection recorded. Rank verification arrives in Early Access.</div>
+        <div id="connectSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.connect.success">Connection saved. Verification is enabled in Early Access.</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="button ghost" data-close-connect data-d18n="d.modal.close">Close</button>
@@ -448,25 +458,17 @@
       </div>
       <div class="modal-body">
         <div class="modal-tabs" id="networkTabs" role="tablist" aria-label="Networking mode">
-          <button type="button" class="active" data-network-mode="intro" aria-selected="true" data-d18n="d.network.tab.intro">Request Introduction</button>
-          <button type="button" data-network-mode="reference" aria-selected="false" data-d18n="d.network.tab.reference">Add Reference</button>
+          <button type="button" class="active" data-network-mode="intro" aria-selected="true" data-d18n="d.network.tab.intro">Connect</button>
+          <button type="button" data-network-mode="reference" aria-selected="false" data-d18n="d.network.tab.reference">Write recommendation</button>
         </div>
 
         <form id="networkIntroForm" class="form" data-network-form="intro">
           <label>
-            <span data-d18n="d.network.intro.org.label">Team / Organization</span>
-            <input type="text" name="organization" required data-d18n-placeholder="d.network.intro.org.placeholder" placeholder="e.g. Team Liquid Academy">
-          </label>
-          <label>
-            <span data-d18n="d.network.intro.role.label">Role needed</span>
-            <input type="text" name="role" required data-d18n-placeholder="d.network.intro.role.placeholder" placeholder="e.g. Flex DPS for evening scrims">
-          </label>
-          <label>
             <span data-d18n="d.network.intro.message.label">Message</span>
-            <textarea name="message" rows="3" data-d18n-placeholder="d.network.intro.message.placeholder" placeholder="Share context for the introduction."></textarea>
+            <textarea name="message" rows="3" data-d18n-placeholder="d.network.intro.message.placeholder" placeholder="Share context for your connection request (optional)."></textarea>
           </label>
-          <p class="modal-help-text network-intro-help" data-d18n="d.modal.introductionHelp">Request a warm introduction to a team or contact.</p>
-          <button type="submit" class="button primary wide" data-d18n="d.network.submit.intro">Send introduction request</button>
+          <p class="modal-help-text network-intro-help" data-d18n="d.modal.introductionHelp">Send a direct connection request for networking and future collaboration.</p>
+          <button type="submit" class="button primary wide" data-d18n="d.network.submit.intro">Send connection request</button>
         </form>
 
         <form id="networkReferenceForm" class="form hidden" data-network-form="reference">
@@ -479,13 +481,13 @@
             <input type="text" name="relationship" required data-d18n-placeholder="d.network.reference.relationship.placeholder" placeholder="e.g. Worked together for one season">
           </label>
           <label>
-            <span data-d18n="d.network.reference.text.label">Reference text</span>
-            <textarea name="referenceText" rows="3" required data-d18n-placeholder="d.network.reference.text.placeholder" placeholder="Write a short reference."></textarea>
+            <span data-d18n="d.network.reference.text.label">Recommendation text</span>
+            <textarea name="referenceText" rows="3" required data-d18n-placeholder="d.network.reference.text.placeholder" placeholder="Write a short recommendation."></textarea>
           </label>
-          <button type="submit" class="button primary wide" data-d18n="d.network.submit.reference">Submit reference</button>
+          <button type="submit" class="button primary wide" data-d18n="d.network.submit.reference">Send recommendation</button>
         </form>
 
-        <div id="networkSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.network.success">Saved (Preview). Intros & references go live in Early Access.</div>
+        <div id="networkSuccess" class="success hidden" role="status" aria-live="polite" data-d18n="d.network.success">Request saved. Contacts and recommendations are enabled with Early Access.</div>
       </div>
       <div class="modal-footer">
         <button type="button" class="button ghost" data-close-network data-d18n="d.modal.close">Close</button>
@@ -677,6 +679,21 @@
               <label>
                 <span data-d18n="d.editor.availabilityDetail">Availability detail</span>
                 <input type="text" id="profileAvailabilityDetail" data-d18n-placeholder="d.editor.availabilityDetailPlaceholder" placeholder="Mon/Wed/Fri 19:00-22:00 CET">
+              </label>
+              <label>
+                <span data-d18n="d.editor.birthDate">Birth date (private)</span>
+                <input type="date" id="profileBirthDate" max="2099-12-31">
+              </label>
+              <label>
+                <span data-d18n="d.editor.ageDisplay">Age visibility</span>
+                <div class="select-wrap">
+                  <select id="profileAgeVisibility">
+                    <option value="NONE" data-d18n="d.editor.ageDisplay.none">Do not show</option>
+                    <option value="AGE" data-d18n="d.editor.ageDisplay.age">Age</option>
+                    <option value="GROUP" data-d18n="d.editor.ageDisplay.group">Age group</option>
+                  </select>
+                  <button type="button" class="select-arrow" data-select-toggle="profileAgeVisibility" aria-label="Toggle options"></button>
+                </div>
               </label>
             </div>
 
@@ -898,6 +915,6 @@
 
   <script src="track.js"></script>
   <script src="shared.js"></script>
-  <script src="main.js"></script>
+  <script src="main.js?v=d9.1.20260221"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@
   const AUTH_USERS_KEY = 'uspecme_auth_users_v1';
   const PROFILE_STORAGE_KEY = 'uspecme_profile_v1';
   const PROFILE_VERSION = 1;
+  const BUILD_TAG = 'd9.1.20260221';
 
   const DEFAULT_AUTH_USER = {
     username: 'aobi10',
@@ -168,6 +169,16 @@
     [GAME_IDS.FORTNITE]: PROFILE_RANKS.fortnite.tiers.slice(),
     [GAME_IDS.RIVALS]: PROFILE_RANKS.rivals.tiers.slice()
   };
+  const AGE_GROUPS = ['U16', '16-17', '18-20', '21-24', '25+'];
+  const AGE_DISPLAY_MODES = {
+    NONE: 'NONE',
+    AGE: 'AGE',
+    GROUP: 'GROUP'
+  };
+  const RELATIONSHIP_STATUS = {
+    CONNECTED: 'CONNECTED',
+    NONE: 'NONE'
+  };
   const SCOUT_HOOK_KEYS = [
     'calm',
     'teamfirst',
@@ -202,6 +213,7 @@
     game: GAME_IDS.ANY,
     role: 'Any',
     rank: 'Any',
+    ageGroup: 'Any',
     region: 'Any',
     availability: 'Any',
     proof: 'Any',
@@ -213,6 +225,7 @@
     isAuthenticated: false,
     authUser: null,
     authUsers: loadAuthUsers(),
+    relationships: loadRelationshipsState(),
     profile: null,
     profileViewMode: 'self',
     profileViewPlayerId: '',
@@ -239,6 +252,7 @@
   state.isAuthenticated = authSession.isAuthenticated;
   state.authUser = authSession.user;
   state.profile = loadProfileState();
+  window.__USM_BUILD = BUILD_TAG;
 
   function safeStorageGet(key) {
     try {
@@ -339,6 +353,65 @@
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
     return normalized || 'unknown';
+  }
+
+  function normalizeRelationshipStatus(value) {
+    return value === RELATIONSHIP_STATUS.CONNECTED
+      ? RELATIONSHIP_STATUS.CONNECTED
+      : RELATIONSHIP_STATUS.NONE;
+  }
+
+  function loadRelationshipsState() {
+    const raw = loadUnifiedState('relationships', { players: {} }, () => null);
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const playersSource = source.players && typeof source.players === 'object' ? source.players : {};
+    const playersNormalized = {};
+    Object.keys(playersSource).forEach((key) => {
+      const token = slugifyStableId(key);
+      playersNormalized[token] = normalizeRelationshipStatus(playersSource[key]);
+    });
+    return { players: playersNormalized };
+  }
+
+  function persistRelationshipsState() {
+    saveUnifiedState('relationships', state.relationships);
+  }
+
+  function getExternalProfileTargetHandle() {
+    if (!isProfilePage() || state.profileViewMode !== 'player') {
+      return '';
+    }
+    const player = findPlayerByViewState();
+    return player && player.handle ? String(player.handle).trim() : '';
+  }
+
+  function isMutualContact(handle) {
+    const token = slugifyStableId(handle);
+    const players = state.relationships && state.relationships.players && typeof state.relationships.players === 'object'
+      ? state.relationships.players
+      : {};
+    return players[token] === RELATIONSHIP_STATUS.CONNECTED;
+  }
+
+  function setMutualContact(handle, status) {
+    const cleanHandle = String(handle || '').trim();
+    if (!cleanHandle) {
+      return;
+    }
+    const token = slugifyStableId(cleanHandle);
+    const relationships = state.relationships && typeof state.relationships === 'object' ? state.relationships : { players: {} };
+    const players = relationships.players && typeof relationships.players === 'object' ? relationships.players : {};
+    players[token] = normalizeRelationshipStatus(status);
+    state.relationships = { players };
+    persistRelationshipsState();
+  }
+
+  function canWriteRecommendationForCurrentContext() {
+    const targetHandle = getExternalProfileTargetHandle();
+    if (!targetHandle) {
+      return true;
+    }
+    return isMutualContact(targetHandle);
   }
 
   function toIsoOrNull(value) {
@@ -1132,6 +1205,7 @@
       game: state.game,
       role: state.role,
       rank: state.rank,
+      ageGroup: state.ageGroup,
       region: state.region,
       availability: state.availability,
       proof: state.proof
@@ -1150,6 +1224,7 @@
     state.game = normalizeGameId(saved.game, GAME_IDS.ANY);
     state.role = typeof saved.role === 'string' ? saved.role : 'Any';
     state.rank = typeof saved.rank === 'string' ? saved.rank : 'Any';
+    state.ageGroup = AGE_GROUPS.includes(saved.ageGroup) ? saved.ageGroup : 'Any';
     state.region = typeof saved.region === 'string' ? saved.region : 'Any';
     state.availability = typeof saved.availability === 'string' ? saved.availability : 'Any';
     state.proof = typeof saved.proof === 'string' ? saved.proof : 'Any';
@@ -1632,6 +1707,9 @@
         mainGame: 'overwatch',
         availability: 'Any',
         availabilityDetail: '',
+        birthDate: '',
+        birthYear: 2002,
+        ageDisplay: AGE_DISPLAY_MODES.GROUP,
         games: {
           overwatch: { handle: 'Shinobi#4728', tier: 'Master', division: '3', platform: PLATFORM_IDS.PC },
           lol: { handle: 'Shn0bi', tier: 'Diamond', division: 'II', platform: PLATFORM_IDS.PC },
@@ -1733,6 +1811,11 @@
       : defaults.publicProfile.mainGame;
     normalized.publicProfile.availability = normalizeAvailability(sourcePublic.availability);
     normalized.publicProfile.availabilityDetail = sanitizeTextValue(sourcePublic.availabilityDetail, '', 80);
+    normalized.publicProfile.birthDate = normalizeBirthDate(sourcePublic.birthDate);
+    const normalizedBirthYear = normalizeBirthYear(sourcePublic.birthYear);
+    normalized.publicProfile.birthYear = normalizedBirthYear
+      || (normalized.publicProfile.birthDate ? normalizeBirthYear(normalized.publicProfile.birthDate.slice(0, 4)) : null);
+    normalized.publicProfile.ageDisplay = normalizeAgeDisplayMode(sourcePublic.ageDisplay || defaults.publicProfile.ageDisplay);
 
     const sourceGames = sourcePublic.games && typeof sourcePublic.games === 'object' ? sourcePublic.games : {};
     normalized.publicProfile.games.overwatch = normalizeProfileGame('overwatch', sourceGames.overwatch, defaults.publicProfile.games.overwatch);
@@ -2236,6 +2319,31 @@
     });
   });
 
+  players.forEach((player) => {
+    const seed = hashStringDeterministic(player.handle || player.name || 'player');
+    if (!normalizeBirthYear(player.birthYear)) {
+      player.birthYear = 1998 + (seed % 11);
+    } else {
+      player.birthYear = normalizeBirthYear(player.birthYear);
+    }
+    if (!normalizeAgeDisplayMode(player.ageDisplay)) {
+      const bucket = seed % 10;
+      player.ageDisplay = bucket < 5
+        ? AGE_DISPLAY_MODES.GROUP
+        : bucket < 8
+          ? AGE_DISPLAY_MODES.AGE
+          : AGE_DISPLAY_MODES.NONE;
+    } else {
+      player.ageDisplay = normalizeAgeDisplayMode(player.ageDisplay);
+    }
+  });
+
+  const shinobiPlayer = players.find((player) => player.handle === 'Shinobi');
+  if (shinobiPlayer) {
+    shinobiPlayer.birthYear = normalizeBirthYear(shinobiPlayer.birthYear) || 2002;
+    shinobiPlayer.ageDisplay = normalizeAgeDisplayMode(shinobiPlayer.ageDisplay) || AGE_DISPLAY_MODES.GROUP;
+  }
+
   const teams = [
     {
       slug: 'vienna-ascend',
@@ -2669,7 +2777,7 @@
       'd.hero.lead': 'Proof-first profiles. Instant compare. Clear tryout intent.',
       'd.hero.ctaExplore': 'Explore players',
       'd.hero.ctaEarlyAccess': 'Join Early Access',
-      'd.hero.toolsLabel': 'Proof tools',
+      'd.hero.toolsLabel': 'Browse mode',
       'd.hero.ctaPlayer': "I'm a Player",
       'd.hero.ctaTeam': "I'm a Team",
       'd.kpi.verified.title': 'Verified Ranks',
@@ -2704,6 +2812,7 @@
       'd.filter.role': 'Role',
       'd.filter.roleNeeded': 'Role needed',
       'd.filter.rank': 'Rank',
+      'd.filter.ageGroup': 'Age group',
       'd.filter.region': 'Region',
       'd.filter.availability': 'Availability',
       'd.filter.proof': 'Proof',
@@ -2739,6 +2848,11 @@
       'd.rank.championUnreal': 'Champion/Unreal',
       'd.availability.weeknights': 'Weeknights',
       'd.availability.weekend': 'Weekend',
+      'd.age.group.u16': 'U16',
+      'd.age.group.16_17': '16-17',
+      'd.age.group.18_20': '18-20',
+      'd.age.group.21_24': '21-24',
+      'd.age.group.25_plus': '25+',
       'd.country.de': 'Germany',
       'd.country.at': 'Austria',
       'd.country.ch': 'Switzerland',
@@ -2823,26 +2937,28 @@
       'd.invite.notes': 'Notes',
       'd.invite.submit': 'Send tryout request',
       'd.invite.submitting': 'Sending...',
-      'd.invite.success': 'Saved (Preview). Sending unlocks in Early Access.',
+      'd.invite.success': 'Request saved. Sending is enabled with Early Access.',
       'd.connect.title': 'Connect account',
       'd.connect.lead': 'Choose a provider to confirm ownership and improve trust signals.',
       'd.connect.connecting': 'Connecting...',
-      'd.connect.success': 'Connection recorded. Rank verification arrives in Early Access.',
+      'd.connect.success': 'Connection saved. Verification is enabled in Early Access.',
       'd.avatar.defaultAlt': 'Profile identity badge',
       'd.avatar.style.mono': 'Monogram',
       'd.avatar.style.symbol': 'Symbol',
       'd.avatar.style.brand': 'Brand',
       'd.modal.close': 'Close',
       'd.modal.tryoutHelp': 'Send a concrete tryout request with role and time window.',
-      'd.modal.introductionHelp': 'Request a warm introduction to a team or contact.',
+      'd.modal.introductionHelp': 'Send a direct connection request for networking and future collaboration.',
       'd.cta.inviteTryout': 'Invite to Tryout',
       'd.cta.applyTryout': 'Apply for Tryout',
-      'd.cta.requestIntroduction': 'Request Introduction',
+      'd.cta.requestIntroduction': 'Connect',
       'd.card.chip.proof': 'Proof',
       'd.card.chip.role': 'Role',
       'd.card.chip.roleNeeded': 'Role needed',
       'd.card.chip.availability': 'Availability',
       'd.card.chip.platform': 'Platform',
+      'd.card.age': 'Age',
+      'd.card.ageGroup': 'Age group',
       'd.card.region': 'Region',
       'd.card.country': 'Country',
       'd.card.availability': 'Availability',
@@ -2887,6 +3003,8 @@
       'd.profile.platform': 'Platform',
       'd.profile.availability': 'Availability',
       'd.profile.availabilityDetail': 'Availability detail',
+      'd.profile.age': 'Age',
+      'd.profile.ageGroup': 'Age group',
       'd.profile.alsoPlays': 'Also plays',
       'd.profile.noSecondaryGames': 'No secondary games added yet.',
       'd.profile.viewingPlayer': 'Viewing profile: {player}',
@@ -2923,28 +3041,33 @@
       'd.references.two.name': 'Mila "Astra" Hoffmann',
       'd.references.two.meta': 'Team Manager · FaZe Academy',
       'd.references.two.text': 'Strong teammate with consistent attendance and clear match communication.',
-      'd.network.open.intro': 'Request Introduction',
-      'd.network.open.reference': 'Add Reference',
+      'd.network.open.intro': 'Connect',
+      'd.network.open.reference': 'Write recommendation',
       'd.network.title': 'Professional Networking',
-      'd.network.tab.intro': 'Request Introduction',
-      'd.network.tab.reference': 'Add Reference',
+      'd.network.tab.intro': 'Connect',
+      'd.network.tab.reference': 'Write recommendation',
+      'd.network.intro.reason.label': 'Reason',
+      'd.network.intro.reason.networking': 'Networking',
+      'd.network.intro.reason.tryout': 'Tryout / Team talk',
+      'd.network.intro.reason.coaching': 'Coaching / Exchange',
+      'd.network.intro.reason.content': 'Content / Stream',
       'd.network.intro.org.label': 'Team / Organization',
       'd.network.intro.org.placeholder': 'e.g. Team Liquid Academy',
       'd.network.intro.role.label': 'Role needed',
       'd.network.intro.role.placeholder': 'e.g. Flex DPS for evening scrims',
       'd.network.intro.message.label': 'Message',
-      'd.network.intro.message.placeholder': 'Share context for the introduction.',
+      'd.network.intro.message.placeholder': 'Share context for your connection request (optional).',
       'd.network.reference.role.label': 'Your role',
       'd.network.reference.role.placeholder': 'e.g. Coach, Team Lead, Analyst',
       'd.network.reference.relationship.label': 'Relationship',
       'd.network.reference.relationship.placeholder': 'e.g. Worked together for one season',
-      'd.network.reference.text.label': 'Reference text',
-      'd.network.reference.text.placeholder': 'Write a short reference.',
-      'd.network.submit.intro': 'Send introduction request',
-      'd.network.submit.reference': 'Submit reference',
+      'd.network.reference.text.label': 'Recommendation text',
+      'd.network.reference.text.placeholder': 'Write a short recommendation.',
+      'd.network.submit.intro': 'Send connection request',
+      'd.network.submit.reference': 'Send recommendation',
       'd.network.submitting': 'Sending...',
-      'd.network.success': 'Saved (Preview). Intros & references go live in Early Access.',
-      'd.toast.networkCaptured': 'Saved (Preview).',
+      'd.network.success': 'Request saved. Contacts and recommendations are enabled with Early Access.',
+      'd.toast.networkCaptured': 'Request saved.',
       'd.scout.hook.calm': 'Calm comms. Consistent VOD review.',
       'd.scout.hook.teamfirst': 'Team-first, fast adaptation.',
       'd.scout.hook.shotcall': 'Shotcaller-leaning, system focused.',
@@ -3020,6 +3143,13 @@
       'd.editor.availability': 'Availability',
       'd.editor.availabilityDetail': 'Availability detail',
       'd.editor.availabilityDetailPlaceholder': 'Mon/Wed/Fri 19:00-22:00 CET',
+      'd.editor.birthDate': 'Birth date (private)',
+      'd.editor.birthYear': 'Birth year (legacy)',
+      'd.editor.birthYearPlaceholder': 'e.g. 2004',
+      'd.editor.ageDisplay': 'Age visibility',
+      'd.editor.ageDisplay.none': 'Do not show',
+      'd.editor.ageDisplay.age': 'Age',
+      'd.editor.ageDisplay.group': 'Age group',
       'd.editor.handle': 'In-game name',
       'd.editor.tier': 'Tier',
       'd.editor.division': 'Division',
@@ -3241,7 +3371,7 @@
       'd.hero.lead': 'Proof-first Profile. Sofort vergleichen. Klarer Tryout-Intent.',
       'd.hero.ctaExplore': 'Spieler entdecken',
       'd.hero.ctaEarlyAccess': 'Early Access sichern',
-      'd.hero.toolsLabel': 'Proof-Tools',
+      'd.hero.toolsLabel': 'Browse-Modus',
       'd.hero.ctaPlayer': 'Ich bin ein Spieler',
       'd.hero.ctaTeam': 'Ich bin ein Team',
       'd.kpi.verified.title': 'Verifizierte Ranks',
@@ -3276,6 +3406,7 @@
       'd.filter.role': 'Rolle',
       'd.filter.roleNeeded': 'Benötigte Rolle',
       'd.filter.rank': 'Rank',
+      'd.filter.ageGroup': 'Altersgruppe',
       'd.filter.region': 'Region',
       'd.filter.availability': 'Verfügbarkeit',
       'd.filter.proof': 'Proof',
@@ -3311,6 +3442,11 @@
       'd.rank.championUnreal': 'Champion/Unreal',
       'd.availability.weeknights': 'Abends unter der Woche',
       'd.availability.weekend': 'Wochenende',
+      'd.age.group.u16': 'U16',
+      'd.age.group.16_17': '16-17',
+      'd.age.group.18_20': '18-20',
+      'd.age.group.21_24': '21-24',
+      'd.age.group.25_plus': '25+',
       'd.country.de': 'Deutschland',
       'd.country.at': 'Österreich',
       'd.country.ch': 'Schweiz',
@@ -3395,26 +3531,28 @@
       'd.invite.notes': 'Notizen',
       'd.invite.submit': 'Tryout-Anfrage senden',
       'd.invite.submitting': 'Wird gesendet...',
-      'd.invite.success': 'Gespeichert (Vorschau). Versenden startet mit Early Access.',
+      'd.invite.success': 'Anfrage gespeichert. Versand wird mit Early Access aktiviert.',
       'd.connect.title': 'Account verbinden',
       'd.connect.lead': 'Wähle einen Provider, um Ownership zu bestätigen und Trust-Signale zu verbessern.',
       'd.connect.connecting': 'Verbinde...',
-      'd.connect.success': 'Verknuepfung gespeichert. Rank-Verifizierung kommt mit Early Access.',
+      'd.connect.success': 'Verknüpfung gespeichert. Verifizierung wird im Early Access aktiviert.',
       'd.avatar.defaultAlt': 'Profil-Identitätsbadge',
       'd.avatar.style.mono': 'Monogramm',
       'd.avatar.style.symbol': 'Symbol',
       'd.avatar.style.brand': 'Brand',
       'd.modal.close': 'Schließen',
       'd.modal.tryoutHelp': 'Sende eine konkrete Tryout-Anfrage mit Rolle und Zeitfenster.',
-      'd.modal.introductionHelp': 'Bitte um eine Einführung/Kontaktvermittlung zu Team oder Ansprechpartner.',
+      'd.modal.introductionHelp': 'Sende eine direkte Kontaktanfrage für Networking und spätere Zusammenarbeit.',
       'd.cta.inviteTryout': 'Zum Tryout einladen',
       'd.cta.applyTryout': 'Für Tryout bewerben',
-      'd.cta.requestIntroduction': 'Vermittlung anfragen',
+      'd.cta.requestIntroduction': 'Kontakt anfragen',
       'd.card.chip.proof': 'Proof',
       'd.card.chip.role': 'Rolle',
       'd.card.chip.roleNeeded': 'Benoetigte Rolle',
       'd.card.chip.availability': 'Verfuegbarkeit',
       'd.card.chip.platform': 'Plattform',
+      'd.card.age': 'Alter',
+      'd.card.ageGroup': 'Altersgruppe',
       'd.card.region': 'Region',
       'd.card.country': 'Herkunftsland',
       'd.card.availability': 'Verfügbarkeit',
@@ -3459,6 +3597,8 @@
       'd.profile.platform': 'Plattform',
       'd.profile.availability': 'Verfügbarkeit',
       'd.profile.availabilityDetail': 'Verfügbarkeitsdetails',
+      'd.profile.age': 'Alter',
+      'd.profile.ageGroup': 'Altersgruppe',
       'd.profile.alsoPlays': 'Spielt außerdem',
       'd.profile.noSecondaryGames': 'Noch keine Secondary Games hinterlegt.',
       'd.profile.viewingPlayer': 'Profilansicht: {player}',
@@ -3495,28 +3635,33 @@
       'd.references.two.name': 'Mila "Astra" Hoffmann',
       'd.references.two.meta': 'Team Managerin · FaZe Academy',
       'd.references.two.text': 'Starker Teammate mit konstanter Verfügbarkeit und klarer Match-Kommunikation.',
-      'd.network.open.intro': 'Vermittlung anfragen',
-      'd.network.open.reference': 'Referenz hinzufügen',
+      'd.network.open.intro': 'Kontakt anfragen',
+      'd.network.open.reference': 'Empfehlung schreiben',
       'd.network.title': 'Professionelles Networking',
-      'd.network.tab.intro': 'Vermittlung anfragen',
-      'd.network.tab.reference': 'Referenz hinzufügen',
+      'd.network.tab.intro': 'Kontakt anfragen',
+      'd.network.tab.reference': 'Empfehlung schreiben',
+      'd.network.intro.reason.label': 'Grund',
+      'd.network.intro.reason.networking': 'Vernetzen',
+      'd.network.intro.reason.tryout': 'Tryout / Teamtalk',
+      'd.network.intro.reason.coaching': 'Coaching / Austausch',
+      'd.network.intro.reason.content': 'Content / Stream',
       'd.network.intro.org.label': 'Team / Organisation',
       'd.network.intro.org.placeholder': 'z. B. Team Liquid Academy',
       'd.network.intro.role.label': 'Gesuchte Rolle',
       'd.network.intro.role.placeholder': 'z. B. Flex DPS für Abend-Scrims',
       'd.network.intro.message.label': 'Nachricht',
-      'd.network.intro.message.placeholder': 'Teile den Kontext für die Vermittlungsanfrage.',
+      'd.network.intro.message.placeholder': 'Teile den Kontext deiner Kontaktanfrage (optional).',
       'd.network.reference.role.label': 'Deine Rolle',
       'd.network.reference.role.placeholder': 'z. B. Coach, Teamleitung, Analyst',
       'd.network.reference.relationship.label': 'Beziehung',
       'd.network.reference.relationship.placeholder': 'z. B. Eine Season zusammen gespielt',
-      'd.network.reference.text.label': 'Referenztext',
-      'd.network.reference.text.placeholder': 'Schreibe eine kurze Referenz.',
-      'd.network.submit.intro': 'Vermittlungsanfrage senden',
-      'd.network.submit.reference': 'Referenz übermitteln',
+      'd.network.reference.text.label': 'Empfehlungstext',
+      'd.network.reference.text.placeholder': 'Schreibe eine kurze Empfehlung.',
+      'd.network.submit.intro': 'Kontaktanfrage senden',
+      'd.network.submit.reference': 'Empfehlung senden',
       'd.network.submitting': 'Wird gesendet...',
-      'd.network.success': 'Gespeichert (Vorschau). Intros & Referenzen gehen mit Early Access live.',
-      'd.toast.networkCaptured': 'Gespeichert (Vorschau).',
+      'd.network.success': 'Anfrage gespeichert. Kontakte und Empfehlungen werden mit Early Access aktiviert.',
+      'd.toast.networkCaptured': 'Anfrage gespeichert.',
       'd.scout.hook.calm': 'Ruhige Comms. Konstantes VOD-Review.',
       'd.scout.hook.teamfirst': 'Team-first und schnelle Anpassung.',
       'd.scout.hook.shotcall': 'Shotcaller-nah und systemfokussiert.',
@@ -3562,7 +3707,7 @@
       'd.auth.submit.register': 'Registrieren und fortfahren',
       'd.auth.submit.login': 'Einloggen',
       'd.auth.submitting': 'Bitte warten...',
-      'd.auth.success': 'Authentifizierung abgeschlossen.',
+      'd.auth.success': 'Erfolgreich eingeloggt.',
       'd.auth.success.login': 'Erfolgreich eingeloggt.',
       'd.auth.error.invalid': 'E-Mail/Benutzername oder Passwort ist ungültig.',
       'd.auth.error.exists': 'Ein Konto mit dieser E-Mail existiert bereits.',
@@ -3592,6 +3737,13 @@
       'd.editor.availability': 'Verfügbarkeit',
       'd.editor.availabilityDetail': 'Verfügbarkeitsdetails',
       'd.editor.availabilityDetailPlaceholder': 'Mo/Mi/Fr 19:00-22:00 CET',
+      'd.editor.birthDate': 'Geburtsdatum (privat)',
+      'd.editor.birthYear': 'Geburtsjahr (Legacy)',
+      'd.editor.birthYearPlaceholder': 'z. B. 2004',
+      'd.editor.ageDisplay': 'Anzeige Alter',
+      'd.editor.ageDisplay.none': 'Nicht anzeigen',
+      'd.editor.ageDisplay.age': 'Alter',
+      'd.editor.ageDisplay.group': 'Altersgruppe',
       'd.editor.handle': 'Ingame-Name',
       'd.editor.tier': 'Tier',
       'd.editor.division': 'Division',
@@ -3911,6 +4063,7 @@
 
     syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
+    syncExploreAgeGroupFilter();
     updateExploreModeSemantics();
     syncQuickStartControls();
     applyWaitlistSuccessCopy();
@@ -4474,6 +4627,167 @@
     return 'Any';
   }
 
+  function normalizeAgeDisplayMode(value) {
+    const raw = String(value || '').trim().toUpperCase();
+    if (raw === AGE_DISPLAY_MODES.AGE) {
+      return AGE_DISPLAY_MODES.AGE;
+    }
+    if (raw === AGE_DISPLAY_MODES.GROUP) {
+      return AGE_DISPLAY_MODES.GROUP;
+    }
+    return AGE_DISPLAY_MODES.NONE;
+  }
+
+  function normalizeBirthYear(value) {
+    const parsed = Number.parseInt(String(value || '').trim(), 10);
+    if (!Number.isFinite(parsed)) {
+      return null;
+    }
+    const currentYear = new Date().getFullYear();
+    if (parsed < 1960 || parsed > currentYear) {
+      return null;
+    }
+    return parsed;
+  }
+
+  function normalizeBirthDate(value) {
+    const raw = String(value || '').trim();
+    if (!raw) {
+      return '';
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return '';
+    }
+
+    const [yearPart, monthPart, dayPart] = raw.split('-');
+    const year = Number.parseInt(yearPart, 10);
+    const month = Number.parseInt(monthPart, 10);
+    const day = Number.parseInt(dayPart, 10);
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      return '';
+    }
+    const currentYear = new Date().getFullYear();
+    if (year < 1960 || year > currentYear) {
+      return '';
+    }
+
+    const date = new Date(year, month - 1, day);
+    if (
+      date.getFullYear() !== year
+      || date.getMonth() !== (month - 1)
+      || date.getDate() !== day
+    ) {
+      return '';
+    }
+
+    const now = new Date();
+    if (date.getTime() > now.getTime()) {
+      return '';
+    }
+    return raw;
+  }
+
+  function deriveAgeFromBirthYear(birthYear) {
+    const normalizedYear = normalizeBirthYear(birthYear);
+    if (!normalizedYear) {
+      return null;
+    }
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - normalizedYear;
+    if (!Number.isFinite(age) || age < 10 || age > 80) {
+      return null;
+    }
+    return age;
+  }
+
+  function deriveAgeFromBirthDate(birthDate, nowValue) {
+    const normalizedDate = normalizeBirthDate(birthDate);
+    if (!normalizedDate) {
+      return null;
+    }
+
+    const [yearPart, monthPart, dayPart] = normalizedDate.split('-');
+    const birthYear = Number.parseInt(yearPart, 10);
+    const birthMonth = Number.parseInt(monthPart, 10);
+    const birthDay = Number.parseInt(dayPart, 10);
+    if (!Number.isFinite(birthYear) || !Number.isFinite(birthMonth) || !Number.isFinite(birthDay)) {
+      return null;
+    }
+
+    const now = nowValue instanceof Date ? nowValue : new Date();
+    let age = now.getFullYear() - birthYear;
+    const beforeBirthday = (
+      now.getMonth() + 1 < birthMonth
+      || ((now.getMonth() + 1 === birthMonth) && now.getDate() < birthDay)
+    );
+    if (beforeBirthday) {
+      age -= 1;
+    }
+    if (!Number.isFinite(age) || age < 10 || age > 80) {
+      return null;
+    }
+    return age;
+  }
+
+  function deriveAgeGroupFromAge(age) {
+    const safeAge = Number(age);
+    if (!Number.isFinite(safeAge)) {
+      return '';
+    }
+    if (safeAge < 16) return 'U16';
+    if (safeAge <= 17) return '16-17';
+    if (safeAge <= 20) return '18-20';
+    if (safeAge <= 24) return '21-24';
+    return '25+';
+  }
+
+  function formatAgeGroupLabel(ageGroup) {
+    const normalized = String(ageGroup || '').trim();
+    if (normalized === 'U16') return t('d.age.group.u16');
+    if (normalized === '16-17') return t('d.age.group.16_17');
+    if (normalized === '18-20') return t('d.age.group.18_20');
+    if (normalized === '21-24') return t('d.age.group.21_24');
+    if (normalized === '25+') return t('d.age.group.25_plus');
+    return normalized;
+  }
+
+  function buildAgeSignal(source) {
+    const safeSource = source && typeof source === 'object' ? source : {};
+    const ageDisplay = normalizeAgeDisplayMode(safeSource.ageDisplay);
+    const birthDate = normalizeBirthDate(safeSource.birthDate);
+    const birthYear = normalizeBirthYear(safeSource.birthYear);
+    const preciseAge = deriveAgeFromBirthDate(birthDate);
+    const fallbackAge = Number.isFinite(preciseAge) ? preciseAge : deriveAgeFromBirthYear(birthYear);
+    const ageGroup = deriveAgeGroupFromAge(fallbackAge);
+    const showAge = ageDisplay === AGE_DISPLAY_MODES.AGE && Number.isFinite(preciseAge);
+    const showGroup = ageDisplay === AGE_DISPLAY_MODES.GROUP && !!ageGroup;
+    return {
+      birthDate,
+      birthYear,
+      ageDisplay,
+      age: showAge ? preciseAge : null,
+      ageGroup,
+      showAge,
+      showGroup,
+      hasExactAge: Number.isFinite(preciseAge),
+      isVisible: showAge || showGroup
+    };
+  }
+
+  function getAgeSignalText(ageSignal) {
+    const signal = ageSignal && typeof ageSignal === 'object' ? ageSignal : null;
+    if (!signal || !signal.isVisible) {
+      return '';
+    }
+    if (signal.showAge) {
+      return `${t('d.card.age')}: ${signal.age}`;
+    }
+    if (signal.showGroup) {
+      return `${t('d.card.ageGroup')}: ${formatAgeGroupLabel(signal.ageGroup)}`;
+    }
+    return '';
+  }
+
   function formatAvailability(availability) {
     const normalized = normalizeAvailability(availability);
     if (normalized === 'Any') {
@@ -4702,6 +5016,8 @@
       roleLabel.dataset.d18n = roleKey;
       roleLabel.textContent = t(roleKey);
     }
+
+    syncExploreAgeGroupFilter();
   }
 
   function syncExploreRoleFilterOptions() {
@@ -4790,6 +5106,28 @@
       rankFilter._uspecRebuildMenu();
     }
     updateGameFilterHint();
+  }
+
+  function syncExploreAgeGroupFilter() {
+    const ageFilter = document.getElementById('ageGroupFilter');
+    const ageWrap = document.getElementById('ageGroupFilterWrap');
+    if (!ageFilter) {
+      return;
+    }
+
+    const normalizedAgeGroup = AGE_GROUPS.includes(state.ageGroup) ? state.ageGroup : 'Any';
+    const enabled = state.mode === 'players';
+    state.ageGroup = enabled ? normalizedAgeGroup : 'Any';
+
+    if (ageWrap) {
+      ageWrap.classList.toggle('hidden', !enabled);
+    }
+
+    ageFilter.value = state.ageGroup;
+    setSelectEnabled(ageFilter, enabled);
+    if (typeof ageFilter._uspecRebuildMenu === 'function') {
+      ageFilter._uspecRebuildMenu();
+    }
   }
 
   function getRankTierKey(gameKey, tier) {
@@ -5015,6 +5353,16 @@
     const sourceAvailabilityDetail = sourcePlayer && sourcePlayer.availabilityDetail
       ? sanitizeTextValue(sourcePlayer.availabilityDetail, '', 80)
       : '';
+    const profileAgeSignal = buildAgeSignal({
+      birthDate: profilePublic.birthDate,
+      birthYear: profilePublic.birthYear,
+      ageDisplay: profilePublic.ageDisplay
+    });
+    const sourceAgeSignal = buildAgeSignal(sourcePlayer || {});
+    const hasProfileAgeConfig = normalizeBirthDate(profilePublic.birthDate) !== ''
+      || normalizeBirthYear(profilePublic.birthYear) !== null
+      || normalizeAgeDisplayMode(profilePublic.ageDisplay) !== AGE_DISPLAY_MODES.NONE;
+    const ageSignal = hasProfileAgeConfig ? profileAgeSignal : sourceAgeSignal;
     const secondaryGames = getOrderedGameKeys(primaryGame)
       .filter((gameId) => gameId !== primaryGame)
       .map((gameId) => {
@@ -5049,6 +5397,12 @@
       mainPlatform,
       availability: profileAvailability || sourceAvailability || 'Any',
       availabilityDetail: profileAvailabilityDetail || sourceAvailabilityDetail || '',
+      birthDate: ageSignal.birthDate,
+      birthYear: ageSignal.birthYear,
+      ageDisplay: ageSignal.ageDisplay,
+      age: ageSignal.age,
+      ageGroup: ageSignal.ageGroup,
+      ageSignal,
       secondaryGames,
       avatar: avatarConfig,
       conductSubjectType: 'player',
@@ -5067,6 +5421,7 @@
     const mainPeak = sanitizeTextValue(mainEntry.peak, mainRank, 64);
     const mainHandle = sanitizeTextValue(mainEntry.handle, safePlayer.handle || '-', 64);
     const mainPlatform = resolvePlatformForGame(mainEntry, safePlayer);
+    const ageSignal = buildAgeSignal(safePlayer);
 
     let secondaryGames = [];
     if (Array.isArray(safePlayer.secondaryGames) && safePlayer.secondaryGames.length) {
@@ -5124,6 +5479,12 @@
       mainPlatform,
       availability: safePlayer.availability || 'Any',
       availabilityDetail: safePlayer.availabilityDetail ? String(safePlayer.availabilityDetail).trim() : '',
+      birthDate: ageSignal.birthDate,
+      birthYear: ageSignal.birthYear,
+      ageDisplay: ageSignal.ageDisplay,
+      age: ageSignal.age,
+      ageGroup: ageSignal.ageGroup,
+      ageSignal,
       secondaryGames,
       avatar: avatarConfig,
       conductSubjectType: 'player',
@@ -5170,9 +5531,22 @@
     const proofBadge = renderProofBadge(viewModel.proofStatus, { compact: true });
     const availabilityLabel = formatAvailability(viewModel.availability || 'Any');
     const availabilityDetail = viewModel.availabilityDetail ? String(viewModel.availabilityDetail).trim() : '';
+    const ageSignal = viewModel.ageSignal && typeof viewModel.ageSignal === 'object'
+      ? viewModel.ageSignal
+      : buildAgeSignal(viewModel);
     const mainGameLogo = renderProfileGameLogo(viewModel.mainGame, '');
     const mainPlatform = getPlatformLabel(viewModel.mainPlatform || '');
     const rankVisual = renderRankVisual({ rank: viewModel.mainRank }, viewModel.mainGame);
+    const ageLabel = ageSignal.showAge
+      ? t('d.profile.age')
+      : ageSignal.showGroup
+        ? t('d.profile.ageGroup')
+        : '';
+    const ageValue = ageSignal.showAge
+      ? String(ageSignal.age)
+      : ageSignal.showGroup
+        ? formatAgeGroupLabel(ageSignal.ageGroup)
+        : '';
 
     return [
       `<h4 class="profile-main-panel-title">${escapeHtml(t('d.profile.mainGameDetails'))}</h4>`,
@@ -5208,6 +5582,14 @@
       `<span class="profile-main-label">${escapeHtml(t('d.profile.availability'))}</span>`,
       `<span class="profile-main-value">${escapeHtml(availabilityLabel)}</span>`,
       '</div>',
+      ageSignal.isVisible
+        ? [
+          '<div class="profile-main-row">',
+          `<span class="profile-main-label">${escapeHtml(ageLabel)}</span>`,
+          `<span class="profile-main-value">${escapeHtml(ageValue)}</span>`,
+          '</div>'
+        ].join('')
+        : '',
       availabilityDetail
         ? `<p class="profile-main-subvalue">${escapeHtml(availabilityDetail)}</p>`
         : ''
@@ -5492,6 +5874,7 @@
       : profile.displayName;
     const heroConductSummary = formatConductSummary('player', heroSubject, entitiesState);
     setProfileField('hero.conductSummary', heroConductSummary);
+    applyNetworkRecommendationGate();
     renderProfileEditorControls();
     renderProfileHeaderActions();
   }
@@ -5513,6 +5896,9 @@
       mainGame: document.getElementById('editorMainGame'),
       profileAvailability: document.getElementById('profileAvailability'),
       profileAvailabilityDetail: document.getElementById('profileAvailabilityDetail'),
+      profileBirthDate: document.getElementById('profileBirthDate'),
+      profileBirthYear: document.getElementById('profileBirthYear'),
+      profileAgeVisibility: document.getElementById('profileAgeVisibility'),
       owHandle: document.getElementById('editorOwHandle'),
       owTier: document.getElementById('editorOwTier'),
       owDivision: document.getElementById('editorOwDivision'),
@@ -5657,6 +6043,18 @@
     if (inputs.profileAvailabilityDetail) {
       inputs.profileAvailabilityDetail.value = data.availabilityDetail || '';
     }
+    if (inputs.profileBirthDate) {
+      inputs.profileBirthDate.value = normalizeBirthDate(data.birthDate) || '';
+    }
+    if (inputs.profileBirthYear) {
+      inputs.profileBirthYear.value = Number.isFinite(Number(data.birthYear)) ? String(data.birthYear) : '';
+    }
+    if (inputs.profileAgeVisibility) {
+      inputs.profileAgeVisibility.value = normalizeAgeDisplayMode(data.ageDisplay);
+      if (typeof inputs.profileAgeVisibility._uspecRebuildMenu === 'function') {
+        inputs.profileAgeVisibility._uspecRebuildMenu();
+      }
+    }
 
     populateProfileRankOptions();
     populateProfilePlatformOptions();
@@ -5776,6 +6174,10 @@
     setButtonLoading(saveButton, true, t('d.editor.saving'));
     persistUiSubmitMeta('profileEditor', { status: 'pending', section: state.profileEditorSection });
     const currentProfile = normalizeProfileState(state.profile);
+    const normalizedBirthDate = normalizeBirthDate(inputs.profileBirthDate ? inputs.profileBirthDate.value : '');
+    const normalizedBirthYear = normalizedBirthDate
+      ? normalizeBirthYear(normalizedBirthDate.slice(0, 4))
+      : normalizeBirthYear(inputs.profileBirthYear ? inputs.profileBirthYear.value : currentProfile.publicProfile.birthYear);
 
     const draft = {
       version: PROFILE_VERSION,
@@ -5789,6 +6191,9 @@
         mainGame: inputs.mainGame ? inputs.mainGame.value : 'overwatch',
         availability: normalizeAvailability(inputs.profileAvailability ? inputs.profileAvailability.value : 'Any'),
         availabilityDetail: inputs.profileAvailabilityDetail ? sanitizeTextValue(inputs.profileAvailabilityDetail.value, '', 80) : '',
+        birthDate: normalizedBirthDate,
+        birthYear: normalizedBirthYear,
+        ageDisplay: normalizeAgeDisplayMode(inputs.profileAgeVisibility ? inputs.profileAgeVisibility.value : AGE_DISPLAY_MODES.NONE),
         games: {
           overwatch: {
             handle: inputs.owHandle.value,
@@ -5907,6 +6312,13 @@
       return false;
     }
 
+    if (state.ageGroup !== 'Any') {
+      const ageGroup = buildAgeSignal(player).ageGroup;
+      if (ageGroup !== state.ageGroup) {
+        return false;
+      }
+    }
+
     const games = player.games.filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game);
     if (!games.length) {
       return false;
@@ -5997,6 +6409,8 @@
     const countryName = formatCountry(player.country);
     const countryFlag = countryCodeToFlagEmoji(player.country);
     const countryText = countryFlag ? `${countryFlag} ${countryName}` : countryName;
+    const ageSignal = buildAgeSignal(player);
+    const ageSignalText = getAgeSignalText(ageSignal);
     const avatarConfig = resolveAvatarConfig(player, player.handle);
     const avatarBadge = renderAvatarBadgeHTML(avatarConfig, {
       size: 'md',
@@ -6034,6 +6448,7 @@
       `<span class="scout-chip scout-chip--platform"><strong>${escapeHtml(t('d.card.chip.platform'))}</strong><span>${escapeHtml(platformLabel)}</span></span>`,
       '</div>',
       availabilityDetail ? `<p class="availability-detail">${escapeHtml(availabilityDetail)}</p>` : '',
+      ageSignalText ? `<p class="age-signal">${escapeHtml(ageSignalText)}</p>` : '',
       '<div class="result-card__meta">',
       `<span class="meta-chip">${escapeHtml(t('d.card.region'))}: ${escapeHtml(player.region)}</span>`,
       `<span class="meta-chip">${escapeHtml(t('d.card.country'))}: ${escapeHtml(countryText)}</span>`,
@@ -6302,24 +6717,12 @@
       { key: t('d.compare.row.role'), value: (p) => formatRole(getPrimaryGame(p).role) || '-' },
       { key: t('d.compare.row.rank'), value: (p) => getPrimaryGame(p).rank || '-' },
       { key: t('d.compare.row.proof'), value: (p) => renderProofBadge(getPrimaryGame(p).proof, { compact: true }), isHtml: true },
-      { key: t('d.compare.row.country'), value: (p) => formatCountry(p.country) },
+      { key: t('d.compare.row.country'), value: (p) => formatCountryWithFlag(p.country) },
       { key: t('d.compare.row.availability'), value: (p) => formatAvailability(p.availability) },
       { key: t('d.compare.row.languages'), value: (p) => p.language.join(', ') }
     ];
 
     compareContent.innerHTML = [
-      '<div class="compare-profile-actions">',
-      selected.map((player) => [
-        `<button type="button" class="compare-profile-action" data-action="open-player-compare" data-handle="${escapeHtml(player.handle)}" data-player-id="${escapeHtml(getPlayerViewId(player))}" data-game="${escapeHtml(getPrimaryGame(player).game)}">`,
-        renderAvatarBadgeHTML(resolveAvatarConfig(player, player.handle), {
-          size: 'sm',
-          className: 'compare-slot-avatar',
-          ariaLabel: `${t('d.avatar.defaultAlt')} ${player.handle}`
-        }),
-        `<span>${escapeHtml(t('d.card.open'))}: ${escapeHtml(player.handle)}</span>`,
-        '</button>'
-      ].join('')).join(''),
-      '</div>',
       '<table class="compare-table">',
       `<thead><tr><th>${t('d.compare.header.field')}</th>`,
       selected.map((player) => {
@@ -6330,20 +6733,21 @@
         return [
           '<th>',
           `<button type="button" class="compare-player-open" data-action="open-player-compare" data-handle="${escapeHtml(player.handle)}" data-player-id="${escapeHtml(getPlayerViewId(player))}" data-game="${escapeHtml(primary.game)}">`,
-          '<span class="compare-player-open-content">',
+          '<span class="compare-player-open-card">',
           renderAvatarBadgeHTML(resolveAvatarConfig(player, player.handle), {
             size: 'sm',
-            className: 'compare-slot-avatar',
+            className: 'compare-player-open-avatar',
             ariaLabel: `${t('d.avatar.defaultAlt')} ${player.handle}`
           }),
-          '<span class="compare-player-open-copy">',
-          `<span>${escapeHtml(player.handle)}</span>`,
-          '<span class="compare-player-open-meta">',
-          logo ? `<img class="compare-slot-game" src="${escapeHtml(logo.src)}" alt="${escapeHtml(logo.alt)}">` : '',
+          `<span class="compare-player-open-name">${escapeHtml(player.handle)}</span>`,
+          '<span class="compare-player-open-secondary">',
+          logo ? `<img class="compare-player-open-game" src="${escapeHtml(logo.src)}" alt="${escapeHtml(logo.alt)}">` : '',
+          `<span>${escapeHtml(getGameLabel(primary.game))}</span>`,
+          '<span class="compare-player-open-dot">·</span>',
           rankVisual,
-          `<span>${escapeHtml(platform)}</span>`,
+          `<span>${escapeHtml(primary.rank || '-')}</span>`,
           '</span>',
-          '</span>',
+          `<span class="compare-player-open-tertiary">${escapeHtml(platform)}</span>`,
           '</span>',
           '</button>',
           '</th>'
@@ -7332,6 +7736,7 @@
       game: state.game,
       role: state.role,
       rankRange: state.rank,
+      ageGroup: state.ageGroup,
       proof: state.proof
     });
   }
@@ -7341,6 +7746,21 @@
       const gameId = chip.dataset.game || GAME_IDS.ANY;
       chip.classList.toggle('active', gameId === state.game);
     });
+  }
+
+  function syncHeroBrowseButtons() {
+    const ctaPlayer = document.getElementById('ctaPlayer');
+    const ctaTeam = document.getElementById('ctaTeam');
+    if (ctaPlayer) {
+      const active = state.mode === 'players';
+      ctaPlayer.classList.toggle('is-selected', active);
+      ctaPlayer.setAttribute('aria-pressed', String(active));
+    }
+    if (ctaTeam) {
+      const active = state.mode === 'teams';
+      ctaTeam.classList.toggle('is-selected', active);
+      ctaTeam.setAttribute('aria-pressed', String(active));
+    }
   }
 
   function getQuickStartRunLabelKey() {
@@ -7364,6 +7784,7 @@
   }
 
   function syncQuickStartControls() {
+    syncHeroBrowseButtons();
     document.querySelectorAll('[data-quick-game]').forEach((button) => {
       const gameId = button.dataset.quickGame || '';
       button.classList.toggle('active', gameId === state.game);
@@ -8073,8 +8494,44 @@
     document.body.style.overflow = '';
   }
 
+  function applyNetworkRecommendationGate() {
+    const targetHandle = getExternalProfileTargetHandle();
+    const gateEnabled = Boolean(targetHandle);
+    const canWriteReference = !gateEnabled || canWriteRecommendationForCurrentContext();
+    const hideReference = !canWriteReference;
+
+    document.querySelectorAll('[data-open-network-modal][data-network-mode="reference"]').forEach((button) => {
+      button.classList.toggle('hidden', hideReference);
+      button.setAttribute('aria-hidden', hideReference ? 'true' : 'false');
+    });
+
+    const referenceTab = document.querySelector('#networkTabs [data-network-mode="reference"]');
+    if (referenceTab) {
+      referenceTab.classList.toggle('hidden', hideReference);
+      referenceTab.setAttribute('aria-hidden', hideReference ? 'true' : 'false');
+      referenceTab.disabled = hideReference;
+      referenceTab.tabIndex = hideReference ? -1 : 0;
+    }
+
+    if (hideReference && state.networkMode === 'reference') {
+      state.networkMode = 'intro';
+    }
+
+    const introForm = document.getElementById('networkIntroForm');
+    const referenceForm = document.getElementById('networkReferenceForm');
+    if (introForm) {
+      introForm.classList.toggle('hidden', state.networkMode !== 'intro');
+    }
+    if (referenceForm) {
+      referenceForm.classList.toggle('hidden', hideReference || state.networkMode !== 'reference');
+    }
+  }
+
   function setNetworkMode(mode, trackSwitch) {
-    const nextMode = mode === 'reference' ? 'reference' : 'intro';
+    const requestedMode = mode === 'reference' ? 'reference' : 'intro';
+    const nextMode = requestedMode === 'reference' && !canWriteRecommendationForCurrentContext()
+      ? 'intro'
+      : requestedMode;
     state.networkMode = nextMode;
 
     const introForm = document.getElementById('networkIntroForm');
@@ -8100,6 +8557,8 @@
     if (trackSwitch) {
       track('switch_network_mode', { mode: nextMode });
     }
+
+    applyNetworkRecommendationGate();
   }
 
   function openNetworkModal(mode) {
@@ -8107,7 +8566,11 @@
     if (!modal) {
       return;
     }
-    setNetworkMode(mode || state.networkMode, false);
+    const requestedMode = mode || state.networkMode;
+    const nextMode = requestedMode === 'reference' && !canWriteRecommendationForCurrentContext()
+      ? 'intro'
+      : requestedMode;
+    setNetworkMode(nextMode, false);
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     track('open_network_modal', { mode: state.networkMode });
@@ -8416,15 +8879,17 @@
     const searchInput = document.getElementById('searchInput');
     const roleFilter = document.getElementById('roleFilter');
     const rankFilter = document.getElementById('rankFilter');
+    const ageGroupFilter = document.getElementById('ageGroupFilter');
     const regionFilter = document.getElementById('regionFilter');
     const availabilityFilter = document.getElementById('availabilityFilter');
     const proofFilter = document.getElementById('proofFilter');
-    const selectNodes = [roleFilter, rankFilter, regionFilter, availabilityFilter, proofFilter];
+    const selectNodes = [roleFilter, rankFilter, ageGroupFilter, regionFilter, availabilityFilter, proofFilter];
 
     applyPersistedExploreFilters();
     initFilterSelectToggles(selectNodes);
     syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
+    syncExploreAgeGroupFilter();
     updateExploreModeSemantics();
 
     if (searchInput) {
@@ -8447,6 +8912,7 @@
     const filterBindings = [
       [roleFilter, 'role'],
       [rankFilter, 'rank'],
+      [ageGroupFilter, 'ageGroup'],
       [regionFilter, 'region'],
       [availabilityFilter, 'availability'],
       [proofFilter, 'proof']
@@ -8988,12 +9454,17 @@
         setButtonLoading(submit, true, t('d.network.submitting'));
         persistUiSubmitMeta('networkIntro', { status: 'pending' });
 
-        const organization = introForm.querySelector('input[name="organization"]').value.trim();
-        const role = introForm.querySelector('input[name="role"]').value.trim();
+        const messageInput = introForm.querySelector('textarea[name="message"]');
+        const reason = 'NETWORKING';
+        const message = messageInput ? messageInput.value.trim() : '';
 
         try {
-          await callMockApi('network_intro', { organization, role });
-          track('submit_intro_fake', { organization, role });
+          await callMockApi('network_intro', { reason, message });
+          track('submit_intro_fake', { reason, hasMessage: Boolean(message) });
+          const targetHandle = getExternalProfileTargetHandle();
+          if (targetHandle) {
+            setMutualContact(targetHandle, RELATIONSHIP_STATUS.CONNECTED);
+          }
 
           const success = document.getElementById('networkSuccess');
           if (success) {
@@ -9001,9 +9472,11 @@
           }
           persistUiSubmitMeta('networkIntro', {
             status: 'success',
+            reason,
             requestId: makeUnifiedId('network')
           });
           showToast('d.network.success', 'success');
+          applyNetworkRecommendationGate();
         } catch (_err) {
           persistUiSubmitMeta('networkIntro', { status: 'error' });
           showToast('d.toast.error.generic', 'error');
@@ -9097,6 +9570,7 @@
       inputs.proofStatus,
       inputs.mainGame,
       inputs.profileAvailability,
+      inputs.profileAgeVisibility,
       inputs.country,
       inputs.owTier,
       inputs.owDivision,
@@ -9200,6 +9674,8 @@
         scrollToExplore();
       });
     }
+
+    syncHeroBrowseButtons();
   }
 
   function initQuickStart() {

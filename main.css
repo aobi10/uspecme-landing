@@ -602,11 +602,27 @@ body.is-authenticated .preview-lock {
   border-color: rgb(var(--border));
   background: rgb(var(--surface-2));
   color: rgb(var(--text-2));
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 .hero-actions-legacy .button.primary:hover,
 .hero-actions-legacy .button.secondary:hover {
   color: rgb(var(--text));
-  border-color: rgb(var(--primary) / 0.42);
+  border-color: rgb(var(--primary) / 0.68);
+  background: linear-gradient(140deg, rgb(var(--primary) / 0.22), rgb(var(--mint) / 0.16));
+  box-shadow: 0 8px 18px rgb(var(--primary) / 0.18);
+  transform: translateY(-1px);
+}
+.hero-actions-legacy .button.is-selected {
+  border-color: transparent;
+  color: rgb(8 12 24);
+  font-weight: 700;
+  background: linear-gradient(140deg, rgb(var(--primary)), rgb(var(--mint)));
+  box-shadow: 0 10px 20px rgb(var(--primary) / 0.24);
+}
+.hero-actions-legacy .button.primary:focus-visible,
+.hero-actions-legacy .button.secondary:focus-visible {
+  outline: 2px solid rgb(var(--primary) / 0.72);
+  outline-offset: 2px;
 }
 .network-cta-row {
   margin-top: 0.75rem;
@@ -723,6 +739,19 @@ body.is-authenticated .preview-lock {
 .quick-mode-toggle button {
   font-size: 13px;
   padding: 7px 10px;
+}
+.quick-mode-toggle button:not(.active):hover {
+  color: rgb(var(--text));
+  background: rgb(var(--primary) / 0.2);
+}
+.quick-mode-toggle button:focus-visible {
+  outline: 2px solid rgb(var(--primary) / 0.72);
+  outline-offset: -2px;
+}
+.quick-mode-toggle button.active {
+  color: rgb(var(--text));
+  background: rgb(var(--primary) / 0.3);
+  box-shadow: inset 0 0 0 1px rgb(var(--primary) / 0.55);
 }
 .quick-run .button {
   white-space: nowrap;
@@ -922,10 +951,20 @@ body.is-authenticated .preview-lock {
   color: rgb(var(--text-2));
   background: rgb(var(--surface-2));
   cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+.mode-toggle button:not(.active):hover {
+  color: rgb(var(--text));
+  background: rgb(var(--primary) / 0.2);
+}
+.mode-toggle button:focus-visible {
+  outline: 2px solid rgb(var(--primary) / 0.72);
+  outline-offset: -2px;
 }
 .mode-toggle button.active {
   color: rgb(var(--text));
-  background: rgb(var(--surface-3));
+  background: rgb(var(--primary) / 0.3);
+  box-shadow: inset 0 0 0 1px rgb(var(--primary) / 0.58);
 }
 .explore-mode-hint {
   margin: -0.15rem 0 0.8rem;
@@ -1221,6 +1260,12 @@ body.is-authenticated .preview-lock {
 .availability-detail {
   margin: -2px 0 0;
   color: rgb(var(--muted));
+  font-size: 12px;
+  line-height: 1.4;
+}
+.age-signal {
+  margin: -2px 0 0;
+  color: rgb(var(--text-2));
   font-size: 12px;
   line-height: 1.4;
 }
@@ -1649,60 +1694,73 @@ body.is-authenticated .preview-lock {
   outline: 2px solid rgb(var(--primary) / 0.62);
   outline-offset: 1px;
 }
-.compare-profile-actions {
-  margin-bottom: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.compare-profile-action {
-  border: 1px solid rgb(var(--border));
-  border-radius: 999px;
-  background: rgb(var(--surface-1));
-  color: rgb(var(--text-2));
-  padding: 5px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.compare-profile-action:hover {
-  color: rgb(var(--text));
-  border-color: rgb(var(--primary) / 0.45);
-}
 .compare-player-open {
-  border: 0;
-  background: transparent;
+  border: 1px solid rgb(var(--border));
+  background: rgb(var(--surface-1));
   color: rgb(var(--text));
-  padding: 0;
+  padding: 6px;
   font: inherit;
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  justify-content: center;
+  border-radius: 10px;
+  transition: border-color 130ms ease, background 130ms ease, transform 130ms ease, box-shadow 130ms ease;
 }
-.compare-player-open-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.compare-player-open-copy {
-  min-width: 0;
+.compare-player-open-card {
+  min-height: 84px;
+  width: 100%;
   display: grid;
-  gap: 1px;
+  justify-items: center;
+  gap: 3px;
+  text-align: center;
 }
-.compare-player-open-meta {
+.compare-player-open-avatar {
+  margin-bottom: 1px;
+}
+.compare-player-open-name {
+  min-width: 0;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+  color: rgb(var(--text));
+  overflow-wrap: anywhere;
+}
+.compare-player-open-secondary {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 5px;
+  min-width: 0;
   color: rgb(var(--muted));
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.compare-player-open-game {
+  width: 13px;
+  height: 13px;
+  object-fit: contain;
+  border-radius: 2px;
+}
+.compare-player-open-dot {
+  color: rgb(var(--muted));
+}
+.compare-player-open-tertiary {
+  color: rgb(var(--text-2));
   font-size: 11px;
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
 .compare-player-open:hover {
-  color: rgb(var(--primary));
+  border-color: rgb(var(--primary) / 0.52);
+  background: linear-gradient(180deg, rgb(var(--surface-2)), rgb(var(--surface-1)));
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgb(0 0 0 / 0.18);
 }
 .compare-player-open:focus-visible {
   outline: 2px solid rgb(var(--primary) / 0.62);
@@ -1745,12 +1803,19 @@ body.is-authenticated .preview-lock {
   border-collapse: collapse;
   font-size: 13px;
 }
+.compare-table thead th {
+  vertical-align: top;
+}
 .compare-table th,
 .compare-table td {
   border-bottom: 1px solid rgb(var(--border));
   padding: 7px 5px;
   text-align: left;
   color: rgb(var(--text-2));
+}
+.compare-table thead th:not(:first-child),
+.compare-table tbody td:not(:first-child) {
+  text-align: center;
 }
 .compare-table th:first-child,
 .compare-table td:first-child {
@@ -2755,6 +2820,15 @@ textarea {
   }
   .compare-slot-name {
     white-space: normal;
+  }
+  .compare-player-open {
+    padding: 5px;
+  }
+  .compare-player-open-card {
+    min-height: 76px;
+  }
+  .compare-player-open-name {
+    font-size: 13px;
   }
   .compare-dock {
     left: max(0.55rem, env(safe-area-inset-left));
