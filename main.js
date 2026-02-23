@@ -215,6 +215,8 @@
     rank: 'Any',
     ageGroup: 'Any',
     region: 'Any',
+    language: 'Any',
+    country: 'Any',
     availability: 'Any',
     proof: 'Any',
     compare: [],
@@ -1207,6 +1209,8 @@
       rank: state.rank,
       ageGroup: state.ageGroup,
       region: state.region,
+      language: state.language,
+      country: state.country,
       availability: state.availability,
       proof: state.proof
     });
@@ -1226,6 +1230,8 @@
     state.rank = typeof saved.rank === 'string' ? saved.rank : 'Any';
     state.ageGroup = AGE_GROUPS.includes(saved.ageGroup) ? saved.ageGroup : 'Any';
     state.region = typeof saved.region === 'string' ? saved.region : 'Any';
+    state.language = typeof saved.language === 'string' ? saved.language : 'Any';
+    state.country = typeof saved.country === 'string' ? saved.country : 'Any';
     state.availability = typeof saved.availability === 'string' ? saved.availability : 'Any';
     state.proof = typeof saved.proof === 'string' ? saved.proof : 'Any';
   }
@@ -2567,6 +2573,33 @@
     }
   ];
 
+  const TEAM_GEO_LANGUAGE_OVERRIDES = {
+    'vienna-ascend': { country: 'AT', language: ['DE', 'EN'] },
+    'cloud-quarter': { country: 'DE', language: ['DE', 'EN'] },
+    'northforge-ow': { country: 'US', language: ['EN'] },
+    'payload-union': { country: 'KR', language: ['KR', 'EN'] },
+    'river-wardens': { country: 'NL', language: ['NL', 'EN'] },
+    'midlane-district': { country: 'US', language: ['EN'] },
+    'storm-harbor': { country: 'SE', language: ['EN', 'SE'] },
+    'last-circle-labs': { country: 'AU', language: ['EN'] },
+    'neon-vanguard': { country: 'DE', language: ['DE', 'EN'] },
+    'quantum-sigil': { country: 'US', language: ['EN'] },
+    'crossfire-labs': { country: 'BE', language: ['EN', 'FR'] },
+    'astral-path': { country: 'JP', language: ['JP', 'EN'] }
+  };
+
+  teams.forEach((team) => {
+    const fallback = TEAM_GEO_LANGUAGE_OVERRIDES[team.slug] || {};
+    const country = normalizeCountryCode(team.country || fallback.country);
+    if (country) {
+      team.country = country;
+    }
+    const language = normalizeLanguageList(Array.isArray(team.language) ? team.language : fallback.language);
+    if (language.length) {
+      team.language = language;
+    }
+  });
+
   const TEAM_PLATFORM_OVERRIDES = {
     'vienna-ascend': [PLATFORM_IDS.PC],
     'cloud-quarter': [PLATFORM_IDS.PC, PLATFORM_IDS.PLAYSTATION],
@@ -2814,6 +2847,8 @@
       'd.filter.rank': 'Rank',
       'd.filter.ageGroup': 'Age group',
       'd.filter.region': 'Region',
+      'd.filter.country': 'Country',
+      'd.filter.language': 'Language',
       'd.filter.availability': 'Availability',
       'd.filter.proof': 'Proof',
       'd.filter.any': 'Any',
@@ -2900,7 +2935,7 @@
       'd.compare.dock.selectedCount': '{count}/2 selected',
       'd.compare.dock.open': 'Compare now',
       'd.compare.dock.clear': 'Clear',
-      'd.compare.empty': 'Select up to 2 players to compare role, rank, proof, country and availability.',
+      'd.compare.empty': 'Select up to 2 players to compare role, rank, proof, age, country, platform and availability.',
       'd.compare.invite': 'Invite selected',
       'd.empty': 'No results for current filters.',
       'd.legal.privacy': 'Privacy',
@@ -2970,9 +3005,14 @@
       'd.compare.row.role': 'Role',
       'd.compare.row.rank': 'Rank',
       'd.compare.row.proof': 'Proof',
+      'd.compare.row.age': 'Age',
       'd.compare.row.country': 'Country',
       'd.compare.row.availability': 'Availability',
       'd.compare.row.languages': 'Languages',
+      'd.compare.row.platform': 'Platform',
+      'd.compare.row.mainGame': 'Main game',
+      'd.compare.value.notPublic': 'Not public',
+      'd.compare.header.metric': 'Metric',
       'd.compare.header.field': 'Field',
       'd.search.placeholder.players': 'Search in-game name',
       'd.search.placeholder.teams': 'Search team name',
@@ -3408,6 +3448,8 @@
       'd.filter.rank': 'Rank',
       'd.filter.ageGroup': 'Altersgruppe',
       'd.filter.region': 'Region',
+      'd.filter.country': 'Land',
+      'd.filter.language': 'Sprache',
       'd.filter.availability': 'Verfügbarkeit',
       'd.filter.proof': 'Proof',
       'd.filter.any': 'Alle',
@@ -3494,7 +3536,7 @@
       'd.compare.dock.selectedCount': '{count}/2 gewählt',
       'd.compare.dock.open': 'Jetzt vergleichen',
       'd.compare.dock.clear': 'Leeren',
-      'd.compare.empty': 'Wähle bis zu 2 Spieler für Rollen-, Rank-, Proof-, Herkunftsland- und Verfügbarkeitsvergleich.',
+      'd.compare.empty': 'Wähle bis zu 2 Spieler für Rollen-, Rank-, Proof-, Alters-, Herkunftsland-, Plattform- und Verfügbarkeitsvergleich.',
       'd.compare.invite': 'Ausgewählte einladen',
       'd.empty': 'Keine Ergebnisse für diese Filter.',
       'd.legal.privacy': 'Datenschutz',
@@ -3564,9 +3606,14 @@
       'd.compare.row.role': 'Rolle',
       'd.compare.row.rank': 'Rank',
       'd.compare.row.proof': 'Proof',
+      'd.compare.row.age': 'Alter',
       'd.compare.row.country': 'Herkunftsland',
       'd.compare.row.availability': 'Verfügbarkeit',
       'd.compare.row.languages': 'Sprachen',
+      'd.compare.row.platform': 'Plattform',
+      'd.compare.row.mainGame': 'Hauptspiel',
+      'd.compare.value.notPublic': 'Nicht öffentlich',
+      'd.compare.header.metric': 'Merkmal',
       'd.compare.header.field': 'Feld',
       'd.search.placeholder.players': 'Ingame-Namen suchen',
       'd.search.placeholder.teams': 'Teamnamen suchen',
@@ -4064,6 +4111,8 @@
     syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
     syncExploreAgeGroupFilter();
+    syncExploreCountryFilterOptions();
+    syncExploreLanguageFilterOptions();
     updateExploreModeSemantics();
     syncQuickStartControls();
     applyWaitlistSuccessCopy();
@@ -4788,6 +4837,18 @@
     return '';
   }
 
+  function formatCompareAgeValue(player) {
+    const signal = buildAgeSignal(player || {});
+    if (signal.showAge && Number.isFinite(signal.age)) {
+      return String(signal.age);
+    }
+    if (signal.showGroup && signal.ageGroup) {
+      return formatAgeGroupLabel(signal.ageGroup);
+    }
+    const notPublic = t('d.compare.value.notPublic');
+    return notPublic && notPublic !== 'd.compare.value.notPublic' ? notPublic : '-';
+  }
+
   function formatAvailability(availability) {
     const normalized = normalizeAvailability(availability);
     if (normalized === 'Any') {
@@ -4830,6 +4891,22 @@
     const label = formatCountry(countryCode);
     const flag = countryCodeToFlagEmoji(countryCode);
     return flag ? `${flag} ${label}` : label;
+  }
+
+  function normalizeCountryCode(value) {
+    const normalized = String(value || '').trim().toUpperCase();
+    return PROFILE_COUNTRY_CODES.includes(normalized) ? normalized : '';
+  }
+
+  function normalizeLanguageCode(value) {
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function normalizeLanguageList(values) {
+    if (!Array.isArray(values)) {
+      return [];
+    }
+    return Array.from(new Set(values.map((value) => normalizeLanguageCode(value)).filter(Boolean)));
   }
 
   function formatRole(role) {
@@ -5127,6 +5204,78 @@
     setSelectEnabled(ageFilter, enabled);
     if (typeof ageFilter._uspecRebuildMenu === 'function') {
       ageFilter._uspecRebuildMenu();
+    }
+  }
+
+  function getExploreCountryOptions() {
+    const countryCodes = new Set();
+    players.forEach((player) => {
+      const code = normalizeCountryCode(player && player.country);
+      if (code) {
+        countryCodes.add(code);
+      }
+    });
+    teams.forEach((team) => {
+      const code = normalizeCountryCode(team && team.country);
+      if (code) {
+        countryCodes.add(code);
+      }
+    });
+    const sorted = Array.from(countryCodes).sort((a, b) => formatCountry(a).localeCompare(formatCountry(b)));
+    return ['Any'].concat(sorted);
+  }
+
+  function getExploreLanguageOptions() {
+    const languageCodes = new Set();
+    players.forEach((player) => {
+      normalizeLanguageList(player && player.language).forEach((code) => {
+        languageCodes.add(code);
+      });
+    });
+    teams.forEach((team) => {
+      normalizeLanguageList(team && team.language).forEach((code) => {
+        languageCodes.add(code);
+      });
+    });
+    const sorted = Array.from(languageCodes).sort((a, b) => a.localeCompare(b));
+    return ['Any'].concat(sorted);
+  }
+
+  function syncExploreCountryFilterOptions() {
+    const countryFilter = document.getElementById('countryFilter');
+    if (!countryFilter) {
+      return;
+    }
+    const options = getExploreCountryOptions();
+    setSelectOptions(countryFilter, options, (value) => {
+      if (value === 'Any') {
+        return t('d.filter.any');
+      }
+      return formatCountry(value);
+    });
+    state.country = options.includes(state.country) ? state.country : 'Any';
+    countryFilter.value = state.country;
+    if (typeof countryFilter._uspecRebuildMenu === 'function') {
+      countryFilter._uspecRebuildMenu();
+    }
+  }
+
+  function syncExploreLanguageFilterOptions() {
+    const languageFilter = document.getElementById('languageFilter');
+    if (!languageFilter) {
+      return;
+    }
+    const options = getExploreLanguageOptions();
+    setSelectOptions(languageFilter, options, (value) => {
+      if (value === 'Any') {
+        return t('d.filter.any');
+      }
+      return value;
+    });
+    state.language = options.includes(state.language) ? state.language : 'Any';
+    languageFilter.value = state.language;
+    if (typeof languageFilter._uspecRebuildMenu === 'function') {
+      languageFilter._uspecRebuildMenu();
     }
   }
 
@@ -6308,6 +6457,17 @@
       return false;
     }
 
+    if (state.country !== 'Any' && normalizeCountryCode(player.country) !== state.country) {
+      return false;
+    }
+
+    if (state.language !== 'Any') {
+      const languages = normalizeLanguageList(player.language);
+      if (!languages.includes(normalizeLanguageCode(state.language))) {
+        return false;
+      }
+    }
+
     if (state.availability !== 'Any' && player.availability !== state.availability) {
       return false;
     }
@@ -6355,6 +6515,17 @@
 
     if (state.region !== 'Any' && team.region !== state.region) {
       return false;
+    }
+
+    if (state.country !== 'Any' && normalizeCountryCode(team.country) !== state.country) {
+      return false;
+    }
+
+    if (state.language !== 'Any') {
+      const languages = normalizeLanguageList(team.language);
+      if (!languages.includes(normalizeLanguageCode(state.language))) {
+        return false;
+      }
     }
 
     if (state.game !== GAME_IDS.ANY && !team.games.some((entry) => entry.game === state.game)) {
@@ -6406,9 +6577,7 @@
     const availabilityDetail = player.availabilityDetail ? String(player.availabilityDetail).trim() : '';
     const gameLogo = getGameLogoMeta(game.game);
     const platformLabel = getPlatformLabel(resolvePlatformForGame(game, player));
-    const countryName = formatCountry(player.country);
-    const countryFlag = countryCodeToFlagEmoji(player.country);
-    const countryText = countryFlag ? `${countryFlag} ${countryName}` : countryName;
+    const countryText = normalizeCountryCode(player.country) ? formatCountryWithFlag(player.country) : '-';
     const ageSignal = buildAgeSignal(player);
     const ageSignalText = getAgeSignalText(ageSignal);
     const avatarConfig = resolveAvatarConfig(player, player.handle);
@@ -6484,6 +6653,8 @@
     const gameLogo = getGameLogoMeta(primaryGame);
     const platformFocus = formatPlatformList(team.platforms);
     const hasPlatformFocus = platformFocus !== '—';
+    const countryText = normalizeCountryCode(team.country) ? formatCountryWithFlag(team.country) : '-';
+    const teamLanguage = normalizeLanguageList(team.language).join(', ');
     const avatarConfig = resolveAvatarConfig(team, team.name, { preferredStyle: AVATAR_STYLE_IDS.BRAND });
     const avatarBadge = renderAvatarBadgeHTML(avatarConfig, {
       size: 'md',
@@ -6522,6 +6693,8 @@
       availabilityDetail ? `<p class="availability-detail">${escapeHtml(availabilityDetail)}</p>` : '',
       '<div class="result-card__meta">',
       `<span class="meta-chip">${escapeHtml(t('d.card.region'))}: ${escapeHtml(team.region)}</span>`,
+      `<span class="meta-chip">${escapeHtml(t('d.card.country'))}: ${escapeHtml(countryText)}</span>`,
+      teamLanguage ? `<span class="meta-chip">${escapeHtml(teamLanguage)}</span>` : '',
       scopedNeeds.length > 1 ? `<span class="meta-chip">${escapeHtml(scopedNeeds[1])}</span>` : '',
       hasPlatformFocus ? `<span class="meta-chip">${escapeHtml(t('d.common.platformFocus'))}: ${escapeHtml(platformFocus)}</span>` : '',
       `<span class="conduct-line">${conduct}</span>`,
@@ -6653,17 +6826,15 @@
           size: 'sm',
           className: 'compare-slot-avatar'
         });
-        const rankVisual = renderRankVisual(primaryGame, primaryGame.game);
-        const platform = getPlatformLabel(resolvePlatformForGame(primaryGame, player));
         node.innerHTML = [
           '<span class="compare-slot-content">',
           avatarBadge,
           '<span class="compare-slot-copy">',
           `<span class="compare-slot-name">${escapeHtml(player.handle)}</span>`,
-          '<span class="compare-slot-meta">',
+          '<span class="compare-slot-secondary">',
           gameLogo ? `<img class="compare-slot-game" src="${escapeHtml(gameLogo.src)}" alt="${escapeHtml(gameLogo.alt)}">` : '',
-          rankVisual,
-          `<span>${escapeHtml(platform)}</span>`,
+          `<span>${escapeHtml(getGameLabel(primaryGame.game))}</span>`,
+          '</span>',
           '</span>',
           '</span>',
           '</span>'
@@ -6673,7 +6844,7 @@
         node.dataset.handle = player.handle;
         node.dataset.playerId = getPlayerViewId(player);
         node.dataset.game = primaryGame.game;
-        node.setAttribute('aria-label', `${player.handle} ${getGameLabel(primaryGame.game)} ${platform}`);
+        node.setAttribute('aria-label', `${player.handle} ${getGameLabel(primaryGame.game)}`);
         node.disabled = false;
         delete node.dataset.d18n;
         return;
@@ -6713,47 +6884,26 @@
       compareNow.textContent = t(compareNowKey);
     }
 
+    const selectedPrimaryGames = selected.map((player) => getPrimaryGame(player).game);
+    const isCrossGameCompare = selectedPrimaryGames.some((gameId) => gameId !== selectedPrimaryGames[0]);
     const rows = [
       { key: t('d.compare.row.role'), value: (p) => formatRole(getPrimaryGame(p).role) || '-' },
       { key: t('d.compare.row.rank'), value: (p) => getPrimaryGame(p).rank || '-' },
       { key: t('d.compare.row.proof'), value: (p) => renderProofBadge(getPrimaryGame(p).proof, { compact: true }), isHtml: true },
+      { key: t('d.compare.row.age'), value: (p) => formatCompareAgeValue(p) },
       { key: t('d.compare.row.country'), value: (p) => formatCountryWithFlag(p.country) },
       { key: t('d.compare.row.availability'), value: (p) => formatAvailability(p.availability) },
-      { key: t('d.compare.row.languages'), value: (p) => p.language.join(', ') }
+      { key: t('d.compare.row.languages'), value: (p) => p.language.join(', ') },
+      { key: t('d.compare.row.platform'), value: (p) => getPlatformLabel(resolvePlatformForGame(getPrimaryGame(p), p)) }
     ];
+    if (isCrossGameCompare) {
+      rows.push({ key: t('d.compare.row.mainGame'), value: (p) => getGameLabel(getPrimaryGame(p).game) });
+    }
 
     compareContent.innerHTML = [
       '<table class="compare-table">',
-      `<thead><tr><th>${t('d.compare.header.field')}</th>`,
-      selected.map((player) => {
-        const primary = getPrimaryGame(player);
-        const logo = getGameLogoMeta(primary.game);
-        const rankVisual = renderRankVisual(primary, primary.game);
-        const platform = getPlatformLabel(resolvePlatformForGame(primary, player));
-        return [
-          '<th>',
-          `<button type="button" class="compare-player-open" data-action="open-player-compare" data-handle="${escapeHtml(player.handle)}" data-player-id="${escapeHtml(getPlayerViewId(player))}" data-game="${escapeHtml(primary.game)}">`,
-          '<span class="compare-player-open-card">',
-          renderAvatarBadgeHTML(resolveAvatarConfig(player, player.handle), {
-            size: 'sm',
-            className: 'compare-player-open-avatar',
-            ariaLabel: `${t('d.avatar.defaultAlt')} ${player.handle}`
-          }),
-          `<span class="compare-player-open-name">${escapeHtml(player.handle)}</span>`,
-          '<span class="compare-player-open-secondary">',
-          logo ? `<img class="compare-player-open-game" src="${escapeHtml(logo.src)}" alt="${escapeHtml(logo.alt)}">` : '',
-          `<span>${escapeHtml(getGameLabel(primary.game))}</span>`,
-          '<span class="compare-player-open-dot">·</span>',
-          rankVisual,
-          `<span>${escapeHtml(primary.rank || '-')}</span>`,
-          '</span>',
-          `<span class="compare-player-open-tertiary">${escapeHtml(platform)}</span>`,
-          '</span>',
-          '</button>',
-          '</th>'
-        ].join('');
-      }).join(''),
-      '</tr></thead><tbody>',
+      `<caption class="sr-only">${escapeHtml(t('d.compare.header.metric'))}: ${selected.map((player) => player.handle).join(' vs ')}</caption>`,
+      '<tbody>',
       rows
         .map((row) => `<tr><td>${row.key}</td>${selected.map((p) => `<td>${row.isHtml ? row.value(p) : escapeHtml(row.value(p))}</td>`).join('')}</tr>`)
         .join(''),
@@ -7737,6 +7887,8 @@
       role: state.role,
       rankRange: state.rank,
       ageGroup: state.ageGroup,
+      country: state.country,
+      language: state.language,
       proof: state.proof
     });
   }
@@ -8881,15 +9033,19 @@
     const rankFilter = document.getElementById('rankFilter');
     const ageGroupFilter = document.getElementById('ageGroupFilter');
     const regionFilter = document.getElementById('regionFilter');
+    const countryFilter = document.getElementById('countryFilter');
+    const languageFilter = document.getElementById('languageFilter');
     const availabilityFilter = document.getElementById('availabilityFilter');
     const proofFilter = document.getElementById('proofFilter');
-    const selectNodes = [roleFilter, rankFilter, ageGroupFilter, regionFilter, availabilityFilter, proofFilter];
+    const selectNodes = [roleFilter, rankFilter, ageGroupFilter, regionFilter, countryFilter, languageFilter, availabilityFilter, proofFilter];
 
     applyPersistedExploreFilters();
     initFilterSelectToggles(selectNodes);
     syncExploreRoleFilterOptions();
     syncExploreRankFilterOptions();
     syncExploreAgeGroupFilter();
+    syncExploreCountryFilterOptions();
+    syncExploreLanguageFilterOptions();
     updateExploreModeSemantics();
 
     if (searchInput) {
@@ -8914,6 +9070,8 @@
       [rankFilter, 'rank'],
       [ageGroupFilter, 'ageGroup'],
       [regionFilter, 'region'],
+      [countryFilter, 'country'],
+      [languageFilter, 'language'],
       [availabilityFilter, 'availability'],
       [proofFilter, 'proof']
     ];

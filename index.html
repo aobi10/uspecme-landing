@@ -245,6 +245,26 @@
             </label>
 
             <label>
+              <span data-d18n="d.filter.country">Country</span>
+              <div class="select-wrap">
+                <select id="countryFilter">
+                  <option value="Any" data-d18n="d.filter.any">Any</option>
+                </select>
+                <button type="button" class="select-arrow" data-select-toggle="countryFilter" aria-label="Toggle options"></button>
+              </div>
+            </label>
+
+            <label>
+              <span data-d18n="d.filter.language">Language</span>
+              <div class="select-wrap">
+                <select id="languageFilter">
+                  <option value="Any" data-d18n="d.filter.any">Any</option>
+                </select>
+                <button type="button" class="select-arrow" data-select-toggle="languageFilter" aria-label="Toggle options"></button>
+              </div>
+            </label>
+
+            <label>
               <span data-d18n="d.filter.availability">Availability</span>
               <div class="select-wrap">
                 <select id="availabilityFilter">
@@ -307,7 +327,7 @@
               </div>
             </div>
 
-            <div id="compareEmpty" class="drawer-empty" data-d18n="d.compare.empty">Select up to 2 players to compare role, rank, proof and availability.</div>
+            <div id="compareEmpty" class="drawer-empty" data-d18n="d.compare.empty">Select up to 2 players to compare role, rank, proof, age, country, platform and availability.</div>
             <div id="compareContent" class="compare-panel hidden"></div>
 
             <button type="button" id="inviteSelected" class="button primary wide" disabled data-d18n="d.compare.invite">Invite selected</button>
