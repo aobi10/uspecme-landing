@@ -6,7 +6,7 @@
   const AUTH_USERS_KEY = 'uspecme_auth_users_v1';
   const PROFILE_STORAGE_KEY = 'uspecme_profile_v1';
   const PROFILE_VERSION = 1;
-  const BUILD_TAG = 'd10.4.20260223';
+  const BUILD_TAG = 'd10.5.20260224';
 
   const DEFAULT_AUTH_USER = {
     username: 'aobi10',
@@ -175,6 +175,13 @@
     AGE: 'AGE',
     GROUP: 'GROUP'
   };
+  const EXPLORE_VIEW_IDS = {
+    HOME: 'home',
+    FULL: 'explore'
+  };
+  const EXPLORE_PREVIEW_LIMIT = 6;
+  const EXPLORE_PAGE_SIZE = 9;
+  const RECOMMENDATION_SCORE_MAX = 120;
   const RELATIONSHIP_STATUS = {
     CONNECTED: 'CONNECTED',
     NONE: 'NONE'
@@ -228,12 +235,19 @@
       'FaZe Academy · Active Roster',
       'Team Liquid Community Division · Former Member'
     ],
-    setupHighlights: [
-      'Logitech G Pro X Superlight 2',
-      'Artisan Zero XL',
-      'Wooting 60HE',
-      'BenQ Zowie 360Hz'
-    ],
+    setupGear: {
+      mouse: 'Logitech G Pro X Superlight 2',
+      mousepad: 'Artisan Zero XL',
+      keyboard: 'Wooting 60HE',
+      monitor: 'BenQ Zowie 360Hz',
+      gpu: 'NVIDIA RTX 4090'
+    },
+    setupSettings: {
+      dpi: '800',
+      sensitivity: '4.00',
+      polling: '1000 Hz',
+      fov: '103'
+    },
     socialLinks: {
       twitch: 'https://twitch.tv/shinobi',
       youtube: 'https://www.youtube.com/@shinobi',
@@ -246,6 +260,8 @@
 
   const state = {
     mode: 'players',
+    exploreView: EXPLORE_VIEW_IDS.HOME,
+    explorePage: 1,
     search: '',
     game: GAME_IDS.ANY,
     role: 'Any',
@@ -2871,16 +2887,16 @@
       'd.hero.ctaExploreHub': 'Explore players & teams',
       'd.hero.ctaEarlyAccess': 'Join Early Access',
       'd.hero.ctaHowItWorks': 'How uSpecMe works',
-      'd.hero.ctaWatchLearn': 'Watch pros',
+      'd.hero.ctaWatchLearn': 'Spectate pros',
       'd.hero.toolsLabel': 'Browse mode',
       'd.hero.ctaPlayer': "I'm a Player",
       'd.hero.ctaTeam': "I'm a Team",
       'd.hero.dual.gamein.title': 'Build your roster faster.',
       'd.hero.dual.gamein.lead': 'Find fitting players and teams faster with proof-first profiles, quick compare and clear tryout intent.',
-      'd.hero.dual.uspecme.title': 'Watch. Learn. Get better.',
-      'd.hero.dual.uspecme.lead': "Want to improve but not sure where to start? Watch strong players, learn from their games, setup and habits, then build your own path.",
+      'd.hero.dual.uspecme.title': 'Spectate. Learn. Get better.',
+      'd.hero.dual.uspecme.lead': "Want to improve but not sure where to start? Spectate strong players, learn from their games, setup and habits, then build your own path.",
       'd.hero.bridge': 'Scout smarter: spectate first, decide faster.',
-      'd.uspecme.benefit.gameplay': 'Watch gameplay',
+      'd.uspecme.benefit.gameplay': 'Spectate gameplay',
       'd.uspecme.benefit.setup': 'See setup & settings',
       'd.uspecme.benefit.updates': 'Follow updates',
       'd.uspecme.learn.title': 'Spectate & Learn',
@@ -2888,11 +2904,22 @@
       'd.uspecme.note.external': 'In MVP, streams and social content open on external platforms.',
       'd.featured.label': 'Featured Pro',
       'd.featured.title': 'Spectate & Learn',
-      'd.featured.subtitle': "Watch Shinobi's gameplay, setup and updates in one place.",
+      'd.featured.subtitle': "Spectate Shinobi's gameplay, setup and updates in one place.",
       'd.featured.rankSnapshot': 'Rank Snapshot',
       'd.featured.achievements': 'Achievements & Events',
       'd.featured.careerHighlights': 'Career highlights',
-      'd.featured.setupHighlights': 'Setup highlights',
+      'd.featured.setupHighlights': 'Pro setup',
+      'd.featured.setup.gear': 'Gear',
+      'd.featured.setup.settings': 'Settings',
+      'd.featured.setup.mouse': 'Mouse',
+      'd.featured.setup.mousepad': 'Mousepad',
+      'd.featured.setup.keyboard': 'Keyboard',
+      'd.featured.setup.monitor': 'Monitor',
+      'd.featured.setup.gpu': 'GPU',
+      'd.featured.setup.dpi': 'DPI',
+      'd.featured.setup.sensitivity': 'Sensitivity',
+      'd.featured.setup.polling': 'Polling',
+      'd.featured.setup.fov': 'FOV',
       'd.featured.cta.spectate': 'Spectate now',
       'd.featured.cta.follow': 'Follow',
       'd.featured.note.external': 'Streams and social content open externally in MVP.',
@@ -2915,7 +2942,7 @@
       'd.observe.point.follow': 'Follow people and teams to track public updates over time.',
       'd.observe.point.noAutoplay': 'No autoplay noise: scan fast, open streams externally when needed.',
       'd.observe.note.external': 'In MVP, streams and social content open on external platforms.',
-      'd.social.watchFollow': 'Watch & Follow',
+      'd.social.watchFollow': 'Spectate & Follow',
       'd.social.twitch': 'Twitch',
       'd.social.youtube': 'YouTube',
       'd.social.instagram': 'Instagram',
@@ -2937,6 +2964,23 @@
       'd.metric.m3': 'Waitlist Submits',
       'd.metric.m4': 'Compare Adds',
       'd.explore.title': 'Explore',
+      'd.explore.preview.title': 'Suggested for you',
+      'd.explore.preview.lead': 'Players and teams that match your game, level and setup preferences.',
+      'd.explore.preview.empty': 'No suggestions yet. Open full Explore to browse all profiles.',
+      'd.explore.preview.ctaPlayers': 'Browse all players',
+      'd.explore.preview.ctaTeams': 'Browse all teams',
+      'd.explore.preview.why': 'Why suggested',
+      'd.explore.results.summary': '{shown} of {total} results',
+      'd.explore.pagination.prev': 'Prev',
+      'd.explore.pagination.next': 'Next',
+      'd.reco.reason.sameGame': 'Same game: {value}',
+      'd.reco.reason.roleFit': 'Role fit',
+      'd.reco.reason.region': 'Region match: {value}',
+      'd.reco.reason.platform': 'Platform match: {value}',
+      'd.reco.reason.rank': 'Similar rank range',
+      'd.reco.reason.language': 'Shared language: {value}',
+      'd.reco.reason.availability': 'Availability fit',
+      'd.reco.reason.curated': 'Featured recommendation',
       'd.mode.players': 'Players',
       'd.mode.teams': 'Teams',
       'd.quick.title': 'Quick Start',
@@ -3526,16 +3570,16 @@
       'd.hero.ctaExploreHub': 'Spieler & Teams entdecken',
       'd.hero.ctaEarlyAccess': 'Early Access sichern',
       'd.hero.ctaHowItWorks': 'Wie uSpecMe funktioniert',
-      'd.hero.ctaWatchLearn': 'Pros beobachten',
+      'd.hero.ctaWatchLearn': 'Pros spectaten',
       'd.hero.toolsLabel': 'Browse-Modus',
       'd.hero.ctaPlayer': 'Ich bin ein Spieler',
       'd.hero.ctaTeam': 'Ich bin ein Team',
       'd.hero.dual.gamein.title': 'Stell dein Team schneller zusammen.',
       'd.hero.dual.gamein.lead': 'Finde passende Spieler und Teams schneller mit Proof-first-Profilen, schnellem Compare und klarem Tryout-Intent.',
-      'd.hero.dual.uspecme.title': 'Spectate & Learn',
+      'd.hero.dual.uspecme.title': 'Spectate. Lerne. Werde besser.',
       'd.hero.dual.uspecme.lead': 'Du willst dich verbessern und weißt nicht, wo du anfangen sollst? Spectate starke Spieler, lerne aus Games, Setup und Gewohnheiten und baue deinen eigenen Weg.',
       'd.hero.bridge': 'Cleverer scouten: erst spectaten, dann schneller entscheiden.',
-      'd.uspecme.benefit.gameplay': 'Gameplay ansehen',
+      'd.uspecme.benefit.gameplay': 'Gameplay spectaten',
       'd.uspecme.benefit.setup': 'Setup & Settings sehen',
       'd.uspecme.benefit.updates': 'Updates verfolgen',
       'd.uspecme.learn.title': 'Spectate & Learn',
@@ -3543,11 +3587,22 @@
       'd.uspecme.note.external': 'Im MVP werden Streams und Social-Inhalte über externe Plattformen geöffnet.',
       'd.featured.label': 'Featured Pro',
       'd.featured.title': 'Spectate & Learn',
-      'd.featured.subtitle': 'Sieh dir Shinobis Gameplay, Setup und Updates an einem Ort an.',
+      'd.featured.subtitle': 'Spectate Shinobis Gameplay, Setup und Updates an einem Ort.',
       'd.featured.rankSnapshot': 'Rank Snapshot',
       'd.featured.achievements': 'Erfolge & Events',
       'd.featured.careerHighlights': 'Karriere-Highlights',
-      'd.featured.setupHighlights': 'Setup-Highlights',
+      'd.featured.setupHighlights': 'Pro Setup',
+      'd.featured.setup.gear': 'Gear',
+      'd.featured.setup.settings': 'Settings',
+      'd.featured.setup.mouse': 'Maus',
+      'd.featured.setup.mousepad': 'Mousepad',
+      'd.featured.setup.keyboard': 'Tastatur',
+      'd.featured.setup.monitor': 'Monitor',
+      'd.featured.setup.gpu': 'GPU',
+      'd.featured.setup.dpi': 'DPI',
+      'd.featured.setup.sensitivity': 'Sensitivität',
+      'd.featured.setup.polling': 'Polling',
+      'd.featured.setup.fov': 'FOV',
       'd.featured.cta.spectate': 'Jetzt spectaten',
       'd.featured.cta.follow': 'Folgen',
       'd.featured.note.external': 'Streams und Social-Inhalte werden im MVP extern geöffnet.',
@@ -3570,7 +3625,7 @@
       'd.observe.point.follow': 'Folge Spielern und Teams, um öffentliche Updates über Zeit zu verfolgen.',
       'd.observe.point.noAutoplay': 'Kein Autoplay-Lärm: schnell scannen, Streams bei Bedarf extern öffnen.',
       'd.observe.note.external': 'Im MVP werden Streams und Social-Inhalte über externe Plattformen geöffnet.',
-      'd.social.watchFollow': 'Watch & Follow',
+      'd.social.watchFollow': 'Spectate & Follow',
       'd.social.twitch': 'Twitch',
       'd.social.youtube': 'YouTube',
       'd.social.instagram': 'Instagram',
@@ -3592,6 +3647,23 @@
       'd.metric.m3': 'Waitlist Submits',
       'd.metric.m4': 'Compare Adds',
       'd.explore.title': 'Explore',
+      'd.explore.preview.title': 'Vorschläge für dich',
+      'd.explore.preview.lead': 'Spieler und Teams, die zu deinem Spiel, Level und Profil passen.',
+      'd.explore.preview.empty': 'Noch keine Vorschläge. Öffne Explore, um alle Profile zu sehen.',
+      'd.explore.preview.ctaPlayers': 'Alle Spieler durchsuchen',
+      'd.explore.preview.ctaTeams': 'Alle Teams durchsuchen',
+      'd.explore.preview.why': 'Warum vorgeschlagen',
+      'd.explore.results.summary': '{shown} von {total} Ergebnissen',
+      'd.explore.pagination.prev': 'Zurück',
+      'd.explore.pagination.next': 'Weiter',
+      'd.reco.reason.sameGame': 'Gleiches Spiel: {value}',
+      'd.reco.reason.roleFit': 'Rollen-Fit',
+      'd.reco.reason.region': 'Region passt: {value}',
+      'd.reco.reason.platform': 'Plattform passt: {value}',
+      'd.reco.reason.rank': 'Ähnliche Rank-Range',
+      'd.reco.reason.language': 'Gemeinsame Sprache: {value}',
+      'd.reco.reason.availability': 'Verfügbarkeit passt',
+      'd.reco.reason.curated': 'Kuratiert empfohlen',
       'd.mode.players': 'Spieler',
       'd.mode.teams': 'Teams',
       'd.quick.title': 'Quick Start',
@@ -4427,6 +4499,233 @@
     return parseCompareHandlesParam(handles.join(',')).join(',');
   }
 
+  function normalizeExploreView(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (raw === EXPLORE_VIEW_IDS.FULL) {
+      return EXPLORE_VIEW_IDS.FULL;
+    }
+    return EXPLORE_VIEW_IDS.HOME;
+  }
+
+  function normalizeExploreTab(value) {
+    return String(value || '').trim().toLowerCase() === 'teams' ? 'teams' : 'players';
+  }
+
+  function normalizeExplorePage(value) {
+    const parsed = Number.parseInt(String(value || ''), 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      return 1;
+    }
+    return parsed;
+  }
+
+  function sanitizeExploreQueryState(input) {
+    const source = input && typeof input === 'object' ? input : {};
+    const normalizedLanguage = source.language && source.language !== 'Any'
+      ? normalizeLanguageCode(source.language)
+      : '';
+    const normalizedCountry = source.country && source.country !== 'Any'
+      ? normalizeCountryCode(source.country)
+      : '';
+    const normalizedAgeGroup = AGE_GROUPS.includes(source.ageGroup) ? source.ageGroup : 'Any';
+    const normalizedGame = normalizeGameId(source.game, GAME_IDS.ANY);
+    return {
+      view: normalizeExploreView(source.view || state.exploreView),
+      tab: normalizeExploreTab(source.tab || source.mode || state.mode),
+      page: normalizeExplorePage(source.page || state.explorePage),
+      search: typeof source.search === 'string' ? source.search.trim() : String(state.search || '').trim(),
+      game: normalizedGame || GAME_IDS.ANY,
+      role: typeof source.role === 'string' ? source.role : state.role,
+      rank: typeof source.rank === 'string' ? source.rank : state.rank,
+      region: typeof source.region === 'string' ? source.region : state.region,
+      country: normalizedCountry || 'Any',
+      language: normalizedLanguage || 'Any',
+      availability: typeof source.availability === 'string' ? source.availability : state.availability,
+      ageGroup: normalizedAgeGroup,
+      proof: typeof source.proof === 'string' ? source.proof : state.proof
+    };
+  }
+
+  function readExploreStateFromURL() {
+    if (typeof window === 'undefined' || !window.location || !isStartPage()) {
+      return null;
+    }
+
+    const params = new URLSearchParams(window.location.search || '');
+    const hasAnyExploreParam = [
+      'view', 'tab', 'page', 'q', 'game', 'role', 'rank',
+      'region', 'country', 'lang', 'language', 'availability', 'ageGroup', 'proof'
+    ].some((key) => params.has(key));
+
+    if (!hasAnyExploreParam) {
+      return null;
+    }
+
+    return params;
+  }
+
+  function applyExploreStateFromURL() {
+    if (!isStartPage()) {
+      return;
+    }
+
+    const params = readExploreStateFromURL();
+    state.exploreView = params
+      ? normalizeExploreView(params.get('view') || state.exploreView)
+      : EXPLORE_VIEW_IDS.HOME;
+
+    if (!params) {
+      state.explorePage = 1;
+      return;
+    }
+
+    if (params.has('tab')) {
+      state.mode = normalizeExploreTab(params.get('tab'));
+    }
+    state.explorePage = normalizeExplorePage(params.get('page') || 1);
+
+    if (params.has('q')) {
+      state.search = String(params.get('q') || '').trim();
+    }
+    if (params.has('game')) {
+      state.game = normalizeGameId(params.get('game'), GAME_IDS.ANY);
+    }
+    if (params.has('role')) {
+      state.role = String(params.get('role') || 'Any') || 'Any';
+    }
+    if (params.has('rank')) {
+      state.rank = String(params.get('rank') || 'Any') || 'Any';
+    }
+    if (params.has('region')) {
+      state.region = String(params.get('region') || 'Any') || 'Any';
+    }
+    if (params.has('country')) {
+      const country = normalizeCountryCode(params.get('country') || '');
+      state.country = country || 'Any';
+    }
+    if (params.has('lang') || params.has('language')) {
+      const language = normalizeLanguageCode(params.get('lang') || params.get('language') || '');
+      state.language = language || 'Any';
+    }
+    if (params.has('availability')) {
+      state.availability = normalizeAvailability(params.get('availability') || 'Any');
+    }
+    if (params.has('ageGroup')) {
+      const group = String(params.get('ageGroup') || '');
+      state.ageGroup = AGE_GROUPS.includes(group) ? group : 'Any';
+    }
+    if (params.has('proof')) {
+      state.proof = normalizeProofStatus(params.get('proof') || 'Any', 'Any');
+    }
+  }
+
+  function writeExploreStateToURL(options) {
+    if (typeof window === 'undefined' || !window.history || !isStartPage()) {
+      return;
+    }
+    const opts = options && typeof options === 'object' ? options : {};
+    const params = new URLSearchParams(window.location.search || '');
+    const normalized = sanitizeExploreQueryState({
+      view: state.exploreView,
+      mode: state.mode,
+      page: state.explorePage,
+      search: state.search,
+      game: state.game,
+      role: state.role,
+      rank: state.rank,
+      region: state.region,
+      country: state.country,
+      language: state.language,
+      availability: state.availability,
+      ageGroup: state.ageGroup,
+      proof: state.proof
+    });
+
+    if (normalized.view !== EXPLORE_VIEW_IDS.HOME) {
+      params.set('view', normalized.view);
+    } else {
+      params.delete('view');
+    }
+    if (normalized.tab !== 'players') {
+      params.set('tab', normalized.tab);
+    } else {
+      params.delete('tab');
+    }
+    if (normalized.view === EXPLORE_VIEW_IDS.FULL && normalized.page > 1) {
+      params.set('page', String(normalized.page));
+    } else {
+      params.delete('page');
+    }
+
+    if (normalized.search) params.set('q', normalized.search);
+    else params.delete('q');
+
+    if (normalized.game !== GAME_IDS.ANY) params.set('game', normalized.game);
+    else params.delete('game');
+
+    if (normalized.role !== 'Any') params.set('role', normalized.role);
+    else params.delete('role');
+
+    if (normalized.rank !== 'Any') params.set('rank', normalized.rank);
+    else params.delete('rank');
+
+    if (normalized.region !== 'Any') params.set('region', normalized.region);
+    else params.delete('region');
+
+    if (normalized.country !== 'Any') params.set('country', normalized.country);
+    else params.delete('country');
+
+    if (normalized.language !== 'Any') params.set('lang', normalized.language);
+    else params.delete('lang');
+
+    params.delete('language');
+
+    if (normalized.availability !== 'Any') params.set('availability', normalized.availability);
+    else params.delete('availability');
+
+    if (normalized.ageGroup !== 'Any') params.set('ageGroup', normalized.ageGroup);
+    else params.delete('ageGroup');
+
+    if (normalized.proof !== 'Any') params.set('proof', normalized.proof);
+    else params.delete('proof');
+
+    const nextQuery = params.toString();
+    const nextUrl = `index.html${nextQuery ? `?${nextQuery}` : ''}`;
+    const current = `${window.location.pathname}${window.location.search}`;
+    const nextResolved = new URL(nextUrl, window.location.href);
+    const nextPathAndQuery = `${nextResolved.pathname}${nextResolved.search}`;
+    if (current === nextPathAndQuery) {
+      return;
+    }
+    if (opts.push === true && typeof window.history.pushState === 'function') {
+      window.history.pushState({}, '', nextUrl);
+      return;
+    }
+    if (typeof window.history.replaceState === 'function') {
+      window.history.replaceState({}, '', nextUrl);
+    }
+  }
+
+  function syncExploreViewVisibility() {
+    if (!isStartPage()) {
+      return;
+    }
+    const isHome = state.exploreView === EXPLORE_VIEW_IDS.HOME;
+    const preview = document.getElementById('explorePreview');
+    const full = document.getElementById('exploreFull');
+    const compareDock = document.getElementById('compareDock');
+
+    if (preview) {
+      preview.classList.toggle('hidden', !isHome);
+    }
+    if (full) {
+      full.classList.toggle('hidden', isHome);
+    }
+    if (compareDock) {
+      compareDock.classList.toggle('hidden', isHome);
+    }
+  }
+
   function setNavContext(source, options) {
     const opts = options && typeof options === 'object' ? options : {};
     const normalizedSource = normalizeNavSource(source);
@@ -4728,6 +5027,8 @@
     } else {
       clearNavContext();
     }
+    state.exploreView = EXPLORE_VIEW_IDS.FULL;
+    syncExploreViewVisibility();
 
     renderResults();
     renderCompareDrawer();
@@ -4744,6 +5045,8 @@
       const params = new URLSearchParams(window.location.search || '');
       params.delete('back');
       params.delete('compare');
+      params.set('view', EXPLORE_VIEW_IDS.FULL);
+      params.set('tab', normalizeExploreTab(state.mode));
       const nextQuery = params.toString();
       window.history.replaceState({}, '', `index.html${nextQuery ? `?${nextQuery}` : ''}`);
     }
@@ -6341,15 +6644,32 @@
     const careerHighlights = careerHighlightsRaw.length
       ? careerHighlightsRaw
       : FEATURED_PRO_MVP.careerHighlights.slice(0, 2);
-    const setupHighlightsRaw = [
-      `${t('d.setup.metric.dpi')} ${sanitizeTextValue(normalized.setup && normalized.setup.dpi, '', 12)}`.trim(),
-      `${t('d.setup.metric.sens')} ${sanitizeTextValue(normalized.setup && normalized.setup.sens, '', 12)}`.trim(),
-      `${t('d.setup.metric.fov')} ${sanitizeTextValue(normalized.setup && normalized.setup.fov, '', 12)}`.trim(),
-      `${t('d.setup.metric.hz')} ${sanitizeTextValue(normalized.setup && normalized.setup.hz, '', 12)} Hz`.trim()
-    ].filter((entry) => /\d/.test(entry));
-    const setupHighlights = setupHighlightsRaw.length
-      ? setupHighlightsRaw
-      : FEATURED_PRO_MVP.setupHighlights.slice(0, 4);
+    const setupGearSource = FEATURED_PRO_MVP.setupGear || {};
+    const setupSettingsSource = FEATURED_PRO_MVP.setupSettings || {};
+    const setupGearRows = [
+      { label: t('d.featured.setup.mouse'), value: sanitizeTextValue(setupGearSource.mouse, '', 80) },
+      { label: t('d.featured.setup.mousepad'), value: sanitizeTextValue(setupGearSource.mousepad, '', 80) },
+      { label: t('d.featured.setup.keyboard'), value: sanitizeTextValue(setupGearSource.keyboard, '', 80) },
+      { label: t('d.featured.setup.monitor'), value: sanitizeTextValue(setupGearSource.monitor, '', 80) },
+      { label: t('d.featured.setup.gpu'), value: sanitizeTextValue(setupGearSource.gpu, '', 80) }
+    ].filter((entry) => Boolean(entry.value));
+
+    const setupDpi = sanitizeTextValue(normalized.setup && normalized.setup.dpi, '', 12)
+      || sanitizeTextValue(setupSettingsSource.dpi, '', 12);
+    const setupSens = sanitizeTextValue(normalized.setup && normalized.setup.sens, '', 12)
+      || sanitizeTextValue(setupSettingsSource.sensitivity, '', 12);
+    const setupHz = sanitizeTextValue(normalized.setup && normalized.setup.hz, '', 12);
+    const setupPolling = setupHz
+      ? `${setupHz} Hz`
+      : sanitizeTextValue(setupSettingsSource.polling, '', 14);
+    const setupFov = sanitizeTextValue(normalized.setup && normalized.setup.fov, '', 12)
+      || sanitizeTextValue(setupSettingsSource.fov, '', 12);
+    const setupSettingsRows = [
+      { label: t('d.featured.setup.dpi'), value: setupDpi },
+      { label: t('d.featured.setup.sensitivity'), value: setupSens },
+      { label: t('d.featured.setup.polling'), value: setupPolling },
+      { label: t('d.featured.setup.fov'), value: setupFov }
+    ].filter((entry) => Boolean(entry.value));
 
     return {
       id: FEATURED_PRO_MVP.id,
@@ -6361,7 +6681,8 @@
       rankSnapshot,
       achievements,
       careerHighlights,
-      setupHighlights,
+      setupGearRows,
+      setupSettingsRows,
       socialLinks,
       isStreamingFocus: profilePublic.isStreamingFocus === true || FEATURED_PRO_MVP.isStreamingFocus === true,
       lastSeenStatus: sanitizeTextValue(
@@ -6399,6 +6720,15 @@
     )).join('');
   }
 
+  function renderFeaturedLabeledRows(values) {
+    if (!Array.isArray(values) || !values.length) {
+      return '';
+    }
+    return values.map((entry) => (
+      `<li class="featured-pro__list-item"><strong>${escapeHtml(entry.label || '-')}</strong><span>${escapeHtml(entry.value || '-')}</span></li>`
+    )).join('');
+  }
+
   function openExternalLink(url) {
     const href = sanitizeExternalUrl(url);
     if (!href) {
@@ -6431,8 +6761,9 @@
     const rankNode = document.getElementById('featuredRankSnapshot');
     const achievementsNode = document.getElementById('featuredAchievements');
     const careerNode = document.getElementById('featuredCareerHighlights');
-    const setupNode = document.getElementById('featuredSetupHighlights');
-    const hasFeaturedMarkup = rankNode || achievementsNode || careerNode || setupNode;
+    const setupGearNode = document.getElementById('featuredSetupGear');
+    const setupSettingsNode = document.getElementById('featuredSetupSettings');
+    const hasFeaturedMarkup = rankNode || achievementsNode || careerNode || setupGearNode || setupSettingsNode;
     const viewModel = getFeaturedProViewModel(profileState);
 
     setProfileField('featured.displayName', viewModel.displayName);
@@ -6453,8 +6784,11 @@
       if (careerNode) {
         careerNode.innerHTML = renderFeaturedListRows(viewModel.careerHighlights);
       }
-      if (setupNode) {
-        setupNode.innerHTML = renderFeaturedListRows(viewModel.setupHighlights);
+      if (setupGearNode) {
+        setupGearNode.innerHTML = renderFeaturedLabeledRows(viewModel.setupGearRows);
+      }
+      if (setupSettingsNode) {
+        setupSettingsNode.innerHTML = renderFeaturedLabeledRows(viewModel.setupSettingsRows);
       }
     }
 
@@ -7038,9 +7372,508 @@
     return true;
   }
 
-  function renderPlayerCard(player, entitiesState) {
+  function getProofPriority(proofStatus) {
+    const normalized = normalizeProofStatus(proofStatus, PROOF_STATUS.SELF_DECLARED);
+    if (normalized === PROOF_STATUS.RANK_VERIFIED || normalized === PROOF_STATUS.USPECME_TRYOUT_VERIFIED) {
+      return 3;
+    }
+    if (normalized === PROOF_STATUS.ACCOUNT_CONNECTED) {
+      return 2;
+    }
+    if (normalized === PROOF_STATUS.SELF_DECLARED) {
+      return 1;
+    }
+    return 0;
+  }
+
+  function toRoleBucket(roleValue) {
+    const raw = String(roleValue || '').trim().toLowerCase();
+    if (!raw) {
+      return '';
+    }
+    if (raw.includes('tank')) return 'tank';
+    if (raw.includes('support')) return 'support';
+    if (raw.includes('dps') || raw.includes('fragger')) return 'dps';
+    if (raw.includes('jungle')) return 'jungle';
+    if (raw.includes('top')) return 'top';
+    if (raw.includes('mid')) return 'mid';
+    if (raw.includes('adc')) return 'adc';
+    if (raw.includes('igl')) return 'igl';
+    if (raw.includes('vanguard')) return 'vanguard';
+    if (raw.includes('duelist')) return 'duelist';
+    if (raw.includes('strategist')) return 'strategist';
+    if (raw.includes('scout')) return 'scout';
+    return raw.replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  function areRolesCompatible(viewerRole, candidateRole) {
+    const viewerBucket = toRoleBucket(viewerRole);
+    const candidateBucket = toRoleBucket(candidateRole);
+    if (!viewerBucket || !candidateBucket) {
+      return false;
+    }
+    if (viewerBucket === candidateBucket) {
+      return true;
+    }
+    return viewerBucket.includes(candidateBucket) || candidateBucket.includes(viewerBucket);
+  }
+
+  function areAvailabilitiesCompatible(viewerAvailability, candidateAvailability) {
+    const viewer = normalizeAvailability(viewerAvailability);
+    const candidate = normalizeAvailability(candidateAvailability);
+    if (!viewer || !candidate) {
+      return false;
+    }
+    if (viewer === 'Any' || candidate === 'Any') {
+      return true;
+    }
+    return viewer === candidate;
+  }
+
+  function getRankTierIndex(gameId, tierLabel) {
+    const gameKey = getProfileGameKeyFromExploreGame(gameId);
+    const catalog = gameKey ? PROFILE_RANKS[gameKey] : null;
+    if (!catalog) {
+      return -1;
+    }
+    const normalizedTier = String(tierLabel || '').trim().toLowerCase();
+    if (!normalizedTier) {
+      return -1;
+    }
+    return catalog.tiers.findIndex((entry) => String(entry || '').trim().toLowerCase() === normalizedTier);
+  }
+
+  function areRanksClose(gameId, viewerTier, candidateTier) {
+    const viewerIndex = getRankTierIndex(gameId, viewerTier);
+    const candidateIndex = getRankTierIndex(gameId, candidateTier);
+    if (viewerIndex < 0 || candidateIndex < 0) {
+      return false;
+    }
+    return Math.abs(viewerIndex - candidateIndex) <= 1;
+  }
+
+  function getViewerRecommendationContext() {
+    const normalizedProfile = normalizeProfileState(state.profile);
+    const profilePublic = normalizedProfile.publicProfile;
+    const sourcePlayer = getProfileSourcePlayer(profilePublic);
+    const preferredGame = state.game !== GAME_IDS.ANY
+      ? normalizeGameId(state.game, '')
+      : resolvePrimaryGameFromProfile(profilePublic);
+    const hasGameSignal = state.game !== GAME_IDS.ANY || isCanonicalProfileGame(preferredGame);
+    const viewerGame = isCanonicalProfileGame(preferredGame) ? preferredGame : GAME_IDS.OVERWATCH;
+    const viewerGameState = profilePublic.games[viewerGame] || profilePublic.games.overwatch || {};
+    const sourceGameEntry = getProfileGameEntryFromPlayer(sourcePlayer, viewerGame) || {};
+
+    const role = sourceGameEntry.role || profilePublic.role || '';
+    const rankTier = viewerGameState.tier || '';
+    const region = sourcePlayer && sourcePlayer.region ? sourcePlayer.region : '';
+    const platform = resolvePlatformForGame(viewerGameState, sourcePlayer || null);
+    const languages = sourcePlayer ? normalizeLanguageList(sourcePlayer.language) : [];
+    const availability = normalizeAvailability(
+      (sourcePlayer && sourcePlayer.availability)
+      || profilePublic.availability
+      || 'Any'
+    );
+    const handle = sourcePlayer && sourcePlayer.handle
+      ? sourcePlayer.handle
+      : sanitizeTextValue(profilePublic.displayName, '', 64);
+    const hasSignal = Boolean(hasGameSignal || role || rankTier || region || platform || languages.length || availability !== 'Any');
+
+    return {
+      game: viewerGame,
+      role,
+      rankTier,
+      region,
+      platform,
+      languages,
+      availability,
+      handle,
+      hasSignal
+    };
+  }
+
+  function buildRecommendationReasonList(reasonMatches) {
+    if (!Array.isArray(reasonMatches) || !reasonMatches.length) {
+      return [];
+    }
+    return reasonMatches
+      .slice()
+      .sort((a, b) => b.weight - a.weight || String(a.label || '').localeCompare(String(b.label || '')))
+      .slice(0, 3)
+      .map((entry) => entry.label);
+  }
+
+  function scorePlayerForViewer(viewer, player) {
+    const primary = getPrimaryGame(player);
+    const gameMatchEntry = Array.isArray(player.games)
+      ? player.games.find((entry) => entry.game === viewer.game) || primary
+      : primary;
+    const candidateRole = gameMatchEntry && gameMatchEntry.role ? gameMatchEntry.role : '';
+    const candidatePlatform = resolvePlatformForGame(gameMatchEntry, player);
+    const candidateTier = gameMatchEntry
+      ? extractTierFromExploreRank(getProfileGameKeyFromExploreGame(gameMatchEntry.game), gameMatchEntry.rank)
+      : '';
+    const sharedLanguages = normalizeLanguageList(player.language).filter((code) => viewer.languages.includes(code));
+    const reasonMatches = [];
+    let score = 0;
+
+    if (gameMatchEntry && gameMatchEntry.game === viewer.game) {
+      score += 40;
+      reasonMatches.push({
+        weight: 40,
+        label: formatTemplate(t('d.reco.reason.sameGame'), { value: getGameLabel(viewer.game) })
+      });
+    }
+
+    if (areRolesCompatible(viewer.role, candidateRole)) {
+      score += 20;
+      reasonMatches.push({ weight: 20, label: t('d.reco.reason.roleFit') });
+    }
+
+    if (viewer.region && player.region === viewer.region) {
+      score += 15;
+      reasonMatches.push({
+        weight: 15,
+        label: formatTemplate(t('d.reco.reason.region'), { value: viewer.region })
+      });
+    }
+
+    if (viewer.platform && candidatePlatform && viewer.platform === candidatePlatform) {
+      score += 10;
+      reasonMatches.push({
+        weight: 10,
+        label: formatTemplate(t('d.reco.reason.platform'), { value: getPlatformLabel(viewer.platform) })
+      });
+    }
+
+    if (gameMatchEntry && areRanksClose(gameMatchEntry.game, viewer.rankTier, candidateTier)) {
+      score += 10;
+      reasonMatches.push({ weight: 10, label: t('d.reco.reason.rank') });
+    }
+
+    if (sharedLanguages.length) {
+      score += 20;
+      reasonMatches.push({
+        weight: 20,
+        label: formatTemplate(t('d.reco.reason.language'), { value: sharedLanguages[0] })
+      });
+    }
+
+    if (areAvailabilitiesCompatible(viewer.availability, player.availability)) {
+      score += 5;
+      reasonMatches.push({ weight: 5, label: t('d.reco.reason.availability') });
+    }
+
+    return {
+      type: 'player',
+      entity: player,
+      recommendationScoreRaw: score,
+      recommendationScore: Math.round((score / RECOMMENDATION_SCORE_MAX) * 100),
+      recommendationReasons: buildRecommendationReasonList(reasonMatches),
+      proofPriority: getProofPriority(gameMatchEntry && gameMatchEntry.proof),
+      sortName: String(player.handle || '').toLowerCase()
+    };
+  }
+
+  function scoreTeamForViewer(viewer, team) {
+    const matchingGameEntry = Array.isArray(team.games)
+      ? team.games.find((entry) => entry.game === viewer.game) || (team.games[0] || null)
+      : null;
+    const relevantNeeds = matchingGameEntry && Array.isArray(matchingGameEntry.needs)
+      ? matchingGameEntry.needs
+      : [];
+    const roleNeedMatch = relevantNeeds.some((need) => areRolesCompatible(viewer.role, need && need.role));
+    const teamLanguages = normalizeLanguageList(team.language);
+    const sharedLanguages = teamLanguages.filter((code) => viewer.languages.includes(code));
+    const normalizedPlatforms = Array.isArray(team.platforms)
+      ? team.platforms.map((value) => normalizePlatform(value)).filter(Boolean)
+      : [];
+    const platformMatch = viewer.platform && normalizedPlatforms.includes(viewer.platform);
+    const needsTier = relevantNeeds
+      .map((need) => extractTierFromExploreRank(getProfileGameKeyFromExploreGame(viewer.game), need && need.rankMin))
+      .find(Boolean);
+    const reasonMatches = [];
+    let score = 0;
+
+    if (matchingGameEntry && matchingGameEntry.game === viewer.game) {
+      score += 40;
+      reasonMatches.push({
+        weight: 40,
+        label: formatTemplate(t('d.reco.reason.sameGame'), { value: getGameLabel(viewer.game) })
+      });
+    }
+
+    if (roleNeedMatch) {
+      score += 20;
+      reasonMatches.push({ weight: 20, label: t('d.reco.reason.roleFit') });
+    }
+
+    if (viewer.region && team.region === viewer.region) {
+      score += 15;
+      reasonMatches.push({
+        weight: 15,
+        label: formatTemplate(t('d.reco.reason.region'), { value: viewer.region })
+      });
+    }
+
+    if (platformMatch) {
+      score += 10;
+      reasonMatches.push({
+        weight: 10,
+        label: formatTemplate(t('d.reco.reason.platform'), { value: getPlatformLabel(viewer.platform) })
+      });
+    }
+
+    if (areRanksClose(viewer.game, viewer.rankTier, needsTier)) {
+      score += 10;
+      reasonMatches.push({ weight: 10, label: t('d.reco.reason.rank') });
+    }
+
+    if (sharedLanguages.length) {
+      score += 20;
+      reasonMatches.push({
+        weight: 20,
+        label: formatTemplate(t('d.reco.reason.language'), { value: sharedLanguages[0] })
+      });
+    }
+
+    if (areAvailabilitiesCompatible(viewer.availability, getCoarseTeamAvailability(team))) {
+      score += 5;
+      reasonMatches.push({ weight: 5, label: t('d.reco.reason.availability') });
+    }
+
+    return {
+      type: 'team',
+      entity: team,
+      recommendationScoreRaw: score,
+      recommendationScore: Math.round((score / RECOMMENDATION_SCORE_MAX) * 100),
+      recommendationReasons: buildRecommendationReasonList(reasonMatches),
+      proofPriority: getProofPriority(team.verified),
+      sortName: String(team.name || '').toLowerCase()
+    };
+  }
+
+  function getCuratedFallbackRecommendations(tab, limit) {
+    const safeLimit = Math.max(1, Number(limit || EXPLORE_PREVIEW_LIMIT));
+    if (tab === 'teams') {
+      const curatedTeamSlugs = ['vienna-ascend', 'neon-vanguard', 'river-wardens', 'cloud-quarter', 'northforge-ow', 'storm-harbor'];
+      return curatedTeamSlugs
+        .map((slug) => teams.find((team) => team.slug === slug))
+        .filter(Boolean)
+        .slice(0, safeLimit)
+        .map((team) => ({
+          type: 'team',
+          entity: team,
+          recommendationScoreRaw: 0,
+          recommendationScore: 0,
+          recommendationReasons: [t('d.reco.reason.curated')],
+          proofPriority: getProofPriority(team.verified),
+          sortName: String(team.name || '').toLowerCase()
+        }));
+    }
+
+    const curatedPlayerHandles = ['Shinobi', 'ValkyrieEU', 'AegisTank', 'ZenithTracer', 'OrbitSupport', 'PulseDPS', 'ArcScout'];
+    return curatedPlayerHandles
+      .map((handle) => players.find((player) => player.handle === handle))
+      .filter(Boolean)
+      .slice(0, safeLimit)
+      .map((player) => ({
+        type: 'player',
+        entity: player,
+        recommendationScoreRaw: 0,
+        recommendationScore: 0,
+        recommendationReasons: [t('d.reco.reason.curated')],
+        proofPriority: getProofPriority(getPrimaryGame(player).proof),
+        sortName: String(player.handle || '').toLowerCase()
+      }));
+  }
+
+  function getRecommendedCards(options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const tab = normalizeExploreTab(opts.tab || state.mode);
+    const safeLimit = Math.max(1, Number(opts.limit || EXPLORE_PREVIEW_LIMIT));
+    const viewer = getViewerRecommendationContext();
+    const viewerHandle = String(viewer.handle || '').trim().toLowerCase();
+    const scored = tab === 'teams'
+      ? teams.map((team) => scoreTeamForViewer(viewer, team))
+      : players
+        .filter((player) => String(player.handle || '').trim().toLowerCase() !== viewerHandle)
+        .map((player) => scorePlayerForViewer(viewer, player));
+
+    scored.sort((a, b) => {
+      if (b.recommendationScoreRaw !== a.recommendationScoreRaw) {
+        return b.recommendationScoreRaw - a.recommendationScoreRaw;
+      }
+      if (b.proofPriority !== a.proofPriority) {
+        return b.proofPriority - a.proofPriority;
+      }
+      return a.sortName.localeCompare(b.sortName);
+    });
+
+    if (!viewer.hasSignal || !scored.length || scored[0].recommendationScoreRaw <= 0) {
+      const fallback = getCuratedFallbackRecommendations(tab, safeLimit);
+      if (tab === 'players') {
+        return fallback
+          .filter((entry) => String(entry.entity && entry.entity.handle ? entry.entity.handle : '').trim().toLowerCase() !== viewerHandle)
+          .slice(0, safeLimit);
+      }
+      return fallback;
+    }
+
+    return scored.slice(0, safeLimit);
+  }
+
+  function paginate(items, page, pageSize) {
+    const source = Array.isArray(items) ? items : [];
+    const size = Math.max(1, Number(pageSize || EXPLORE_PAGE_SIZE));
+    const total = source.length;
+    const totalPages = Math.max(1, Math.ceil(total / size));
+    const safePage = Math.min(totalPages, Math.max(1, normalizeExplorePage(page)));
+    const start = (safePage - 1) * size;
+    const sliced = source.slice(start, start + size);
+    return {
+      items: sliced,
+      page: safePage,
+      pageSize: size,
+      total,
+      totalPages,
+      shown: sliced.length
+    };
+  }
+
+  function buildPaginationModel(currentPage, totalPages) {
+    const current = Math.max(1, Number(currentPage || 1));
+    const total = Math.max(1, Number(totalPages || 1));
+    if (total <= 7) {
+      return Array.from({ length: total }, (_value, index) => index + 1);
+    }
+    const model = [1];
+    const left = Math.max(2, current - 1);
+    const right = Math.min(total - 1, current + 1);
+    if (left > 2) {
+      model.push('ellipsis-left');
+    }
+    for (let page = left; page <= right; page += 1) {
+      model.push(page);
+    }
+    if (right < total - 1) {
+      model.push('ellipsis-right');
+    }
+    model.push(total);
+    return model;
+  }
+
+  function renderExplorePagination(totalPages, currentPage) {
+    const pagination = document.getElementById('explorePagination');
+    const prevButton = document.getElementById('explorePaginationPrev');
+    const nextButton = document.getElementById('explorePaginationNext');
+    const pagesNode = document.getElementById('explorePaginationPages');
+    if (!pagination || !prevButton || !nextButton || !pagesNode) {
+      return;
+    }
+
+    const hasPages = totalPages > 1;
+    pagination.classList.toggle('hidden', !hasPages);
+    prevButton.disabled = !hasPages || currentPage <= 1;
+    nextButton.disabled = !hasPages || currentPage >= totalPages;
+
+    if (!hasPages) {
+      pagesNode.innerHTML = '';
+      return;
+    }
+
+    const pageModel = buildPaginationModel(currentPage, totalPages);
+    pagesNode.innerHTML = pageModel.map((entry) => {
+      if (typeof entry !== 'number') {
+        return '<span class="explore-page-btn is-ellipsis" aria-hidden="true">…</span>';
+      }
+      const isActive = entry === currentPage;
+      return `<button type="button" class="explore-page-btn ${isActive ? 'is-active' : ''}" data-page="${entry}" aria-current="${isActive ? 'page' : 'false'}">${entry}</button>`;
+    }).join('');
+  }
+
+  function renderExplorePreview() {
+    const list = document.getElementById('explorePreviewList');
+    const empty = document.getElementById('explorePreviewEmpty');
+    if (!list || !empty) {
+      return;
+    }
+    const entitiesState = loadEntitiesState();
+    const recommended = getRecommendedCards({ tab: state.mode, limit: EXPLORE_PREVIEW_LIMIT });
+    const hasResults = recommended.length > 0;
+
+    if (state.mode === 'players') {
+      list.innerHTML = recommended
+        .filter((entry) => entry.type === 'player')
+        .map((entry) => renderPlayerCard(entry.entity, entitiesState, {
+          preview: true,
+          recommendationReasons: entry.recommendationReasons
+        }))
+        .join('');
+    } else {
+      list.innerHTML = recommended
+        .filter((entry) => entry.type === 'team')
+        .map((entry) => renderTeamCard(entry.entity, entitiesState, {
+          preview: true,
+          recommendationReasons: entry.recommendationReasons
+        }))
+        .join('');
+    }
+
+    empty.classList.toggle('hidden', hasResults);
+    bindCardActions();
+  }
+
+  function renderExploreFull() {
+    const list = document.getElementById('resultList');
+    const empty = document.getElementById('emptyState');
+    const summary = document.getElementById('exploreResultSummary');
+    if (!list || !empty) {
+      return;
+    }
+    const entitiesState = loadEntitiesState();
+    const filtered = state.mode === 'players'
+      ? players.filter(passesPlayerFilters)
+      : teams.filter(passesTeamFilters);
+    const pageData = paginate(filtered, state.explorePage, EXPLORE_PAGE_SIZE);
+    if (pageData.page !== state.explorePage) {
+      state.explorePage = pageData.page;
+      writeExploreStateToURL();
+    }
+
+    if (state.mode === 'players') {
+      list.innerHTML = pageData.items.map((player) => renderPlayerCard(player, entitiesState)).join('');
+    } else {
+      list.innerHTML = pageData.items.map((team) => renderTeamCard(team, entitiesState)).join('');
+    }
+
+    const hasResults = filtered.length > 0;
+    empty.classList.toggle('hidden', hasResults);
+    if (summary) {
+      if (hasResults) {
+        summary.classList.remove('hidden');
+        summary.textContent = formatTemplate(t('d.explore.results.summary'), {
+          shown: String(pageData.shown),
+          total: String(pageData.total)
+        });
+      } else {
+        summary.classList.add('hidden');
+        summary.textContent = '';
+      }
+    }
+
+    renderExplorePagination(pageData.totalPages, pageData.page);
+    bindCardActions();
+  }
+
+  function renderPlayerCard(player, entitiesState, options) {
+    const opts = options && typeof options === 'object' ? options : {};
     const game = getPrimaryGame(player);
     const inCompare = state.compare.includes(player.handle);
+    const showCompare = opts.preview !== true;
+    const recommendationReasons = Array.isArray(opts.recommendationReasons)
+      ? opts.recommendationReasons.filter((reason) => String(reason || '').trim().length > 0).slice(0, 3)
+      : [];
     const conduct = formatConductSummary('player', player.handle, entitiesState);
     const proofMeta = getProofMeta(game.proof);
     const availabilityLabel = formatAvailability(player.availability || 'Any');
@@ -7060,7 +7893,7 @@
     const rankVisual = renderRankVisual(game, game.game);
 
     return [
-      '<article class="result-card">',
+      `<article class="result-card ${opts.preview ? 'result-card--preview' : ''}">`,
       '<div class="result-card__header">',
       '<div class="result-card__identity">',
       avatarBadge,
@@ -7077,6 +7910,16 @@
       renderProofBadge(game.proof, { compact: true }),
       '</div>',
       `<p class="scout-hook">${escapeHtml(hookText)}</p>`,
+      recommendationReasons.length
+        ? [
+          '<div class="recommendation-reasons">',
+          `<p class="recommendation-reasons__title">${escapeHtml(t('d.explore.preview.why'))}</p>`,
+          '<div class="recommendation-reasons__chips">',
+          recommendationReasons.map((reason) => `<span class="recommendation-reason-chip">${escapeHtml(reason)}</span>`).join(''),
+          '</div>',
+          '</div>'
+        ].join('')
+        : '',
       '<div class="result-card__rank">',
       `<span class="result-card__rank-main">${rankVisual}<strong>${escapeHtml(game.rank || '-')}</strong></span>`,
       `<span>${escapeHtml(t('d.card.peak'))} ${escapeHtml(game.peak || '-')}</span>`,
@@ -7097,14 +7940,20 @@
       '</div>',
       '<div class="result-card__actions">',
       `<button type="button" class="button primary small" data-action="invite-player" data-handle="${escapeHtml(player.handle)}" data-game="${escapeHtml(game.game)}">${escapeHtml(t('d.card.invite'))}</button>`,
-      `<button type="button" class="button ghost small" data-action="compare-player" data-handle="${escapeHtml(player.handle)}">${escapeHtml(inCompare ? t('d.card.remove') : t('d.card.compare'))}</button>`,
+      showCompare
+        ? `<button type="button" class="button ghost small" data-action="compare-player" data-handle="${escapeHtml(player.handle)}">${escapeHtml(inCompare ? t('d.card.remove') : t('d.card.compare'))}</button>`
+        : '',
       `<button type="button" class="button ghost small" data-action="open-player" data-handle="${escapeHtml(player.handle)}" data-player-id="${escapeHtml(getPlayerViewId(player))}" data-game="${escapeHtml(game.game)}">${escapeHtml(t('d.card.open'))}</button>`,
       '</div>',
       '</article>'
     ].join('');
   }
 
-  function renderTeamCard(team, entitiesState) {
+  function renderTeamCard(team, entitiesState, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const recommendationReasons = Array.isArray(opts.recommendationReasons)
+      ? opts.recommendationReasons.filter((reason) => String(reason || '').trim().length > 0).slice(0, 3)
+      : [];
     const conduct = formatConductSummary('team', team.slug, entitiesState);
     const scopedNeeds = team.games
       .filter((entry) => state.game === GAME_IDS.ANY || entry.game === state.game)
@@ -7135,7 +7984,7 @@
     const rankVisual = renderRankVisual({ rank: primaryNeed && primaryNeed.need ? primaryNeed.need.rankMin : '' }, primaryGame);
 
     return [
-      '<article class="result-card">',
+      `<article class="result-card ${opts.preview ? 'result-card--preview' : ''}">`,
       '<div class="result-card__header">',
       '<div class="result-card__identity">',
       avatarBadge,
@@ -7152,6 +8001,16 @@
       renderProofBadge(team.verified, { compact: true }),
       '</div>',
       `<p class="scout-hook">${escapeHtml(hookText)}</p>`,
+      recommendationReasons.length
+        ? [
+          '<div class="recommendation-reasons">',
+          `<p class="recommendation-reasons__title">${escapeHtml(t('d.explore.preview.why'))}</p>`,
+          '<div class="recommendation-reasons__chips">',
+          recommendationReasons.map((reason) => `<span class="recommendation-reason-chip">${escapeHtml(reason)}</span>`).join(''),
+          '</div>',
+          '</div>'
+        ].join('')
+        : '',
       '<div class="result-card__rank">',
       `<span class="result-card__rank-main">${rankVisual}<strong>${escapeHtml(topNeed)}</strong></span>`,
       `<span>${escapeHtml(formatSchedule(team.schedule))}</span>`,
@@ -7178,26 +8037,12 @@
   }
 
   function renderResults() {
-    const list = document.getElementById('resultList');
-    const empty = document.getElementById('emptyState');
-    if (!list || !empty) {
+    syncExploreViewVisibility();
+    if (state.exploreView === EXPLORE_VIEW_IDS.HOME) {
+      renderExplorePreview();
       return;
     }
-    const entitiesState = loadEntitiesState();
-
-    if (state.mode === 'players') {
-      const filteredPlayers = players.filter(passesPlayerFilters);
-      list.innerHTML = filteredPlayers.map((player) => renderPlayerCard(player, entitiesState)).join('');
-      const hasResults = filteredPlayers.length > 0;
-      empty.classList.toggle('hidden', hasResults);
-    } else {
-      const filteredTeams = teams.filter(passesTeamFilters);
-      list.innerHTML = filteredTeams.map((team) => renderTeamCard(team, entitiesState)).join('');
-      const hasResults = filteredTeams.length > 0;
-      empty.classList.toggle('hidden', hasResults);
-    }
-
-    bindCardActions();
+    renderExploreFull();
   }
 
   function clearCompareSelection() {
@@ -7213,6 +8058,15 @@
     const openButton = document.getElementById('compareDockOpen');
     const clearButton = document.getElementById('compareDockClear');
     if (!dock || !content || !openButton || !clearButton) {
+      return;
+    }
+
+    if (state.exploreView === EXPLORE_VIEW_IDS.HOME) {
+      state.compareDockVisible = false;
+      dock.classList.remove('is-visible');
+      dock.setAttribute('aria-hidden', 'true');
+      openButton.disabled = true;
+      clearButton.disabled = true;
       return;
     }
 
@@ -8425,9 +9279,59 @@
     syncQuickStartRunLabel();
   }
 
+  function setExplorePage(page, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    state.explorePage = normalizeExplorePage(page);
+    if (opts.syncUrl !== false) {
+      writeExploreStateToURL({ push: opts.pushHistory === true });
+    }
+    if (opts.render !== false) {
+      renderResults();
+      renderCompareDrawer();
+    }
+  }
+
+  function setExploreView(view, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    state.exploreView = normalizeExploreView(view);
+    if (opts.pageReset === true) {
+      state.explorePage = 1;
+    }
+    syncExploreViewVisibility();
+    if (opts.syncUrl !== false) {
+      writeExploreStateToURL({ push: opts.pushHistory === true });
+    }
+    if (opts.render !== false) {
+      renderResults();
+      renderCompareDrawer();
+    }
+  }
+
+  function openFullExplore(tab, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const targetTab = normalizeExploreTab(tab || state.mode);
+    if (state.mode !== targetTab) {
+      setMode(targetTab, {
+        syncUrl: false,
+        render: false,
+        pageReset: true,
+        track: false
+      });
+    }
+    setExploreView(EXPLORE_VIEW_IDS.FULL, {
+      syncUrl: opts.syncUrl !== false,
+      pushHistory: opts.pushHistory === true,
+      render: opts.render !== false,
+      pageReset: opts.pageReset !== false
+    });
+  }
+
   function applyExploreGame(gameId, options) {
     const opts = options && typeof options === 'object' ? options : {};
     state.game = normalizeGameId(gameId, GAME_IDS.ANY);
+    if (opts.pageReset !== false) {
+      state.explorePage = 1;
+    }
     syncGameChipActiveState();
     syncQuickStartControls();
     syncExploreRoleFilterOptions();
@@ -8436,34 +9340,51 @@
     if (opts.track !== false) {
       applyFiltersTracking();
     }
-    renderResults();
-    renderCompareDrawer();
+    if (opts.syncUrl !== false) {
+      writeExploreStateToURL({ push: opts.pushHistory === true });
+    }
+    if (opts.render !== false) {
+      renderResults();
+      renderCompareDrawer();
+    }
   }
 
-  function setMode(mode) {
-    state.mode = mode;
+  function setMode(mode, options) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const normalizedMode = normalizeExploreTab(mode);
+    if (opts.pageReset !== false) {
+      state.explorePage = 1;
+    }
+    state.mode = normalizedMode;
     const playersTab = document.getElementById('modePlayers');
     const teamsTab = document.getElementById('modeTeams');
 
     if (playersTab) {
-      playersTab.classList.toggle('active', mode === 'players');
-      playersTab.setAttribute('aria-selected', String(mode === 'players'));
+      playersTab.classList.toggle('active', normalizedMode === 'players');
+      playersTab.setAttribute('aria-selected', String(normalizedMode === 'players'));
     }
     if (teamsTab) {
-      teamsTab.classList.toggle('active', mode === 'teams');
-      teamsTab.setAttribute('aria-selected', String(mode === 'teams'));
+      teamsTab.classList.toggle('active', normalizedMode === 'teams');
+      teamsTab.setAttribute('aria-selected', String(normalizedMode === 'teams'));
     }
 
-    if (mode === 'players') {
+    if (normalizedMode === 'players' && opts.track !== false) {
       track('view_explore_players', {});
     }
 
     updateExploreModeSemantics();
     syncQuickStartControls();
     persistExploreFilters();
-    applyCustomI18n();
-    renderResults();
-    renderCompareDrawer();
+    if (opts.applyI18n !== false) {
+      applyCustomI18n();
+    }
+    if (opts.syncUrl !== false) {
+      writeExploreStateToURL({ push: opts.pushHistory === true });
+    }
+    if (opts.render !== false) {
+      renderResults();
+      renderCompareDrawer();
+    }
   }
 
   function syncMetrics() {
@@ -9508,31 +10429,70 @@
     const languageFilter = document.getElementById('languageFilter');
     const availabilityFilter = document.getElementById('availabilityFilter');
     const proofFilter = document.getElementById('proofFilter');
+    const modePlayers = document.getElementById('modePlayers');
+    const modeTeams = document.getElementById('modeTeams');
+    const browseAllPlayers = document.getElementById('exploreBrowseAllPlayers');
+    const browseAllTeams = document.getElementById('exploreBrowseAllTeams');
+    const paginationPrev = document.getElementById('explorePaginationPrev');
+    const paginationNext = document.getElementById('explorePaginationNext');
+    const paginationPages = document.getElementById('explorePaginationPages');
     const selectNodes = [roleFilter, rankFilter, ageGroupFilter, regionFilter, countryFilter, languageFilter, availabilityFilter, proofFilter];
+    const syncControlsFromState = () => {
+      syncExploreRoleFilterOptions();
+      syncExploreRankFilterOptions();
+      syncExploreAgeGroupFilter();
+      syncExploreCountryFilterOptions();
+      syncExploreLanguageFilterOptions();
+
+      if (regionFilter) {
+        regionFilter.value = state.region;
+        if (typeof regionFilter._uspecRebuildMenu === 'function') {
+          regionFilter._uspecRebuildMenu();
+        }
+      }
+      if (availabilityFilter) {
+        availabilityFilter.value = state.availability;
+        if (typeof availabilityFilter._uspecRebuildMenu === 'function') {
+          availabilityFilter._uspecRebuildMenu();
+        }
+      }
+      if (proofFilter) {
+        proofFilter.value = state.proof;
+        if (typeof proofFilter._uspecRebuildMenu === 'function') {
+          proofFilter._uspecRebuildMenu();
+        }
+      }
+
+      if (searchInput) {
+        searchInput.value = state.search;
+      }
+      syncGameChipActiveState();
+      updateExploreModeSemantics();
+      syncQuickStartControls();
+
+      if (modePlayers) {
+        modePlayers.classList.toggle('active', state.mode === 'players');
+        modePlayers.setAttribute('aria-selected', String(state.mode === 'players'));
+      }
+      if (modeTeams) {
+        modeTeams.classList.toggle('active', state.mode === 'teams');
+        modeTeams.setAttribute('aria-selected', String(state.mode === 'teams'));
+      }
+    };
 
     applyPersistedExploreFilters();
+    applyExploreStateFromURL();
     initFilterSelectToggles(selectNodes);
-    syncExploreRoleFilterOptions();
-    syncExploreRankFilterOptions();
-    syncExploreAgeGroupFilter();
-    syncExploreCountryFilterOptions();
-    syncExploreLanguageFilterOptions();
-    updateExploreModeSemantics();
-
-    if (searchInput) {
-      searchInput.value = state.search;
-    }
-
-    document.querySelectorAll('#gameChips .chip').forEach((chip) => {
-      const gameId = chip.dataset.game || GAME_IDS.ANY;
-      chip.classList.toggle('active', gameId === state.game);
-    });
+    syncControlsFromState();
 
     if (searchInput) {
       searchInput.addEventListener('input', () => {
         state.search = searchInput.value.trim();
+        state.explorePage = 1;
         persistExploreFilters();
+        writeExploreStateToURL();
         renderResults();
+        renderCompareDrawer();
       });
     }
 
@@ -9551,9 +10511,12 @@
       if (!node) return;
       node.addEventListener('change', () => {
         state[key] = node.value;
+        state.explorePage = 1;
         persistExploreFilters();
         applyFiltersTracking();
+        writeExploreStateToURL();
         renderResults();
+        renderCompareDrawer();
       });
     });
 
@@ -9563,8 +10526,6 @@
       });
     });
 
-    const modePlayers = document.getElementById('modePlayers');
-    const modeTeams = document.getElementById('modeTeams');
     if (modePlayers) {
       modePlayers.addEventListener('click', () => setMode('players'));
     }
@@ -9572,13 +10533,46 @@
       modeTeams.addEventListener('click', () => setMode('teams'));
     }
 
-    if (modePlayers) {
-      modePlayers.classList.toggle('active', state.mode === 'players');
-      modePlayers.setAttribute('aria-selected', String(state.mode === 'players'));
+    if (browseAllPlayers) {
+      browseAllPlayers.addEventListener('click', () => {
+        trackSafe('click_preview_browse_players', { source: 'explore_preview' });
+        openFullExplore('players');
+        scrollToExploreResults();
+      });
     }
-    if (modeTeams) {
-      modeTeams.classList.toggle('active', state.mode === 'teams');
-      modeTeams.setAttribute('aria-selected', String(state.mode === 'teams'));
+    if (browseAllTeams) {
+      browseAllTeams.addEventListener('click', () => {
+        trackSafe('click_preview_browse_teams', { source: 'explore_preview' });
+        openFullExplore('teams');
+        scrollToExploreResults();
+      });
+    }
+
+    if (paginationPrev) {
+      paginationPrev.addEventListener('click', () => {
+        if (state.exploreView !== EXPLORE_VIEW_IDS.FULL) {
+          return;
+        }
+        setExplorePage(state.explorePage - 1);
+      });
+    }
+    if (paginationNext) {
+      paginationNext.addEventListener('click', () => {
+        if (state.exploreView !== EXPLORE_VIEW_IDS.FULL) {
+          return;
+        }
+        setExplorePage(state.explorePage + 1);
+      });
+    }
+    if (paginationPages) {
+      paginationPages.addEventListener('click', (event) => {
+        const pageButton = event.target.closest('[data-page]');
+        if (!pageButton || state.exploreView !== EXPLORE_VIEW_IDS.FULL) {
+          return;
+        }
+        const page = normalizeExplorePage(pageButton.dataset.page || '1');
+        setExplorePage(page);
+      });
     }
 
     const clearCompare = document.getElementById('clearCompare');
@@ -9654,7 +10648,18 @@
       });
     }
 
+    if (!window.__usmExplorePopstateBound) {
+      window.addEventListener('popstate', () => {
+        applyExploreStateFromURL();
+        syncControlsFromState();
+        renderResults();
+        renderCompareDrawer();
+      });
+      window.__usmExplorePopstateBound = true;
+    }
+
     persistExploreFilters();
+    writeExploreStateToURL();
     renderResults();
     renderCompareDrawer();
     applyStartReturnContextFromURL();
@@ -10286,6 +11291,7 @@
       }
     };
     const scrollToExplore = () => {
+      openFullExplore(state.mode, { render: true });
       scrollToSection('explore');
     };
     const scrollToUspecmeLearn = () => {
@@ -10294,7 +11300,7 @@
 
     bindClickOnce(explorePrimary, () => {
       trackSafe('click_cta_explore_hub', { source: 'hero_primary' });
-      setMode('players');
+      setMode('players', { syncUrl: false, render: false });
       scrollToExplore();
     });
 
@@ -10324,13 +11330,13 @@
 
     bindClickOnce(player, () => {
       trackSafe('click_cta_player', {});
-      setMode('players');
+      setMode('players', { syncUrl: false, render: false });
       scrollToExplore();
     });
 
     bindClickOnce(team, () => {
       trackSafe('click_cta_team', {});
-      setMode('teams');
+      setMode('teams', { syncUrl: false, render: false });
       scrollToExplore();
     });
 
@@ -10389,11 +11395,10 @@
     if (runButton) {
       runButton.addEventListener('click', () => {
         if (state.game === GAME_IDS.ANY) {
-          applyExploreGame(GAME_IDS.OVERWATCH, { track: false });
+          applyExploreGame(GAME_IDS.OVERWATCH, { track: false, syncUrl: false });
         }
         applyFiltersTracking();
-        renderResults();
-        renderCompareDrawer();
+        openFullExplore(state.mode, { render: true });
         scrollToExplore();
       });
     }
