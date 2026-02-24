@@ -6,7 +6,7 @@
   const AUTH_USERS_KEY = 'uspecme_auth_users_v1';
   const PROFILE_STORAGE_KEY = 'uspecme_profile_v1';
   const PROFILE_VERSION = 1;
-  const BUILD_TAG = 'd9.1.20260221';
+  const BUILD_TAG = 'd10.4.20260223';
 
   const DEFAULT_AUTH_USER = {
     username: 'aobi10',
@@ -206,6 +206,43 @@
   ];
   const CONDUCT_RATING_WINDOW_HOURS = 72;
   const CONDUCT_MIN_VERIFIED_FOR_DISPLAY = 3;
+  const FEATURED_PRO_MVP = {
+    id: 'shinobi-featured',
+    name: 'Shinobi',
+    role: 'Flex DPS',
+    country: 'DE',
+    proofStatus: PROOF_STATUS.RANK_VERIFIED,
+    headline: 'Flex DPS focused on team systems, comms discipline and measurable improvement.',
+    rankSnapshot: [
+      { game: 'overwatch', tier: 'Master', division: '3' },
+      { game: 'lol', tier: 'Diamond', division: 'II' },
+      { game: 'rivals', tier: 'Grandmaster' },
+      { game: 'fortnite', tier: 'Champion', division: 'II' }
+    ],
+    achievements: [
+      { titleKey: 'd.featured.achievement.one.title', metaKey: 'd.featured.achievement.one.meta' },
+      { titleKey: 'd.featured.achievement.two.title', metaKey: 'd.featured.achievement.two.meta' },
+      { titleKey: 'd.featured.achievement.three.title', metaKey: 'd.featured.achievement.three.meta' }
+    ],
+    careerHighlights: [
+      'FaZe Academy · Active Roster',
+      'Team Liquid Community Division · Former Member'
+    ],
+    setupHighlights: [
+      'Logitech G Pro X Superlight 2',
+      'Artisan Zero XL',
+      'Wooting 60HE',
+      'BenQ Zowie 360Hz'
+    ],
+    socialLinks: {
+      twitch: 'https://twitch.tv/shinobi',
+      youtube: 'https://www.youtube.com/@shinobi',
+      x: 'https://x.com/shinobi',
+      instagram: 'https://instagram.com/shinobi'
+    },
+    isStreamingFocus: true,
+    lastSeenStatus: 'Live on Twitch'
+  };
 
   const state = {
     mode: 'players',
@@ -1716,6 +1753,15 @@
         birthDate: '',
         birthYear: 2002,
         ageDisplay: AGE_DISPLAY_MODES.GROUP,
+        socialLinks: {
+          twitch: 'https://twitch.tv/shinobi',
+          youtube: 'https://www.youtube.com/@shinobi',
+          instagram: 'https://instagram.com/shinobi',
+          discord: 'https://discord.gg/shinobi',
+          x: 'https://x.com/shinobi'
+        },
+        isStreamingFocus: true,
+        lastSeenStatus: 'Live on Twitch',
         games: {
           overwatch: { handle: 'Shinobi#4728', tier: 'Master', division: '3', platform: PLATFORM_IDS.PC },
           lol: { handle: 'Shn0bi', tier: 'Diamond', division: 'II', platform: PLATFORM_IDS.PC },
@@ -1790,6 +1836,9 @@
     const source = rawState;
     const normalized = cloneValue(defaults);
     const sourcePublic = source.publicProfile && typeof source.publicProfile === 'object' ? source.publicProfile : {};
+    const hasSocialLinks = Object.prototype.hasOwnProperty.call(sourcePublic, 'socialLinks');
+    const hasStreamingFocus = Object.prototype.hasOwnProperty.call(sourcePublic, 'isStreamingFocus');
+    const hasLastSeenStatus = Object.prototype.hasOwnProperty.call(sourcePublic, 'lastSeenStatus');
 
     normalized.publicProfile.displayName = sanitizeTextValue(sourcePublic.displayName, defaults.publicProfile.displayName, 40);
     normalized.publicProfile.role = sanitizeTextValue(sourcePublic.role, defaults.publicProfile.role, 40);
@@ -1822,6 +1871,13 @@
     normalized.publicProfile.birthYear = normalizedBirthYear
       || (normalized.publicProfile.birthDate ? normalizeBirthYear(normalized.publicProfile.birthDate.slice(0, 4)) : null);
     normalized.publicProfile.ageDisplay = normalizeAgeDisplayMode(sourcePublic.ageDisplay || defaults.publicProfile.ageDisplay);
+    normalized.publicProfile.socialLinks = normalizeSocialLinks(hasSocialLinks ? sourcePublic.socialLinks : {});
+    normalized.publicProfile.isStreamingFocus = hasStreamingFocus ? sourcePublic.isStreamingFocus === true : false;
+    normalized.publicProfile.lastSeenStatus = sanitizeTextValue(
+      hasLastSeenStatus ? sourcePublic.lastSeenStatus : '',
+      '',
+      80
+    );
 
     const sourceGames = sourcePublic.games && typeof sourcePublic.games === 'object' ? sourcePublic.games : {};
     normalized.publicProfile.games.overwatch = normalizeProfileGame('overwatch', sourceGames.overwatch, defaults.publicProfile.games.overwatch);
@@ -2806,13 +2862,67 @@
       'd.system.inviteCreated': 'Tryout request created for',
       'd.system.requestCancelled': 'Tryout request cancelled for',
       'd.hero.badge': 'GameIn',
+      'd.hero.badge.featured': 'Featured',
+      'd.hero.featuredProfile': 'Featured profile preview (demo)',
       'd.hero.title': 'Build your roster faster.',
       'd.hero.lead': 'Proof-first profiles. Instant compare. Clear tryout intent.',
+      'd.hero.leadExpanded': 'Proof-first profiles for faster tryout decisions - and a clear way to spectate players, teams and setup context before you commit.',
       'd.hero.ctaExplore': 'Explore players',
+      'd.hero.ctaExploreHub': 'Explore players & teams',
       'd.hero.ctaEarlyAccess': 'Join Early Access',
+      'd.hero.ctaHowItWorks': 'How uSpecMe works',
+      'd.hero.ctaWatchLearn': 'Watch pros',
       'd.hero.toolsLabel': 'Browse mode',
       'd.hero.ctaPlayer': "I'm a Player",
       'd.hero.ctaTeam': "I'm a Team",
+      'd.hero.dual.gamein.title': 'Build your roster faster.',
+      'd.hero.dual.gamein.lead': 'Find fitting players and teams faster with proof-first profiles, quick compare and clear tryout intent.',
+      'd.hero.dual.uspecme.title': 'Watch. Learn. Get better.',
+      'd.hero.dual.uspecme.lead': "Want to improve but not sure where to start? Watch strong players, learn from their games, setup and habits, then build your own path.",
+      'd.hero.bridge': 'Scout smarter: spectate first, decide faster.',
+      'd.uspecme.benefit.gameplay': 'Watch gameplay',
+      'd.uspecme.benefit.setup': 'See setup & settings',
+      'd.uspecme.benefit.updates': 'Follow updates',
+      'd.uspecme.learn.title': 'Spectate & Learn',
+      'd.uspecme.learn.lead': 'uSpecMe keeps high-signal public context in one place so scouting and learning are faster.',
+      'd.uspecme.note.external': 'In MVP, streams and social content open on external platforms.',
+      'd.featured.label': 'Featured Pro',
+      'd.featured.title': 'Spectate & Learn',
+      'd.featured.subtitle': "Watch Shinobi's gameplay, setup and updates in one place.",
+      'd.featured.rankSnapshot': 'Rank Snapshot',
+      'd.featured.achievements': 'Achievements & Events',
+      'd.featured.careerHighlights': 'Career highlights',
+      'd.featured.setupHighlights': 'Setup highlights',
+      'd.featured.cta.spectate': 'Spectate now',
+      'd.featured.cta.follow': 'Follow',
+      'd.featured.note.external': 'Streams and social content open externally in MVP.',
+      'd.featured.achievement.one.title': 'Contenders Regional Top 8',
+      'd.featured.achievement.one.meta': '2025 · Overwatch EU circuit',
+      'd.featured.achievement.two.title': 'Community League Finalist',
+      'd.featured.achievement.two.meta': '2024 · Team Liquid community split',
+      'd.featured.achievement.three.title': 'Cross-title Shotcalling Sessions',
+      'd.featured.achievement.three.meta': 'Weekly review blocks · Overwatch, Rivals',
+      'd.entry.find.title': 'Find (GameIn)',
+      'd.entry.find.copy': 'Find fitting players and teams, compare profiles side by side, and send clear tryout intent.',
+      'd.entry.find.cta': 'Open Explore',
+      'd.entry.observe.title': 'Spectate (uSpecMe)',
+      'd.entry.observe.copy': 'Spectate setup context, social channels and public updates first - then decide who fits your system.',
+      'd.entry.observe.cta': 'How Spectate works',
+      'd.observe.title': 'Spectate & Learn',
+      'd.observe.lead': 'uSpecMe keeps high-signal public context in one place so scouting and learning are faster.',
+      'd.observe.point.socials': 'Social channels in one profile view: Twitch, YouTube, Instagram, Discord and more.',
+      'd.observe.point.setup': 'Pro setup and career context stay visible next to gameplay identity.',
+      'd.observe.point.follow': 'Follow people and teams to track public updates over time.',
+      'd.observe.point.noAutoplay': 'No autoplay noise: scan fast, open streams externally when needed.',
+      'd.observe.note.external': 'In MVP, streams and social content open on external platforms.',
+      'd.social.watchFollow': 'Watch & Follow',
+      'd.social.twitch': 'Twitch',
+      'd.social.youtube': 'YouTube',
+      'd.social.instagram': 'Instagram',
+      'd.social.discord': 'Discord',
+      'd.social.x': 'X',
+      'd.social.liveHint': 'LIVE: {status}',
+      'd.social.lastSeen': 'Last active: {status}',
       'd.kpi.verified.title': 'Verified Ranks',
       'd.kpi.verified.text': 'Where possible, rank is verified. Otherwise status is clearly labeled.',
       'd.kpi.compare.title': 'Compare in Seconds',
@@ -3407,13 +3517,67 @@
       'd.system.inviteCreated': 'Tryout-Anfrage erstellt für',
       'd.system.requestCancelled': 'Tryout-Anfrage storniert für',
       'd.hero.badge': 'GameIn',
+      'd.hero.badge.featured': 'Featured',
+      'd.hero.featuredProfile': 'Featured Profilvorschau (Demo)',
       'd.hero.title': 'Stell dein Team schneller zusammen.',
       'd.hero.lead': 'Proof-first Profile. Sofort vergleichen. Klarer Tryout-Intent.',
+      'd.hero.leadExpanded': 'Proof-first Profile für schnellere Tryout-Entscheidungen - und ein klarer Weg, Spieler, Teams und Setup-Kontext vorab zu spectaten.',
       'd.hero.ctaExplore': 'Spieler entdecken',
+      'd.hero.ctaExploreHub': 'Spieler & Teams entdecken',
       'd.hero.ctaEarlyAccess': 'Early Access sichern',
+      'd.hero.ctaHowItWorks': 'Wie uSpecMe funktioniert',
+      'd.hero.ctaWatchLearn': 'Pros beobachten',
       'd.hero.toolsLabel': 'Browse-Modus',
       'd.hero.ctaPlayer': 'Ich bin ein Spieler',
       'd.hero.ctaTeam': 'Ich bin ein Team',
+      'd.hero.dual.gamein.title': 'Stell dein Team schneller zusammen.',
+      'd.hero.dual.gamein.lead': 'Finde passende Spieler und Teams schneller mit Proof-first-Profilen, schnellem Compare und klarem Tryout-Intent.',
+      'd.hero.dual.uspecme.title': 'Spectate & Learn',
+      'd.hero.dual.uspecme.lead': 'Du willst dich verbessern und weißt nicht, wo du anfangen sollst? Spectate starke Spieler, lerne aus Games, Setup und Gewohnheiten und baue deinen eigenen Weg.',
+      'd.hero.bridge': 'Cleverer scouten: erst spectaten, dann schneller entscheiden.',
+      'd.uspecme.benefit.gameplay': 'Gameplay ansehen',
+      'd.uspecme.benefit.setup': 'Setup & Settings sehen',
+      'd.uspecme.benefit.updates': 'Updates verfolgen',
+      'd.uspecme.learn.title': 'Spectate & Learn',
+      'd.uspecme.learn.lead': 'uSpecMe bündelt relevantes öffentliches Gaming-Signal an einem Ort – für schnelleres Lernen und bessere Entscheidungen.',
+      'd.uspecme.note.external': 'Im MVP werden Streams und Social-Inhalte über externe Plattformen geöffnet.',
+      'd.featured.label': 'Featured Pro',
+      'd.featured.title': 'Spectate & Learn',
+      'd.featured.subtitle': 'Sieh dir Shinobis Gameplay, Setup und Updates an einem Ort an.',
+      'd.featured.rankSnapshot': 'Rank Snapshot',
+      'd.featured.achievements': 'Erfolge & Events',
+      'd.featured.careerHighlights': 'Karriere-Highlights',
+      'd.featured.setupHighlights': 'Setup-Highlights',
+      'd.featured.cta.spectate': 'Jetzt spectaten',
+      'd.featured.cta.follow': 'Folgen',
+      'd.featured.note.external': 'Streams und Social-Inhalte werden im MVP extern geöffnet.',
+      'd.featured.achievement.one.title': 'Contenders Regional Top 8',
+      'd.featured.achievement.one.meta': '2025 · Overwatch EU Circuit',
+      'd.featured.achievement.two.title': 'Community League Finalist',
+      'd.featured.achievement.two.meta': '2024 · Team Liquid Community Split',
+      'd.featured.achievement.three.title': 'Cross-Title Shotcalling Sessions',
+      'd.featured.achievement.three.meta': 'Wöchentliche Review-Blöcke · Overwatch, Rivals',
+      'd.entry.find.title': 'Finden (GameIn)',
+      'd.entry.find.copy': 'Finde passende Spieler und Teams, vergleiche Profile direkt und sende klaren Tryout-Intent.',
+      'd.entry.find.cta': 'Explore öffnen',
+      'd.entry.observe.title': 'Spectate (uSpecMe)',
+      'd.entry.observe.copy': 'Spectate zuerst Setup-Kontext, Social-Kanäle und öffentliche Updates - dann entscheide, wer in dein System passt.',
+      'd.entry.observe.cta': 'So funktioniert Spectate',
+      'd.observe.title': 'Spectate & Learn',
+      'd.observe.lead': 'uSpecMe bündelt relevantes öffentliches Gaming-Signal an einem Ort – für schnelleres Lernen und bessere Entscheidungen.',
+      'd.observe.point.socials': 'Social-Kanäle gebündelt: Twitch, YouTube, Instagram, Discord und mehr.',
+      'd.observe.point.setup': 'Pro-Setup und Karrierekontext bleiben direkt neben der Gameplay-Identität sichtbar.',
+      'd.observe.point.follow': 'Folge Spielern und Teams, um öffentliche Updates über Zeit zu verfolgen.',
+      'd.observe.point.noAutoplay': 'Kein Autoplay-Lärm: schnell scannen, Streams bei Bedarf extern öffnen.',
+      'd.observe.note.external': 'Im MVP werden Streams und Social-Inhalte über externe Plattformen geöffnet.',
+      'd.social.watchFollow': 'Watch & Follow',
+      'd.social.twitch': 'Twitch',
+      'd.social.youtube': 'YouTube',
+      'd.social.instagram': 'Instagram',
+      'd.social.discord': 'Discord',
+      'd.social.x': 'X',
+      'd.social.liveHint': 'LIVE: {status}',
+      'd.social.lastSeen': 'Zuletzt aktiv: {status}',
       'd.kpi.verified.title': 'Verifizierte Ranks',
       'd.kpi.verified.text': 'Wo möglich wird Rank verifiziert, sonst klar gekennzeichnet.',
       'd.kpi.compare.title': 'In Sekunden vergleichen',
@@ -3875,6 +4039,17 @@
   function track(event, payload) {
     if (typeof window.uspecTrack === 'function') {
       window.uspecTrack(event, payload || {});
+    }
+  }
+
+  function trackSafe(event, payload) {
+    try {
+      if (typeof window.uspecTrack !== 'function') {
+        return;
+      }
+      track(event, payload || {});
+    } catch (_err) {
+      // no-op: tracking is optional in preview/local modes
     }
   }
 
@@ -4734,6 +4909,41 @@
       return '';
     }
     return raw;
+  }
+
+  function sanitizeExternalUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) {
+      return '';
+    }
+
+    const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    try {
+      const parsed = new URL(withProtocol);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return '';
+      }
+      return parsed.href;
+    } catch (_err) {
+      return '';
+    }
+  }
+
+  function normalizeSocialLinks(value) {
+    const source = value && typeof value === 'object' ? value : {};
+    const normalized = {
+      twitch: sanitizeExternalUrl(source.twitch),
+      youtube: sanitizeExternalUrl(source.youtube),
+      instagram: sanitizeExternalUrl(source.instagram),
+      discord: sanitizeExternalUrl(source.discord),
+      x: sanitizeExternalUrl(source.x)
+    };
+    Object.keys(normalized).forEach((key) => {
+      if (!normalized[key]) {
+        delete normalized[key];
+      }
+    });
+    return normalized;
   }
 
   function deriveAgeFromBirthYear(birthYear) {
@@ -5964,6 +6174,7 @@
     setProfileField('hero.game.lol', formatGameLine('lol', profile.games.lol.handle));
     setProfileField('hero.game.rivals', formatGameLine('rivals', profile.games.rivals.handle));
     setProfileField('hero.game.fortnite', formatGameLine('fortnite', profile.games.fortnite.handle));
+    renderFeaturedProModule(normalized);
     applyGameRowOrder('hero', profile.mainGame);
 
     const mainPanel = document.getElementById('publicMainGamePanel');
@@ -6032,6 +6243,266 @@
     document.querySelectorAll(`[data-profile-field="${field}"]`).forEach((node) => {
       node.textContent = value;
     });
+  }
+
+  function getSocialPlatformLabelKey(platformKey) {
+    if (platformKey === 'twitch') return 'd.social.twitch';
+    if (platformKey === 'youtube') return 'd.social.youtube';
+    if (platformKey === 'instagram') return 'd.social.instagram';
+    if (platformKey === 'discord') return 'd.social.discord';
+    if (platformKey === 'x') return 'd.social.x';
+    return '';
+  }
+
+  function getHeroSocialLinkItems(profilePublic) {
+    const links = normalizeSocialLinks(profilePublic && profilePublic.socialLinks);
+    const order = ['twitch', 'youtube', 'instagram', 'discord', 'x'];
+    return order
+      .map((key) => {
+        const url = links[key];
+        if (!url) {
+          return null;
+        }
+        const labelKey = getSocialPlatformLabelKey(key);
+        return {
+          key,
+          labelKey,
+          label: labelKey ? t(labelKey) : key,
+          url
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function getFeaturedRankSnapshotEntries(profileState) {
+    const normalized = normalizeProfileState(profileState);
+    const profileGames = normalized.publicProfile && normalized.publicProfile.games
+      ? normalized.publicProfile.games
+      : {};
+    const fallbackMap = new Map(
+      (Array.isArray(FEATURED_PRO_MVP.rankSnapshot) ? FEATURED_PRO_MVP.rankSnapshot : [])
+        .map((entry) => [normalizeGameId(entry && entry.game, ''), entry])
+    );
+    return ALLOWED_GAME_IDS.map((gameId) => {
+      const profileEntry = profileGames[gameId];
+      const hasProfileTier = Boolean(profileEntry && String(profileEntry.tier || '').trim());
+      const sourceEntry = hasProfileTier ? profileEntry : fallbackMap.get(gameId);
+      if (!sourceEntry) {
+        return null;
+      }
+      return {
+        game: gameId,
+        rank: formatRankDisplay(gameId, sourceEntry)
+      };
+    }).filter(Boolean);
+  }
+
+  function getFeaturedProViewModel(profileState) {
+    const normalized = normalizeProfileState(profileState);
+    const profilePublic = normalized.publicProfile || {};
+    const sourcePlayer = getProfileSourcePlayer(profilePublic);
+    const socialLinks = {
+      ...normalizeSocialLinks(FEATURED_PRO_MVP.socialLinks),
+      ...normalizeSocialLinks(profilePublic.socialLinks)
+    };
+    const displayName = sanitizeTextValue(
+      profilePublic.displayName,
+      FEATURED_PRO_MVP.name,
+      64
+    );
+    const role = sanitizeTextValue(
+      profilePublic.role,
+      FEATURED_PRO_MVP.role,
+      64
+    );
+    const country = normalizeCountryCode(profilePublic.country)
+      || normalizeCountryCode(sourcePlayer && sourcePlayer.country)
+      || FEATURED_PRO_MVP.country;
+    const proofStatus = normalizeProofStatus(
+      profilePublic.proofStatus,
+      FEATURED_PRO_MVP.proofStatus
+    );
+    const headline = sanitizeTextValue(
+      profilePublic.headline,
+      FEATURED_PRO_MVP.headline,
+      170
+    );
+    const rankSnapshot = getFeaturedRankSnapshotEntries(normalized);
+    const achievements = (Array.isArray(FEATURED_PRO_MVP.achievements) ? FEATURED_PRO_MVP.achievements : [])
+      .slice(0, 3)
+      .map((entry) => ({
+        title: t(entry.titleKey),
+        meta: t(entry.metaKey)
+      }));
+    const careerHighlightsRaw = [
+      sanitizeTextValue(normalized.career && normalized.career.currentTeamText, '', 90),
+      sanitizeTextValue(normalized.career && normalized.career.formerTeamText, '', 90)
+    ].filter(Boolean);
+    const careerHighlights = careerHighlightsRaw.length
+      ? careerHighlightsRaw
+      : FEATURED_PRO_MVP.careerHighlights.slice(0, 2);
+    const setupHighlightsRaw = [
+      `${t('d.setup.metric.dpi')} ${sanitizeTextValue(normalized.setup && normalized.setup.dpi, '', 12)}`.trim(),
+      `${t('d.setup.metric.sens')} ${sanitizeTextValue(normalized.setup && normalized.setup.sens, '', 12)}`.trim(),
+      `${t('d.setup.metric.fov')} ${sanitizeTextValue(normalized.setup && normalized.setup.fov, '', 12)}`.trim(),
+      `${t('d.setup.metric.hz')} ${sanitizeTextValue(normalized.setup && normalized.setup.hz, '', 12)} Hz`.trim()
+    ].filter((entry) => /\d/.test(entry));
+    const setupHighlights = setupHighlightsRaw.length
+      ? setupHighlightsRaw
+      : FEATURED_PRO_MVP.setupHighlights.slice(0, 4);
+
+    return {
+      id: FEATURED_PRO_MVP.id,
+      displayName,
+      role,
+      country,
+      proofStatus,
+      headline,
+      rankSnapshot,
+      achievements,
+      careerHighlights,
+      setupHighlights,
+      socialLinks,
+      isStreamingFocus: profilePublic.isStreamingFocus === true || FEATURED_PRO_MVP.isStreamingFocus === true,
+      lastSeenStatus: sanitizeTextValue(
+        profilePublic.lastSeenStatus,
+        FEATURED_PRO_MVP.lastSeenStatus,
+        80
+      )
+    };
+  }
+
+  function renderFeaturedRankSnapshot(snapshotEntries) {
+    if (!Array.isArray(snapshotEntries) || !snapshotEntries.length) {
+      return '';
+    }
+    return snapshotEntries.map((entry) => (
+      `<div class="featured-pro__rank-row"><span class="featured-pro__rank-game">${renderProfileGameLogo(entry.game, 'featured-rank-logo')}<span>${escapeHtml(getGameLabel(entry.game))}</span></span><span class="featured-pro__rank-value">${escapeHtml(entry.rank || '-')}</span></div>`
+    )).join('');
+  }
+
+  function renderFeaturedAchievementRows(achievements) {
+    if (!Array.isArray(achievements) || !achievements.length) {
+      return '';
+    }
+    return achievements.map((entry) => (
+      `<li class="featured-pro__achievement"><span class="featured-pro__achievement-title">${escapeHtml(entry.title || '-')}</span><span class="featured-pro__achievement-meta">${escapeHtml(entry.meta || '-')}</span></li>`
+    )).join('');
+  }
+
+  function renderFeaturedListRows(values) {
+    if (!Array.isArray(values) || !values.length) {
+      return '';
+    }
+    return values.map((value) => (
+      `<li class="featured-pro__list-item"><strong>${escapeHtml(value)}</strong></li>`
+    )).join('');
+  }
+
+  function openExternalLink(url) {
+    const href = sanitizeExternalUrl(url);
+    if (!href) {
+      return false;
+    }
+    window.open(href, '_blank', 'noopener,noreferrer');
+    return true;
+  }
+
+  function openFeaturedSpectate() {
+    const featured = getFeaturedProViewModel(state.profile);
+    const opened = openExternalLink(featured.socialLinks.twitch)
+      || openExternalLink(featured.socialLinks.youtube);
+    if (!opened) {
+      navigateToProfileSelf({ mode: 'self' });
+    }
+  }
+
+  function openFeaturedFollow() {
+    const featured = getFeaturedProViewModel(state.profile);
+    const opened = openExternalLink(featured.socialLinks.x)
+      || openExternalLink(featured.socialLinks.instagram)
+      || openExternalLink(featured.socialLinks.youtube);
+    if (!opened) {
+      navigateToProfileSelf({ mode: 'self' });
+    }
+  }
+
+  function renderFeaturedProModule(profileState) {
+    const rankNode = document.getElementById('featuredRankSnapshot');
+    const achievementsNode = document.getElementById('featuredAchievements');
+    const careerNode = document.getElementById('featuredCareerHighlights');
+    const setupNode = document.getElementById('featuredSetupHighlights');
+    const hasFeaturedMarkup = rankNode || achievementsNode || careerNode || setupNode;
+    const viewModel = getFeaturedProViewModel(profileState);
+
+    setProfileField('featured.displayName', viewModel.displayName);
+    setProfileField('featured.role', viewModel.role);
+    setProfileField('featured.country', formatCountryWithFlag(viewModel.country));
+    setProfileField('featured.headline', viewModel.headline);
+    const featuredProof = getProofMeta(viewModel.proofStatus);
+    setProfileField('featured.proof', featuredProof.label);
+    setProfileProofBadge('featured', featuredProof);
+
+    if (hasFeaturedMarkup) {
+      if (rankNode) {
+        rankNode.innerHTML = renderFeaturedRankSnapshot(viewModel.rankSnapshot);
+      }
+      if (achievementsNode) {
+        achievementsNode.innerHTML = renderFeaturedAchievementRows(viewModel.achievements);
+      }
+      if (careerNode) {
+        careerNode.innerHTML = renderFeaturedListRows(viewModel.careerHighlights);
+      }
+      if (setupNode) {
+        setupNode.innerHTML = renderFeaturedListRows(viewModel.setupHighlights);
+      }
+    }
+
+    renderHeroSocialLinks({
+      socialLinks: viewModel.socialLinks
+    });
+    setHeroSpectateState({
+      isStreamingFocus: viewModel.isStreamingFocus,
+      lastSeenStatus: viewModel.lastSeenStatus
+    });
+  }
+
+  function renderHeroSocialLinks(profilePublic) {
+    const block = document.getElementById('heroSocialBlock');
+    const linksNode = document.getElementById('heroSocialLinks');
+    if (!block || !linksNode) {
+      return;
+    }
+
+    const links = getHeroSocialLinkItems(profilePublic || {});
+    if (!links.length) {
+      block.classList.add('hidden');
+      linksNode.innerHTML = '';
+      return;
+    }
+
+    linksNode.innerHTML = links.map((item) => (
+      `<a class="hero-social-link" data-platform="${escapeHtml(item.key)}" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(item.label)}">${escapeHtml(item.label)}</a>`
+    )).join('');
+    block.classList.remove('hidden');
+  }
+
+  function setHeroSpectateState(profilePublic) {
+    const hintNode = document.getElementById('heroLiveHint');
+    if (!hintNode) {
+      return;
+    }
+
+    const status = sanitizeTextValue(profilePublic && profilePublic.lastSeenStatus, '', 80);
+    if (!status) {
+      hintNode.classList.add('hidden');
+      hintNode.textContent = '';
+      return;
+    }
+
+    const key = profilePublic && profilePublic.isStreamingFocus ? 'd.social.liveHint' : 'd.social.lastSeen';
+    hintNode.textContent = formatTemplate(t(key), { status });
+    hintNode.classList.remove('hidden');
   }
 
   function getProfileEditorInputs() {
@@ -9794,43 +10265,88 @@
   function initHeroCTAs() {
     const explorePrimary = document.getElementById('ctaExplorePrimary');
     const earlyAccessSecondary = document.getElementById('ctaEarlyAccessSecondary');
+    const howItWorks = document.getElementById('ctaHowItWorks');
+    const watchLearnPrimary = document.getElementById('ctaWatchLearnPrimary');
+    const featuredSpectate = document.getElementById('ctaFeaturedSpectate');
+    const featuredFollow = document.getElementById('ctaFeaturedFollow');
+    const heroSocialLinks = document.getElementById('heroSocialLinks');
     const player = document.getElementById('ctaPlayer');
     const team = document.getElementById('ctaTeam');
-    const scrollToExplore = () => {
-      const explore = document.getElementById('explore');
-      if (explore) {
-        explore.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const bindClickOnce = (button, handler) => {
+      if (!button || button.dataset.bound === '1') {
+        return;
+      }
+      button.addEventListener('click', handler);
+      button.dataset.bound = '1';
+    };
+    const scrollToSection = (sectionId) => {
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     };
+    const scrollToExplore = () => {
+      scrollToSection('explore');
+    };
+    const scrollToUspecmeLearn = () => {
+      scrollToSection('uspecmeLearn');
+    };
 
-    if (explorePrimary) {
-      explorePrimary.addEventListener('click', () => {
-        track('click_cta_player', { source: 'hero_primary' });
-        setMode('players');
-        scrollToExplore();
-      });
-    }
+    bindClickOnce(explorePrimary, () => {
+      trackSafe('click_cta_explore_hub', { source: 'hero_primary' });
+      setMode('players');
+      scrollToExplore();
+    });
 
-    if (earlyAccessSecondary) {
-      earlyAccessSecondary.addEventListener('click', () => {
-        openWaitlistModal();
-      });
-    }
+    bindClickOnce(earlyAccessSecondary, () => {
+      openWaitlistModal();
+    });
 
-    if (player) {
-      player.addEventListener('click', () => {
-        track('click_cta_player', {});
-        setMode('players');
-        scrollToExplore();
-      });
-    }
+    bindClickOnce(howItWorks, () => {
+      trackSafe('click_cta_how_it_works', { source: 'hero_secondary' });
+      scrollToUspecmeLearn();
+    });
 
-    if (team) {
-      team.addEventListener('click', () => {
-        track('click_cta_team', {});
-        setMode('teams');
-        scrollToExplore();
+    bindClickOnce(watchLearnPrimary, () => {
+      trackSafe('click_cta_watch_learn', { source: 'hero_uspecme_primary' });
+      scrollToUspecmeLearn();
+    });
+
+    bindClickOnce(featuredSpectate, () => {
+      trackSafe('click_cta_featured_spectate', { source: 'featured_pro' });
+      openFeaturedSpectate();
+    });
+
+    bindClickOnce(featuredFollow, () => {
+      trackSafe('click_cta_featured_follow', { source: 'featured_pro' });
+      openFeaturedFollow();
+    });
+
+    bindClickOnce(player, () => {
+      trackSafe('click_cta_player', {});
+      setMode('players');
+      scrollToExplore();
+    });
+
+    bindClickOnce(team, () => {
+      trackSafe('click_cta_team', {});
+      setMode('teams');
+      scrollToExplore();
+    });
+
+    if (heroSocialLinks && heroSocialLinks.dataset.bound !== '1') {
+      heroSocialLinks.addEventListener('click', (event) => {
+        const link = event.target.closest('a[data-platform]');
+        if (!link) {
+          return;
+        }
+        const platform = String(link.dataset.platform || '').trim().toLowerCase();
+        if (!platform) {
+          return;
+        }
+        trackSafe(`click_social_featured_${platform}`, { source: 'featured_social' });
       });
+      heroSocialLinks.dataset.bound = '1';
     }
 
     syncHeroBrowseButtons();

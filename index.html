@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>uSpecMe · GameIn</title>
   <meta name="description" content="uSpecMe GameIn comparison variant with a LinkedIn-style professional layer for gaming identities.">
-  <link rel="stylesheet" href="main.css?v=d9.1.20260221">
+  <link rel="stylesheet" href="main.css?v=d10.4.20260223">
 </head>
 <body class="variant-gamein" data-page="start" data-preview-state="preview">
   <a class="skip-link" href="#main" data-d18n="d.a11y.skip">Skip to content</a>
@@ -43,38 +43,44 @@
 
   <main id="main">
     <section id="landing" class="hero section">
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <span class="hero-pill" data-d18n="d.hero.badge">GameIn</span>
-          <h1 data-d18n="d.hero.title">Build your roster faster.</h1>
-          <p data-d18n="d.hero.lead">Proof-first profiles. Instant compare. Clear tryout intent.</p>
+      <div class="container hero-shell">
+        <div class="dual-hero-grid">
+          <article class="hero-card hero-card--gamein panel">
+            <span class="hero-pill" data-d18n="d.hero.badge">GameIn</span>
+            <h1 data-d18n="d.hero.dual.gamein.title">Build your roster faster.</h1>
+            <p class="hero-card-lead" data-d18n="d.hero.dual.gamein.lead">Find fitting players and teams faster with proof-first profiles, quick compare and clear tryout intent.</p>
 
-          <div class="hero-actions">
-            <button type="button" class="button primary" id="ctaExplorePrimary" data-d18n="d.hero.ctaExplore">Explore players</button>
-            <button type="button" class="button secondary" id="ctaEarlyAccessSecondary" data-d18n="d.hero.ctaEarlyAccess">Join Early Access</button>
-          </div>
+            <div class="hero-actions">
+              <button type="button" class="button primary" id="ctaExplorePrimary" data-d18n="d.hero.ctaExploreHub">Explore players & teams</button>
+              <button type="button" class="button secondary" id="ctaEarlyAccessSecondary" data-d18n="d.hero.ctaEarlyAccess">Join Early Access</button>
+            </div>
 
-          <div class="hero-tools-label" data-d18n="d.hero.toolsLabel">Browse mode</div>
-          <div class="hero-actions hero-actions-legacy">
-            <button type="button" class="button primary" id="ctaPlayer" data-d18n="d.hero.ctaPlayer">I'm a Player</button>
-            <button type="button" class="button secondary" id="ctaTeam" data-d18n="d.hero.ctaTeam">I'm a Team</button>
-          </div>
+            <div class="hero-tools-label" data-d18n="d.hero.toolsLabel">Browse mode</div>
+            <div class="hero-actions hero-actions-legacy">
+              <button type="button" class="button primary" id="ctaPlayer" data-d18n="d.hero.ctaPlayer">I'm a Player</button>
+              <button type="button" class="button secondary" id="ctaTeam" data-d18n="d.hero.ctaTeam">I'm a Team</button>
+            </div>
+          </article>
 
-          <div class="hero-kpis">
-            <article>
-              <h3 data-d18n="d.kpi.verified.title">Verified Ranks</h3>
-              <p data-d18n="d.kpi.verified.text">Where possible, rank is verified. Otherwise status is clearly labeled.</p>
-            </article>
-            <article>
-              <h3 data-d18n="d.kpi.compare.title">Compare in Seconds</h3>
-              <p data-d18n="d.kpi.compare.text">Shortlist two profiles side by side without leaving Explore.</p>
-            </article>
-            <article>
-              <h3 data-d18n="d.kpi.tryout.title">Invite to Tryout</h3>
-              <p data-d18n="d.kpi.tryout.text">Trigger clear intent with one modal and capture early-access demand.</p>
-            </article>
-          </div>
+          <article class="hero-card hero-card--uspecme panel">
+            <span class="hero-pill hero-pill--uspecme">uSpecMe</span>
+            <h2 class="hero-card-title" data-d18n="d.hero.dual.uspecme.title">Watch. Learn. Get better.</h2>
+            <p class="hero-card-lead" data-d18n="d.hero.dual.uspecme.lead">Watch strong players, learn from their games, setup and habits, then build your own path.</p>
+            <ul class="hero-bullets">
+              <li data-d18n="d.uspecme.benefit.gameplay">Watch gameplay</li>
+              <li data-d18n="d.uspecme.benefit.setup">See setup & settings</li>
+              <li data-d18n="d.uspecme.benefit.updates">Follow updates</li>
+            </ul>
+            <div class="hero-actions">
+              <button type="button" class="button primary" id="ctaWatchLearnPrimary" data-d18n="d.hero.ctaWatchLearn">Watch pros</button>
+              <button type="button" class="button ghost small" id="ctaHowItWorks" data-d18n="d.hero.ctaHowItWorks">How uSpecMe works</button>
+            </div>
+          </article>
+        </div>
 
+        <p class="hero-bridge-line" data-d18n="d.hero.bridge">Scout smarter: spectate first, decide faster.</p>
+
+        <div class="quick-start-block">
           <div id="quickStart" class="quick-start panel" aria-label="Quick Start">
             <h3 data-d18n="d.quick.title">Quick Start</h3>
             <div class="quick-start-grid">
@@ -101,76 +107,117 @@
           </div>
         </div>
 
-        <div class="hero-panel">
-          <div class="panel-head panel-head-solo">
-            <button type="button" class="button ghost small" id="openConnectFromHero" data-d18n="d.panel.connect">Connect</button>
+        <div class="featured-preview-block hero-panel featured-pro">
+          <div class="hero-featured-header featured-pro__header">
+            <span class="hero-featured-tag" data-d18n="d.featured.label">Featured Pro</span>
+            <div class="featured-pro__header-copy">
+              <h3 class="featured-pro__title" data-d18n="d.featured.title">Spectate & Learn</h3>
+              <p class="featured-pro__subtitle" data-d18n="d.featured.subtitle">Watch Shinobi's gameplay, setup and updates in one place.</p>
+            </div>
           </div>
 
-          <div class="hero-mock-stage">
-            <article class="hero-profile-preview" aria-label="Shinobi profile">
-              <div class="hero-preview-head">
-                <img class="hero-preview-avatar" src="assets/avatars/shinobi 1.jpeg" alt="Shinobi profile picture">
-                <div class="hero-preview-ident">
-                  <h3 data-profile-field="hero.displayName">Shinobi</h3>
-                  <p data-profile-field="hero.role">Flex DPS</p>
-                  <p class="hero-preview-country"><span data-d18n="d.profile.country.label">Country</span>: <span data-profile-field="hero.country">Germany</span></p>
-                </div>
-                <div class="hero-preview-badges">
-                  <span class="proof-badge rank" data-profile-proof="hero" data-profile-field="hero.proof">Skill Verified</span>
-                  <span class="conduct-summary" data-profile-field="hero.conductSummary">★ — (New)</span>
-                </div>
+          <div class="featured-pro__content">
+            <div class="featured-pro__media">
+              <div class="hero-mock-stage">
+                <article class="hero-profile-preview" aria-label="Featured profile preview">
+                  <div class="hero-preview-head">
+                    <img class="hero-preview-avatar" src="assets/avatars/shinobi 1.jpeg" alt="Shinobi profile picture">
+                    <div class="hero-preview-ident">
+                      <h3 data-profile-field="hero.displayName">Shinobi</h3>
+                      <p data-profile-field="hero.role">Flex DPS</p>
+                      <p class="hero-preview-country"><span data-d18n="d.profile.country.label">Country</span>: <span data-profile-field="hero.country">Germany</span></p>
+                    </div>
+                    <div class="hero-preview-badges">
+                      <span class="proof-badge rank" data-profile-proof="hero" data-profile-field="hero.proof">Skill Verified</span>
+                      <span class="conduct-summary" data-profile-field="hero.conductSummary">★ — (New)</span>
+                    </div>
+                  </div>
+
+                  <div class="hero-preview-games" data-profile-games="hero">
+                    <div class="hero-preview-row" data-profile-game-row="overwatch">
+                      <img src="assets/logos/misc/overwatch_logo_2026.png" alt="Overwatch logo">
+                      <span data-profile-field="hero.game.overwatch">Overwatch · Shinobi#4728</span>
+                    </div>
+                    <div class="hero-preview-row" data-profile-game-row="lol">
+                      <img src="assets/logos/misc/LoL.png" alt="League of Legends logo">
+                      <span data-profile-field="hero.game.lol">League of Legends · Shn0bi</span>
+                    </div>
+                    <div class="hero-preview-row" data-profile-game-row="rivals">
+                      <img src="assets/logos/misc/rivals.png" alt="Marvel Rivals logo">
+                      <span data-profile-field="hero.game.rivals">Marvel Rivals · ShinobiX</span>
+                    </div>
+                    <div class="hero-preview-row" data-profile-game-row="fortnite">
+                      <img src="assets/logos/misc/Fortnite.jpeg" alt="Fortnite logo">
+                      <span data-profile-field="hero.game.fortnite">Fortnite · ShinobiFN</span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <div class="featured-pro__panel">
+              <div class="featured-pro__identity">
+                <h4 class="featured-pro__name" data-profile-field="featured.displayName">Shinobi</h4>
+                <p class="featured-pro__role" data-profile-field="featured.role">Flex DPS</p>
+                <p class="featured-pro__country" data-profile-field="featured.country">🇩🇪 Germany</p>
+                <p class="featured-pro__headline" data-profile-field="featured.headline">Flex DPS focused on team systems, comms discipline and measurable improvement.</p>
+                <span class="proof-badge rank" data-profile-proof="featured" data-profile-field="featured.proof">Rank Verified</span>
               </div>
 
-              <div class="hero-preview-games" data-profile-games="hero">
-                <div class="hero-preview-row" data-profile-game-row="overwatch">
-                  <img src="assets/logos/misc/overwatch_logo_2026.png" alt="Overwatch logo">
-                  <span data-profile-field="hero.game.overwatch">Overwatch · Shinobi#4728</span>
-                </div>
-                <div class="hero-preview-row" data-profile-game-row="lol">
-                  <img src="assets/logos/misc/LoL.png" alt="League of Legends logo">
-                  <span data-profile-field="hero.game.lol">League of Legends · Shn0bi</span>
-                </div>
-                <div class="hero-preview-row" data-profile-game-row="rivals">
-                  <img src="assets/logos/misc/rivals.png" alt="Marvel Rivals logo">
-                  <span data-profile-field="hero.game.rivals">Marvel Rivals · ShinobiX</span>
-                </div>
-                <div class="hero-preview-row" data-profile-game-row="fortnite">
-                  <img src="assets/logos/misc/Fortnite.jpeg" alt="Fortnite logo">
-                  <span data-profile-field="hero.game.fortnite">Fortnite · ShinobiFN</span>
-                </div>
+              <div class="featured-pro__cta-row">
+                <button type="button" class="button primary" id="ctaFeaturedSpectate" data-d18n="d.featured.cta.spectate">Spectate now</button>
+                <button type="button" class="button secondary" id="ctaFeaturedFollow" data-d18n="d.featured.cta.follow">Follow</button>
               </div>
 
-              <div class="hero-preview-section">
-                <h4 data-i18n="profile.career.title">Career</h4>
-                <p class="team-line">
-                  <img src="assets/logos/teams/Faze Clan.png" alt="FaZe logo">
-                  <span data-profile-field="hero.career.current">FaZe · Current Member</span>
-                </p>
-                <p class="team-line">
-                  <img src="assets/logos/teams/Team Liquid.jpeg" alt="Team Liquid logo">
-                  <span data-profile-field="hero.career.former">Team Liquid · Former Member</span>
-                </p>
+              <section class="featured-pro__rank-section">
+                <h5 data-d18n="d.featured.rankSnapshot">Rank Snapshot</h5>
+                <div id="featuredRankSnapshot" class="featured-pro__rank-snapshot"></div>
+              </section>
+
+              <section class="featured-pro__achievements-section">
+                <h5 data-d18n="d.featured.achievements">Achievements & Events</h5>
+                <ul id="featuredAchievements" class="featured-pro__achievements"></ul>
+              </section>
+
+              <div class="featured-pro__signals">
+                <section>
+                  <h5 data-d18n="d.featured.careerHighlights">Career highlights</h5>
+                  <ul id="featuredCareerHighlights" class="featured-pro__list"></ul>
+                </section>
+                <section>
+                  <h5 data-d18n="d.featured.setupHighlights">Setup highlights</h5>
+                  <ul id="featuredSetupHighlights" class="featured-pro__list"></ul>
+                </section>
               </div>
 
-              <div class="hero-preview-section">
-                <h4 data-i18n="profile.setup.title">Pro Setup</h4>
-                <div class="hero-preview-hardware">
-                  <span class="setup-item"><img src="assets/logos/misc/logitech.jpeg" alt="Logitech logo"><span data-i18n="profile.setup.s1">Logitech G Pro X Superlight 2</span></span>
-                  <span class="setup-item"><span data-i18n="profile.setup.s2">Artisan Zero XL</span></span>
-                  <span class="setup-item"><span data-i18n="profile.setup.s3">Wooting 60HE</span></span>
-                  <span class="setup-item"><img src="assets/logos/misc/benq.png" alt="BenQ logo"><span data-i18n="profile.setup.s4">BenQ Zowie 360Hz</span></span>
-                  <span class="setup-item setup-item-wide"><img src="assets/logos/misc/nvidea.png" alt="NVIDIA logo"><span data-i18n="profile.setup.s5">NVIDIA RTX 4090</span></span>
+              <div class="hero-linkedin-layer">
+                <p class="profile-headline" data-d18n="d.profile.headline">Flex DPS focused on team systems, comms discipline and measurable improvement.</p>
+                <p class="profile-about compact" data-d18n="d.profile.about.short">Proof-first gaming identity with references, career history and tryout context.</p>
+                <div id="heroSocialBlock" class="hero-social-block hidden">
+                  <p class="hero-social-title" data-d18n="d.social.watchFollow">Watch & Follow</p>
+                  <div id="heroSocialLinks" class="hero-social-links" aria-live="polite"></div>
+                  <p id="heroLiveHint" class="hero-live-hint hidden"></p>
                 </div>
               </div>
-            </article>
-
+            </div>
           </div>
-          <p class="hero-note" data-d18n="d.panel.note">No autoplay. Fast scan, high signal density, clear CTA hierarchy.</p>
-          <div class="hero-linkedin-layer">
-            <p class="profile-headline" data-d18n="d.profile.headline">Flex DPS focused on team systems, comms discipline and measurable improvement.</p>
-            <p class="profile-about compact" data-d18n="d.profile.about.short">Proof-first gaming identity with references, career history and tryout context.</p>
-          </div>
+          <p class="hero-note featured-pro__note" data-d18n="d.featured.note.external">Streams and social content open externally in MVP.</p>
         </div>
+      </div>
+    </section>
+
+    <section id="uspecmeLearn" class="section uspecme-learn">
+      <div class="container panel">
+        <div class="section-head section-head-stack uspecme-learn-head">
+          <h2 data-d18n="d.uspecme.learn.title">Spectate & Learn</h2>
+          <p class="observe-lead" data-d18n="d.uspecme.learn.lead">uSpecMe keeps high-signal public context in one place so scouting and learning are faster.</p>
+        </div>
+        <div class="uspecme-benefits">
+          <article class="benefit-tile" data-d18n="d.uspecme.benefit.gameplay">Watch gameplay</article>
+          <article class="benefit-tile" data-d18n="d.uspecme.benefit.setup">See setup & settings</article>
+          <article class="benefit-tile" data-d18n="d.uspecme.benefit.updates">Follow updates</article>
+        </div>
+        <p class="uspecme-note" data-d18n="d.uspecme.note.external">In MVP, streams and social content open on external platforms.</p>
       </div>
     </section>
 
@@ -935,6 +982,6 @@
 
   <script src="track.js"></script>
   <script src="shared.js"></script>
-  <script src="main.js?v=d9.1.20260221"></script>
+  <script src="main.js?v=d10.4.20260223"></script>
 </body>
 </html>
